@@ -1,13 +1,12 @@
-from flask import Flask,render_template
-
-app = Flask(__name__)
-
+from revelo_package import app
+from flask import render_template
+from revelo_package.models import Item 
 @app.route("/")
 def home_page():
     return render_template('home.html')
 @app.route("/market")
 def market_page():
-    items=[{'id':1,'name':'lot de zinc','description':'description de lot','location':'oran','category':'zinc','subcategory':'pe','price':50,'added_date':'14-01-01'}]
+    items=Item.query.all()
     return render_template('market.html',items=items)
 @app.route("/summary")
 def summary_page():
@@ -31,7 +30,3 @@ def signup_page():
 @app.route("/signin")
 def signin_page():
     return render_template('signin.html')
-
-
-if __name__ == "__main__":
-    app.run()
