@@ -1,0 +1,29 @@
+{%extends'base.html' %}
+{% block title%}
+POST WASTE
+{% endblock%}
+{% block content %}
+<h1>POST WASTE</h1>
+<div class="container">
+    <form method="POST">
+        {{form.hidden_tag()}}
+        {{form.name.label}}
+        {{form.name(class="form-control",placeholder="Title")}}
+        {{form.description.label()}}
+        {{form.description(class="form-control",placeholder="Description")}}
+        {{form.category.label()}}
+        {{form.category(class="form-control",placeholder="Category")}}
+        {{form.unit.label()}}
+        {{form.unit(class="form-control",placeholder="Unit")}}
+        {{form.quantity.label()}}
+        {{form.quantity(class="form-control",placeholder="Quantity")}}
+        {{form.location.label()}}
+        {{form.location(class="form-control",placeholder="Pickup Location")}}
+        {{form.price.label()}}
+        {{form.price(class="form-control",placeholder="Price")}}
+        {{form.submit(class="btn btn-block btn-lg btn-primary text-center")}}
+        
+
+    </form>
+</div>
+{% endblock %}

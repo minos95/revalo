@@ -2,3 +2,49 @@
 {% block title%}
 signup
 {% endblock%}
+{% block content %}
+<h1>Signup</h1>
+<div class="container">
+<form method="POST" class="form-register">
+    {{form.hidden_tag()}}
+    {{form.name.label()}}
+    {{form.name(class="form-control",placeholder="Company name")}}
+    {{form.company_type.label()}}
+    {{form.company_type(class="form-control",placeholder="Company name")}}
+    {{form.activity.label()}}
+    {{form.activity(class="form-control",placeholder="Company name")}}
+    {{form.address.label()}}
+    {{form.address(class="form-control",placeholder="Company address")}}
+    {{form.country.label()}}
+    {{form.country(class="form-control",placeholder="Country")}}
+    {{form.city.label()}}
+    {{form.city(class="form-control",placeholder="City")}}
+    {{form.rc.label()}}
+    {{form.rc(class="form-control",placeholder="Company rc")}}
+    {{form.nif.label()}}
+    {{form.nif(class="form-control",placeholder="Company nif")}}
+    {{form.nis.label()}}
+    {{form.nis(class="form-control",placeholder="Company nis")}}
+    {{form.full_name.label()}}
+    {{form.full_name(class="form-control",placeholder="Fullname user")}}
+    {{form.email.label()}}
+    {{form.email(class="form-control",placeholder="email")}}
+    {{form.password1.label()}}
+    {{form.password1(class="form-control",placeholder="Password")}}
+    {{form.password2.label()}}
+    {{form.password2(class="form-control",placeholder="Confirm password")}}
+    {{form.phone.label()}}
+    {{form.phone(class="form-control",placeholder="Phone")}}
+    {{form.role.label()}}
+    {{form.role(class="form-control",placeholder="Role")}}
+    <br>
+    <br>
+    {{form.submit(class="btn btn-block btn-lg btn-primary text-center")}}
+
+</form>
+<a href="{{url_for('login_page')}}">Already have an account ?</a>
+
+</div>
+
+
+{% endblock%}

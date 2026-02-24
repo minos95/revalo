@@ -22,13 +22,25 @@
         <a class="nav-link" href="{{url_for('summary_page')}}">Résumé</a>
         <a class="nav-link" href="{{url_for('bids_page')}}">Offre/Enchére</a>
         <a class="nav-link " href="{{url_for('contact_page')}}" >Aide & contacte</a>
-        <a class="nav-link "  href="{{url_for('signin_page')}}">Enregistrer</a>
+        <a class="nav-link "  href="{{url_for('login_page')}}">Enregistrer</a>
         <a class="nav-link " href="{{url_for('signup_page')}}" >Se connecter</a>
         
       </div>
     </div>
   </div>
 </nav>
+{% with messages=get_flashed_messages(with_categories=true)%}
+  {%if messages%}
+    {% for category, message in messages%}
+      <div class="alert alert-{{category}}">
+<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>        
+         
+        </button>
+         {{message}}
+      </div>
+    {%endfor %}
+  {%endif%}
+{%endwith%}
 {%block content %}
 
 {% endblock %}

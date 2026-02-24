@@ -1,0 +1,20 @@
+{%extends'base.html' %}
+{% block title%}
+Login in Page
+{% endblock%}
+
+{% block content %}
+<div class="container">
+    <form method="POST">
+    {{form.hidden_tag()}}
+    {{form.email.label()}}
+    {{form.email(class="form-control",placeholder="Email")}}
+
+    {{form.password.label()}}
+    {{form.password(class="form-control",placeholder="password")}}
+    </form>
+
+</div>
+<a href="{{url_for('signup_page')}}">Dont have account ?</a>
+
+{% endblock %}
