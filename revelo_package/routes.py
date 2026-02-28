@@ -1,35 +1,72 @@
 from revelo_package import app,db
-from flask import render_template,redirect,url_for,flash
-from revelo_package.models import Item,User,Company
-from revelo_package.forms import CompanyRegisterForm ,UserRegisterForm,postItemForm,LoginForm,FilterMarketForm
-from flask_login import login_user ,logout_user,login_required
+from flask import render_template,redirect,url_for,flash,request
+from revelo_package.models import Item,User,Company,Offer
+from revelo_package.forms import CompanyRegisterForm ,UserRegisterForm,postItemForm,LoginForm,FilterMarketForm,makeOfferForm
+from flask_login import login_user ,logout_user,login_required,current_user
+from sqlalchemy import desc
 @app.route("/")
 def home_page():
     return render_template('home.html')
-@app.route("/market")
+@app.route("/market",methods=['POST','GET'])
 #@login_required
 def market_page():
+   
+   
+    make_offer_form=makeOfferForm()
+    if make_offer_form.validate_on_submit():
+        offer_to_create=Offer(offered_price=make_offer_form.price.data,
+                              quantity_requested=make_offer_form.quantity.data,
+                              message=make_offer_form.message.data,
+                              item_id=request.form['item_id'],
+                              buyer_company_id=current_user.company_id,
+                              )
+        db.session.add(offer_to_create)
+        db.session.commit()
+        return redirect(url_for("offers_page"))
+
     filter_form=FilterMarketForm()
-    items=Item.query.options(db.joinedload(Item.owned_category)).all()
-    for item in items:
-        print(item.owned_category.name)
-    return render_template('market.html',items=items,filter_form=filter_form)
+    filters=[]
+    filters.append(Item.company_id==current_user.company_id)
+    if request.args.get("name"):
+        filters.append(Item.name.ilike(f"%{request.args.get("name")}%"))
+    if request.args.get("category"):
+        filters.append(Item.category_id==request.args.get("category"))
+    if request.args.get("quantity"):
+        filters.append(request.args.get("quantity")<=Item.quantity)
+    if request.args.get("location"):
+        filters.append(Item.location==request.args.get("location"))
+
+    if filters:   
+            items=Item.query.options(db.joinedload(Item.owned_category)).filter(*filters).all()
+    else:
+            items=Item.query.options(db.joinedload(Item.owned_category)).all()
+
+    
+ 
+    return render_template('market.html',items=items,filter_form=filter_form,make_offer_form=make_offer_form)
 @app.route("/summary")
 def summary_page():
     return render_template('summary.html')
-@app.route("/bids")
-def bids_page():
-    return render_template('bids.html')
+@app.route("/offers")
+def offers_page():
+    offers=Offer.query.filter_by(buyer_company_id=current_user.company_id).all()
+    
+    print("++++++++++++++++++++")
+    for offer in offers:
+
+        print(offer.owned_offer.owned_company.name)
+    return render_template('offers.html',offers=offers)
 
 @app.route("/listing")
 def listing_page():
-    return render_template('listing.html')
+    items=Item.query.filter_by(company_id=current_user.company_id).order_by(desc(Item.created_at)).all()
+    return render_template('listing.html',items=items)
 @app.route('/listing/post',methods=['GET','POST'])
 def post_page():
     form=postItemForm()
     if form.validate_on_submit():
-        print('+++++++++++++++++++++')
         item_to_create=Item(name=form.name.data,
+                            company_id=current_user.company_id,
                             description=form.description.data,
                             category_id=form.category.data,
                             unit=form.unit.data,

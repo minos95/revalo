@@ -1,0 +1,27 @@
+<!-- Modal offers-->
+<div class="modal fade" id="offer-request" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalLabel">faire une offre</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Faire une offre pour le lot {{item.name}}<br>
+        <form method="POST">
+          {{make_offer_form.hidden_tag()}}
+          {{make_offer_form.price(class="form-control",placeholder="Prix a offrire")}}<br>
+          {{make_offer_form.quantity(class="form-control",placeholder="Quantity" ,value=item.qunatity)}}<br>
+          {{make_offer_form.message(class="form-control",placeholder="envoyer un message")}}<br>
+          <input type="hidden" name="item_id" value="{{item.id}}"/>
+          <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          {{make_offer_form.submit(class="btn btn-secondary",)}}
+        
+      </div>
+        </form>
+      </div>
+      
+    </div>
+  </div>
+</div>

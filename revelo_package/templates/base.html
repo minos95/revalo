@@ -22,10 +22,20 @@
         <a class="nav-link active" aria-current="page" href="{{url_for('market_page')}}">Marché</a>
         <a class="nav-link" href="{{url_for('listing_page')}}">Mes annouces</a>
         <a class="nav-link" href="{{url_for('summary_page')}}">Résumé</a>
-        <a class="nav-link" href="{{url_for('bids_page')}}">Offre/Enchére</a>
+        <a class="nav-link" href="{{url_for('offers_page')}}">Offre/Enchére</a>
         <a class="nav-link " href="{{url_for('contact_page')}}" >Aide & contacte</a>
-        <a class="nav-link "  href="#">{{current_user.full_name}}</a>
-        <a class="nav-link "  href="{{url_for('logout_page')}}">Logout</a>
+        <a class="nav-link "  href="#"></a>
+        <li class="nav-item dropdown d-flex">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            {{current_user.full_name}} 
+          </a>
+          <ul class="dropdown-menu">
+            
+            <li><a class="dropdown-item" href="#">Another action</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="{{url_for('logout_page')}}">Logout</a></li>
+          </ul>
+        </li>
        
         
       </div>

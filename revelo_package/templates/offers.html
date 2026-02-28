@@ -1,0 +1,41 @@
+{%extends'base.html' %}
+{% block title%}
+OFFERS PAGE
+{% endblock%}
+{% block content%}
+<div class="row">
+    <div class="col">
+        <H6 class="text-center">Mes offres</H6>
+{%if offers%}
+
+<table class="table table-striped-columns">
+  <thead>
+    <tr>
+      <th scope="col">#</th>
+      <th scope="col">PRIX OFFER</th>
+      <th scope="col">QUANTITY DEMANDE</th>
+      <th scope="col">MESSAGE</th>
+      <th scope="col">STATUS</th>
+    </tr>
+  </thead>
+  {%for offer in offers%}
+  <tr>
+      <th scope="row">1</th>
+      <td>{{offer.offered_price}} DA</td>
+      <td>{{offer.quantity_requested}}</td>
+      <td><button class="btn btn-secondary">Message</button></td>
+      <td>{{offer.status}}</td>
+    </tr>
+    {% endfor %}
+</table>
+{%else%}
+<p>Vous n'avez fais aucune offre </p>
+{% endif%}
+    </div>
+    <div class="col">
+        
+    </div>
+
+</div>
+
+{% endblock%}

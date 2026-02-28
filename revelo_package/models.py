@@ -53,9 +53,9 @@ class Offer(db.Model):
     offered_price = db.Column(db.Integer(),nullable=False)
     quantity_requested = db.Column(db.Integer(),nullable=False)
     message = db.Column(db.String(length=300),nullable=False)
-    status = db.Column(db.String(length=30),nullable=False)
+    status = db.Column(db.String(length=30),default="pending")
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
-
+    owned_offer = db.relationship("Item", back_populates="offers")
 
 class Transaction(db.Model):
     id=db.Column(db.Integer(),primary_key=True)
@@ -92,12 +92,14 @@ class Item(db.Model):
     views=db.relationship('View',backref='owned_item',lazy=True)
     owned_company = db.relationship("Company", back_populates="items")
     owned_category=db.relationship("Category",back_populates="items")
+    offers = db.relationship('Offer', back_populates='owned_offer',lazy=True)
     def __repr__(self):
         return f'Item {self.name}'
 
 class Image(db.Model):
     id=db.Column(db.Integer(),primary_key=True)
     item_id= db.Column(db.Integer(),db.ForeignKey('item.id'))
+    cover=db.column(db.Boolean())
     uri=db.Column(db.String(length=30),nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
 
