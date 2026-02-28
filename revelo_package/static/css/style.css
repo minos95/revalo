@@ -1,0 +1,10 @@
+.listing-container{
+    background-color: rgb(242, 240, 240);
+    margin-top: 10px;
+ 
+}
+.filter-container{
+    margin-top: 20px;
+    padding:20px;
+    background-color: rgb(242, 240, 240);
+}

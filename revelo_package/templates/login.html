@@ -12,7 +12,12 @@ Login in Page
 
     {{form.password.label()}}
     {{form.password(class="form-control",placeholder="password")}}
-    </form>
+    
+    
+    {{form.submit(class="btn btn-block btn-lg btn-primary text-center")}}
+
+
+</form>
 
 </div>
 <a href="{{url_for('signup_page')}}">Dont have account ?</a>

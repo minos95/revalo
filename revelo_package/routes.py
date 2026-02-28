@@ -1,15 +1,19 @@
 from revelo_package import app,db
 from flask import render_template,redirect,url_for,flash
 from revelo_package.models import Item,User,Company
-from revelo_package.forms import CompanyRegisterForm ,UserRegisterForm,postItemForm,LoginForm
-from flask_login import login_user 
+from revelo_package.forms import CompanyRegisterForm ,UserRegisterForm,postItemForm,LoginForm,FilterMarketForm
+from flask_login import login_user ,logout_user,login_required
 @app.route("/")
 def home_page():
     return render_template('home.html')
 @app.route("/market")
+#@login_required
 def market_page():
-    items=Item.query.all()
-    return render_template('market.html',items=items)
+    filter_form=FilterMarketForm()
+    items=Item.query.options(db.joinedload(Item.owned_category)).all()
+    for item in items:
+        print(item.owned_category.name)
+    return render_template('market.html',items=items,filter_form=filter_form)
 @app.route("/summary")
 def summary_page():
     return render_template('summary.html')
@@ -25,7 +29,6 @@ def post_page():
     form=postItemForm()
     if form.validate_on_submit():
         print('+++++++++++++++++++++')
-        print(form.category.data)
         item_to_create=Item(name=form.name.data,
                             description=form.description.data,
                             category_id=form.category.data,
@@ -73,19 +76,25 @@ def signup_page():
             flash(f'error {err_msg}',category='danger')
     return render_template('signup.html',form=form)
 
-@app.route("/login")
+@app.route("/login",methods=['GET','POST'])
 def login_page():
+   
    
    form=LoginForm()
    if form.validate_on_submit():
-       attempted_user=User.query.get(form.email.data).first()
-       if attempted_user and attempted_user.check_password_corection(
+       attempted_user=User.query.filter_by(email=form.email.data).first()
+       if attempted_user and attempted_user.check_password_correction(
            attempted_password=form.password.data):
            login_user(attempted_user)
            flash("success you are logged in",category='success')
            return redirect(url_for('market_page'))
        else:
            flash('Username or password are incorrect! please try again',category='danger')
-
-        
    return render_template('login.html',form=form)
+
+
+@app.route("/logout")
+def logout_page():
+    logout_user()
+    flash("You have been logout!",category="info")
+    return redirect(url_for('home_page'))

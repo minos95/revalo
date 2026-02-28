@@ -8,4 +8,6 @@ app.config['SECRET_KEY']='fb0dcdeb3a4223be7c444a52'
 db=SQLAlchemy(app)
 bcrypt=Bcrypt(app)
 login_manager=LoginManager(app)
+login_manager.login_view="home_page"
+login_manager.login_message_category='info'
 from revelo_package import routes

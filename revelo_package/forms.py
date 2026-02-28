@@ -40,6 +40,7 @@ class UserRegisterForm(FlaskForm):
 class LoginForm(FlaskForm):
     email=StringField(label="EMAIL",validators=[Email(),DataRequired()])
     password=PasswordField(label="PASSWORD",validators=[DataRequired()])
+    submit=SubmitField(label="LOGIN")
 class postItemForm(FlaskForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -49,10 +50,22 @@ class postItemForm(FlaskForm):
     name=StringField(label='TITLE',validators=[Length(min=2,max=30),DataRequired()])
     description=StringField(label='DESCRIPTION',validators=[Length(min=2,max=300)])
     category=SelectField("CATEGORY",choices=[],validators=[DataRequired()])
-    unit=SelectField(label='UNIT',choices=[(1,'KG'),(2,'TON')],validators=[DataRequired()])
+    unit=SelectField(label='UNIT',choices=['KG','TON'],validators=[DataRequired()])
     quantity=IntegerField(label='QUANTITY',validators=[DataRequired()]) 
     location=StringField(label='PICKUP LOCATION',validators=[DataRequired()])
     price=IntegerField(label='PRICE') 
     submit=SubmitField(label="POST WASTE")
        
-    
+class FilterMarketForm(FlaskForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+            # Populate choices dynamically
+        self.category.choices=[("all","Tous")]
+        self.category.choices += [(c.id, c.name) for c in Category.query.all()]
+    name=StringField(label='TITLE',validators=[Length(min=0,max=30)]) 
+    category=SelectField("CATEGORY",choices=[])
+    location=StringField(label='LOCATION',validators=[Length(min=0,max=30)]) 
+    quantity=IntegerField(label='QUANTITY') 
+    quality=SelectField("QUALITY",choices=[])
+    sorting=SelectField("CATEGORY",choices=["","récemment posté","grande quantité "])
+    submit=SubmitField(label="Filtrer")

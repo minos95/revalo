@@ -1,5 +1,11 @@
-from revelo_package import db,bcrypt
+from revelo_package import db,bcrypt,login_manager
+from flask_login import UserMixin
 
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 class Company(db.Model):
     id = db.Column(db.Integer(),primary_key=True)
     items = db.relationship('Item', back_populates='owned_company',lazy=True)
@@ -17,14 +23,16 @@ class Company(db.Model):
     verified=db.Column(db.Boolean())
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
 
-class User(db.Model):
+class User(db.Model,UserMixin):
     id = db.Column(db.Integer(),primary_key=True)
     company_id = db.Column(db.Integer(),db.ForeignKey('company.id'))
     full_name = db.Column(db.String(length=30),nullable=False)
     phone = db.Column(db.String(length=30),nullable=False)
     email = db.Column(db.String(length=50),nullable=False)
+    email_verified=db.Column(db.Boolean())
     password_hash=db.Column(db.String(length=50),nullable=False)
     role = db.Column(db.String(length=30),nullable=False)  # owner, manager, employee
+    authorized=db.Column(db.Boolean())
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
     owned_company = db.relationship("Company", back_populates="users")
 

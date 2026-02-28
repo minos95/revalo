@@ -4,8 +4,49 @@
 {%endblock%}
 
 {%block content %}
-{% for item in items %}
+<div class="container">
+    <div class="filter-container">
+        <form method="GET">
+            <div class="row">
+                <div class="col">{{filter_form.name(class="form-control",placeholder="Titre")}}</div>
+                <div class="col">{{filter_form.category(class="form-select",placeholder="Category")}}</div>
+                <div class="col">{{filter_form.location(class="form-control",placeholder="Localisation")}}</div>
+                <div class="col">{{filter_form.quality(class="form-select",placeholder="quality")}}</div>
+                <div class="col">{{filter_form.quantity(class="form-control",placeholder="Min quantity")}}</div>
+                <div class="col">{{filter_form.sorting(class="form-select",placeholder="par")}}</div>
+                <div class="col text-center">{{filter_form.submit()}}</div>
+            </div>
 
-{{item}}
-{% endfor %}
+        </form>
+
+    </div>
+    
+    {% for item in items %}
+    <div class="row listing-container">
+        <div class="col-2" style=" text-align: center;margin-top: auto;margin-bottom: auto;font-size:xx-large;">
+            <span class="recycle-symbol ">♻️</span>
+        </div>
+        <div class="col">
+            <div class="row"><h5>{{item.name}}</h5></div>
+            <div class="row" style="color: gray;"><p>{{item.owned_category.name}}</p></div>
+            <div class="row" style="color: gray;"><p>{{item.quantity}} {{item.unit}} disponible</p></div>
+            <div class="row" style="color: gray;"><p><span>&#128205;</span> {{item.location}}</p></div>
+            <div class="row"><p><span>&#9745;&#65039;</span> entreprise vérifiée</p></div>
+            
+            
+        </div>
+        <div class="col-1 text-center " >
+            <div class="row " ><h6 style="font-weight: bold;">{{item.price}} DZD</h6></div>
+            <div class="row p-1"><button class="btn btn-primary">Details</button></div>
+            
+            
+        </div>
+
+
+    </div>
+
+
+
+    {% endfor %}
+</div>
 {%endblock%}
