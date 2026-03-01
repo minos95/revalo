@@ -14,6 +14,8 @@
           {{make_offer_form.quantity(class="form-control",placeholder="Quantity" ,value=item.qunatity)}}<br>
           {{make_offer_form.message(class="form-control",placeholder="envoyer un message")}}<br>
           <input type="hidden" name="item_id" value="{{item.id}}"/>
+          <input type="hidden" name="seller_company_id" value="{{item.company_id}}"/>
+          <input type="hidden" name="seller_id" value="{{item.user_id}}"/>
           <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
           {{make_offer_form.submit(class="btn btn-secondary",)}}

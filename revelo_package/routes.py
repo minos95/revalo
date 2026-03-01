@@ -19,6 +19,10 @@ def market_page():
                               message=make_offer_form.message.data,
                               item_id=request.form['item_id'],
                               buyer_company_id=current_user.company_id,
+                              buyer_id=current_user.company_id,
+                              seller_id=request.form['seller_id'],
+                              seller_company_id=request.form['seller_company_id']
+                              
                               )
         db.session.add(offer_to_create)
         db.session.commit()
@@ -49,13 +53,12 @@ def summary_page():
     return render_template('summary.html')
 @app.route("/offers")
 def offers_page():
-    offers=Offer.query.filter_by(buyer_company_id=current_user.company_id).all()
+    offers_send=Offer.query.filter_by(buyer_company_id=current_user.company_id).all()
+    offers_received=Offer.query.filter_by(seller_company_id=current_user.company_id).all()
     
     print("++++++++++++++++++++")
-    for offer in offers:
-
-        print(offer.owned_offer.owned_company.name)
-    return render_template('offers.html',offers=offers)
+    
+    return render_template('offers.html',offers=offers_send,offers_received=offers_received)
 
 @app.route("/listing")
 def listing_page():
@@ -67,6 +70,7 @@ def post_page():
     if form.validate_on_submit():
         item_to_create=Item(name=form.name.data,
                             company_id=current_user.company_id,
+                            user_id=current_user.id,
                             description=form.description.data,
                             category_id=form.category.data,
                             unit=form.unit.data,

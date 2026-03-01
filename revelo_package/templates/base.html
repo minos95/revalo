@@ -10,46 +10,68 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">   
   </head>
   <body>
+    
     {% if current_user.is_authenticated %}
-       <nav class="navbar navbar-expand-lg  bg-dark" data-bs-theme="dark" >
+     
+<nav class="navbar navbar-expand-lg bg-body-tertiary bg-dark" data-bs-theme="dark">
   <div class="container-fluid">
     <a class="navbar-brand" href="#">Navbar</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarTogglerDemo02" aria-controls="navbarTogglerDemo02" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
-    <div class="collapse navbar-collapse " id="navbarNavAltMarkup">
-      <div class="navbar-nav">
-        <a class="nav-link active" aria-current="page" href="{{url_for('market_page')}}">Marché</a>
-        <a class="nav-link" href="{{url_for('listing_page')}}">Mes annouces</a>
-        <a class="nav-link" href="{{url_for('summary_page')}}">Résumé</a>
-        <a class="nav-link" href="{{url_for('offers_page')}}">Offre/Enchére</a>
-        <a class="nav-link " href="{{url_for('contact_page')}}" >Aide & contacte</a>
-        <a class="nav-link "  href="#"></a>
-        <li class="nav-item dropdown d-flex">
+    <div class="collapse navbar-collapse" id="navbarTogglerDemo02">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link active" aria-current="page" href="{{url_for('market_page')}}">Marché</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link"href="{{url_for('listing_page')}}">Mes annouces</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link"href="{{url_for('summary_page')}}">Résumé</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link"href="{{url_for('offers_page')}}">Offre/Enchére</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{url_for('contact_page')}}" >Aide & contacte</a>
+        </li>
+      </ul>
+      <li class="nav-item dropdown" style="color: white;" >
           <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
             {{current_user.full_name}} 
           </a>
-          <ul class="dropdown-menu">
+
+          <ul class="dropdown-menu ml-auto ms-auto">
             
             <li><a class="dropdown-item" href="#">Another action</a></li>
             <li><hr class="dropdown-divider"></li>
             <li><a class="dropdown-item" href="{{url_for('logout_page')}}">Logout</a></li>
           </ul>
         </li>
-       
-        
-      </div>
     </div>
   </div>
 </nav>
+
     {% else %}
-     <nav class="navbar navbar-expand-lg  bg-dark" data-bs-theme="dark" >
+<nav class="navbar navbar-expand-lg bg-body-tertiary bg-dark" data-bs-theme="dark">
   <div class="container-fluid">
     <a class="navbar-brand" href="#">Navbar</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarTogglerDemo02" aria-controls="navbarTogglerDemo02" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
-    <div class="collapse navbar-collapse " id="navbarNavAltMarkup">
+    <div class="collapse navbar-collapse" id="navbarTogglerDemo02">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link active" aria-current="page" href="#">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">Link</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link disabled" aria-disabled="true">Disabled</a>
+        </li>
+      </ul>
       <div class="navbar-nav">
         <a class="nav-link "  href="{{url_for('login_page')}}">Enregistrer</a>
         <a class="nav-link " href="{{url_for('signup_page')}}" >Se connecter</a>
@@ -57,6 +79,7 @@
     </div>
   </div>
 </nav>
+
     {% endif %}
    
 {% with messages=get_flashed_messages(with_categories=true)%}

@@ -24,6 +24,7 @@ class Company(db.Model):
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
 
 class User(db.Model,UserMixin):
+    __tablename__ = 'user'
     id = db.Column(db.Integer(),primary_key=True)
     company_id = db.Column(db.Integer(),db.ForeignKey('company.id'))
     full_name = db.Column(db.String(length=30),nullable=False)
@@ -35,7 +36,7 @@ class User(db.Model,UserMixin):
     authorized=db.Column(db.Boolean())
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
     owned_company = db.relationship("Company", back_populates="users")
-
+    items = db.relationship('Item', back_populates='owned_user',lazy=True)
     @property
     def password(self):
         return self.password
@@ -50,6 +51,9 @@ class Offer(db.Model):
     id = db.Column(db.Integer(),primary_key=True)
     item_id = db.Column(db.Integer(),db.ForeignKey('item.id'))
     buyer_company_id = db.Column(db.Integer(),db.ForeignKey('company.id'))
+    seller_company_id = db.Column(db.Integer(),db.ForeignKey('company.id'))
+    buyer_id=db.Column(db.Integer(),db.ForeignKey('user.id'))
+    seller_id=db.Column(db.Integer(),db.ForeignKey('user.id'))
     offered_price = db.Column(db.Integer(),nullable=False)
     quantity_requested = db.Column(db.Integer(),nullable=False)
     message = db.Column(db.String(length=300),nullable=False)
@@ -78,6 +82,7 @@ class Item(db.Model):
     id=db.Column(db.Integer(),primary_key=True)
     company_id= db.Column(db.Integer(),db.ForeignKey('company.id'))
     category_id= db.Column(db.Integer(),db.ForeignKey('category.id'))
+    user_id=db.Column(db.Integer(),db.ForeignKey('user.id'))
     name=db.Column(db.String(length=30),nullable=False)
     description=db.Column(db.String(length=1024))
     unit= db.Column(db.String(length=30),nullable=False)
@@ -90,6 +95,7 @@ class Item(db.Model):
     images=db.relationship('Image',backref='owned_item',lazy=True)
     offers=db.relationship('Offer',backref='owned_item',lazy=True)
     views=db.relationship('View',backref='owned_item',lazy=True)
+    owned_user = db.relationship("User", back_populates="items")
     owned_company = db.relationship("Company", back_populates="items")
     owned_category=db.relationship("Category",back_populates="items")
     offers = db.relationship('Offer', back_populates='owned_offer',lazy=True)
