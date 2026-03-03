@@ -1,0 +1,32 @@
+<!-- Modal offers-->
+<div class="modal fade" id="validate-offer-{{offer.id}}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalLabel">Valider l'offre</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Ete vous sure de vouloir accepter l'offre pour le lot {{offer.owned_offer.name}} pour le prix {{offer.offered_price}} pour une quantity de {{offer.quantity_requested}}<br>
+        <bold>Montant totale : {{offer.offered_price*offer.quantity_requested}} DA</bold><br>
+        <bold>Service charge 7% : {{(offer.offered_price*offer.quantity_requested*0.07) | round }} DA </bold><br>
+        <bold>Service charge 7% : {{offer.offered_price*offer.quantity_requested*(1-0.07)}} DA </bold>
+        <form method="POST">
+            {{ validate_form.csrf_token() }}
+            {{validate_form.id(value=offer.id)}}<br>
+             {{validate_form.item_id(value=offer.item_id)}}<br>
+            {{validate_form.price(value=offer.offered_price)}}<br>
+            {{validate_form.quantity(value=offer.quantity_requested)}}<br>
+            {{validate_form.buyer_company_id(value=offer.buyer_company_id)}}<br>
+            {{validate_form.seller_company_id(value=offer.seller_company_id)}}<br>
+          <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          {{validate_form.submit(class="btn btn-secondary",)}}
+        
+      </div>
+        </form>
+      </div>
+      
+    </div>
+  </div>
+</div>

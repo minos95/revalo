@@ -1,9 +1,10 @@
 from revelo_package import app,db
 from flask import render_template,redirect,url_for,flash,request
-from revelo_package.models import Item,User,Company,Offer
-from revelo_package.forms import CompanyRegisterForm ,UserRegisterForm,postItemForm,LoginForm,FilterMarketForm,makeOfferForm
+from revelo_package.models import Item,User,Company,Offer,Transaction
+from revelo_package.forms import CompanyRegisterForm ,UserRegisterForm,postItemForm,LoginForm,FilterMarketForm,makeOfferForm,validateOfferForm
 from flask_login import login_user ,logout_user,login_required,current_user
 from sqlalchemy import desc
+from datetime import datetime
 @app.route("/")
 def home_page():
     return render_template('home.html')
@@ -51,14 +52,41 @@ def market_page():
 @app.route("/summary")
 def summary_page():
     return render_template('summary.html')
-@app.route("/offers")
+@app.route("/offers",methods=['POST','GET'])
 def offers_page():
+    
     offers_send=Offer.query.filter_by(buyer_company_id=current_user.company_id).all()
     offers_received=Offer.query.filter_by(seller_company_id=current_user.company_id).all()
+    validate_form=validateOfferForm()
+    if validate_form.validate_on_submit():
+        offer=Offer.query.filter_by(id=validate_form.id.data).first()
+        offer.status="accepted"
+        offer.accepted_at=datetime.now()
+        item=Item.query.filter_by(id=validate_form.item_id.data).first()
+        item.status="solde"
+        offers_to_reject=Offer.query.filter(Offer.item_id==validate_form.item_id.data and id!=validate_form.id.data ).all()
+        print('---------------------')
+        print(offers_to_reject)
+        for offer in offers_to_reject:
+            offer.status="rejected"
+        total_amount=validate_form.price.data*validate_form.quantity.data
+        commission_amount=total_amount*0.07
+        print('------------------------------')
+        print(total_amount)
+        transaction_to_create=Transaction(offer_id=validate_form.id.data,
+                                          item_id=validate_form.item_id.data,
+                                          price=validate_form.price.data,
+                                          quantity=validate_form.quantity.data,
+                                          buyer_company_id=validate_form.buyer_company_id.data,
+                                          seller_company_id=validate_form.seller_company_id.data,
+                                          total_amount=total_amount,
+                                          commission_amount=commission_amount
+                                          )
+        db.session.add(transaction_to_create)
+        db.session.commit()
     
-    print("++++++++++++++++++++")
     
-    return render_template('offers.html',offers=offers_send,offers_received=offers_received)
+    return render_template('offers.html',offers=offers_send,offers_received=offers_received,validate_form=validate_form)
 
 @app.route("/listing")
 def listing_page():

@@ -57,18 +57,23 @@ class Offer(db.Model):
     offered_price = db.Column(db.Integer(),nullable=False)
     quantity_requested = db.Column(db.Integer(),nullable=False)
     message = db.Column(db.String(length=300),nullable=False)
-    status = db.Column(db.String(length=30),default="pending")
+    status = db.Column(db.String(length=30),default="pending")#pending/countred/accepted/rejected/cancelled/expired
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
+    accepted_at=db.Column(db.DateTime(timezone=True))
     owned_offer = db.relationship("Item", back_populates="offers")
 
 class Transaction(db.Model):
     id=db.Column(db.Integer(),primary_key=True)
     offer_id = db.Column(db.Integer(),db.ForeignKey('offer.id'))
+    item_id = db.Column(db.Integer(),db.ForeignKey('item.id'))
     buyer_company_id = db.Column(db.Integer(),nullable=False)
     seller_company_id = db.Column(db.Integer(),nullable=False)
+    price = db.Column(db.Integer(),nullable=False)
     quantity = db.Column(db.Integer(),nullable=False)
-    payement_status = db.Column(db.String(length=30),nullable=False)
-    dilivery_status = db.Column(db.String(length=30),nullable=False)
+    payement_status = db.Column(db.String(length=30),nullable=False,default="pending") #pending/confirmed/in_progress/completed/disputed
+    dilivery_status = db.Column(db.String(length=30),nullable=False,default="pending")
+    total_amount=db.Column(db.Integer(),nullable=False)
+    commission_amount=db.Column(db.Integer(),nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
 
 class Category(db.Model):
