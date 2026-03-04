@@ -26,7 +26,7 @@ OFFERS PAGE
       <td>{{offer.quantity_requested}}</td>
       <td><button >Message</button></td>
       <td>{{offer.status}}</td>
-       <td><button>annuller</button></td>
+       <td>{%if offer.status=="pending"%}<button>annuller</button>{%endif%}</td>
     </tr>
     {% endfor %}
 </table>
@@ -42,7 +42,7 @@ OFFERS PAGE
     <tr>
       <th scope="col">TITRE</th>
       <th scope="col">PRIX OFFER</th>
-      <th scope="col">QUANTITY DEMANDE</th>
+      <th scope="col">QUANTITY </th>
       <th scope="col">MESSAGE</th>
       <th scope="col">STATUS</th>
       <th scope="col">Action</th>
@@ -56,7 +56,12 @@ OFFERS PAGE
       <td>{{offer.quantity_requested}}</td>
       <td><button >Message</button></td>
       <td>{{offer.status}}</td>
-      <td><button type="button" data-bs-toggle="modal" data-bs-target="#validate-offer-{{offer.id}}">Accepter</button><button>Refuser</button></td>
+      
+      <td>{% if offer.status=="pending"%}
+        <button type="button" data-bs-toggle="modal" data-bs-target="#validate-offer-{{offer.id}}">Accepter</button><button>Refuser</button>
+      {% endif %}
+    </td>
+      
     </tr>
     {% endfor %}
 </table>

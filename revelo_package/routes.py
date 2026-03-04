@@ -60,19 +60,22 @@ def offers_page():
     validate_form=validateOfferForm()
     if validate_form.validate_on_submit():
         offer=Offer.query.filter_by(id=validate_form.id.data).first()
+        item=Item.query.filter_by(id=validate_form.item_id.data).first()
         offer.status="accepted"
         offer.accepted_at=datetime.now()
-        item=Item.query.filter_by(id=validate_form.item_id.data).first()
-        item.status="solde"
-        offers_to_reject=Offer.query.filter(Offer.item_id==validate_form.item_id.data and id!=validate_form.id.data ).all()
-        print('---------------------')
-        print(offers_to_reject)
+        offers_to_reject=Offer.query.filter(Offer.item_id==validate_form.item_id.data , Offer.id!=validate_form.id.data,Offer.status=="pending" ).all()
+        quantity_avalaibale=item.quantity-validate_form.quantity.data
+        item.quantity=quantity_avalaibale     
+        if quantity_avalaibale==0:
+            item.status="solde"
+        
         for offer in offers_to_reject:
-            offer.status="rejected"
+            if offer.quantity_requested>quantity_avalaibale:
+                offer.status="rejected"
+
         total_amount=validate_form.price.data*validate_form.quantity.data
         commission_amount=total_amount*0.07
-        print('------------------------------')
-        print(total_amount)
+
         transaction_to_create=Transaction(offer_id=validate_form.id.data,
                                           item_id=validate_form.item_id.data,
                                           price=validate_form.price.data,
@@ -82,6 +85,9 @@ def offers_page():
                                           total_amount=total_amount,
                                           commission_amount=commission_amount
                                           )
+  
+      
+       
         db.session.add(transaction_to_create)
         db.session.commit()
     
