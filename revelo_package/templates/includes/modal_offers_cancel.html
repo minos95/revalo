@@ -1,0 +1,28 @@
+<!-- Modal offers-->
+<div class="modal fade" id="cancel-offer-{{offer.id}}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalLabel">Annuler l'offre</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Ete vous sure de vouloir Annuller l'offre pour le lot {{offer.owned_offer.name}} pour le prix {{offer.offered_price}} pour une quantity de {{offer.quantity_requested}}<br>
+        <form method="POST">
+            {{ cancel_form.csrf_token() }}
+            {{cancel_form.id(value=offer.id)}}<br>
+          <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuller</button>
+          {{cancel_form.submit2(class="btn btn-secondary",)}}
+        
+      </div>
+        </form>
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+
+
+

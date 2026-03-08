@@ -11,8 +11,20 @@ POST WASTE
         {{form.name(class="form-control",placeholder="Title")}}
         {{form.description.label()}}
         {{form.description(class="form-control",placeholder="Description")}}
-        {{form.category.label()}}
-        {{form.category(class="form-control",placeholder="Category")}}
+        {%for attribute in quality_attributes %}
+            {%if attribute.field=='select'%}
+            <label> {{attribute.name}}</label>
+               
+            
+                <select name={{attribute.name}}>
+                <option value="">-- Veuiller choisir une option</option>
+                    {% for option in attribute.options%}
+                        <option>{{ option.value }}</option>
+                    {%endfor %}
+                </select>
+
+            {%endif%}
+        {% endfor %}<br>
         {{form.unit.label()}}
         {{form.unit(class="form-control",placeholder="Unit")}}
         {{form.quantity.label()}}

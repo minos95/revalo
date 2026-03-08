@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField,PasswordField,SubmitField,IntegerField,SelectField,HiddenField,TextAreaField
 from wtforms.validators import Length,EqualTo,Email,DataRequired,ValidationError
-from revelo_package.models import User,Company,Category
+from revelo_package.models import User,Company,Category,Quality_attributes
 from wtforms.widgets import HiddenInput
 
 class CompanyRegisterForm(FlaskForm):
@@ -43,14 +43,12 @@ class LoginForm(FlaskForm):
     password=PasswordField(label="PASSWORD",validators=[DataRequired()])
     submit=SubmitField(label="LOGIN")
 class postItemForm(FlaskForm):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    #def __init__(self, *args, **kwargs):
+       # super().__init__(*args, **kwargs)
             # Populate choices dynamically
-        self.category.choices = [(c.id, c.name) for c in Category.query.all()]
-
+        #self.category.choices = [(c.id, c.name) for c in Category.query.all()]
     name=StringField(label='TITLE',validators=[Length(min=2,max=30),DataRequired()])
     description=TextAreaField(label='DESCRIPTION',validators=[Length(min=2,max=300)])
-    category=SelectField("CATEGORY",choices=[],validators=[DataRequired()])
     unit=SelectField(label='UNIT',choices=['KG','TON'],validators=[DataRequired()])
     quantity=IntegerField(label='QUANTITY',validators=[DataRequired()]) 
     location=StringField(label='PICKUP LOCATION',validators=[DataRequired()])
@@ -84,4 +82,11 @@ class validateOfferForm(FlaskForm):
     quantity=IntegerField(widget=HiddenInput())
     seller_company_id=HiddenField(label="Price",validators=[])
     buyer_company_id=HiddenField(label="Price",validators=[])
-    submit=SubmitField(label="Confirm offer")
+    submit1=SubmitField(label="Confirm offer")
+
+class cancelOfferForm(FlaskForm):
+    id=HiddenField(label="id",validators=[])
+    submit2=SubmitField(label="Cancel offer")
+class rejectOfferForm(FlaskForm):
+    id=HiddenField(label="id",validators=[])
+    submit3=SubmitField(label="Cancel offer")

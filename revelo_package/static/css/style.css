@@ -8,3 +8,19 @@
     padding:20px;
     background-color: rgb(242, 240, 240);
 }
+.image-container {
+  position: relative;
+  display: inline-block;
+}
+.overlay-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 20px;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 10px;
+  border-radius: 5px;
+  text-align: center;
+}

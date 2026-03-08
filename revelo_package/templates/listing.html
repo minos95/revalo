@@ -7,10 +7,11 @@ Listing
     <div class="row mt-5 mb-5">
         <div class="col"></div>
         <div class="col-2">
-            <a class="btn btn-secondary"   href="{{url_for('post_page')}}"><span style="font-size: large;">+</span> Ajouter </a>
+            <a class="btn btn-secondary"   href="{{url_for('choose_category_page')}}"><span style="font-size: large;">+</span> Ajouter </a>
         </div>
         
     </div>
+    {% if items%}
      {% for item in items %}
     <div class="row listing-container mt-2">
         <div class="col-2" style=" text-align: center;margin-top: auto;margin-bottom: auto;font-size:xx-large;">
@@ -46,5 +47,8 @@ Listing
 
 
     {% endfor %}
+    {%else%}
+    <h6 class="text-center">Vous n'avez aucun Article</h6>
+    {%endif%}
 </div>
 {%endblock%}

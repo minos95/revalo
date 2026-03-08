@@ -20,13 +20,14 @@ OFFERS PAGE
     </tr>
   </thead>
   {%for offer in offers%}
+  {% include 'includes/modal_offers_cancel.html' %}
   <tr>
       <th scope="row">{{offer.owned_offer.name}}</th>
       <td>{{offer.offered_price}} DA</td>
       <td>{{offer.quantity_requested}}</td>
       <td><button >Message</button></td>
       <td>{{offer.status}}</td>
-       <td>{%if offer.status=="pending"%}<button>annuller</button>{%endif%}</td>
+       <td>{%if offer.status=="pending"%}<button data-bs-toggle="modal" data-bs-target="#cancel-offer-{{offer.id}}">annuller</button>{%endif%}</td>
     </tr>
     {% endfor %}
 </table>
@@ -50,6 +51,7 @@ OFFERS PAGE
   </thead>
   {%for offer in offers_received%}
    {% include 'includes/modals_offers.html'%}
+  
   <tr>
       <th scope="row">{{offer.owned_offer.name}}</th>
       <td>{{offer.offered_price}} DA</td>
@@ -58,7 +60,7 @@ OFFERS PAGE
       <td>{{offer.status}}</td>
       
       <td>{% if offer.status=="pending"%}
-        <button type="button" data-bs-toggle="modal" data-bs-target="#validate-offer-{{offer.id}}">Accepter</button><button>Refuser</button>
+        <button type="button" data-bs-toggle="modal" data-bs-target="#validate-offer-{{offer.id}}">Accepter</button><button data-bs-toggle="modal" data-bs-target="#reject-offer-{{offer.id}}">Refuser</button>
       {% endif %}
     </td>
       

@@ -1,9 +1,9 @@
 from revelo_package import app,db
 from flask import render_template,redirect,url_for,flash,request
-from revelo_package.models import Item,User,Company,Offer,Transaction
-from revelo_package.forms import CompanyRegisterForm ,UserRegisterForm,postItemForm,LoginForm,FilterMarketForm,makeOfferForm,validateOfferForm
+from revelo_package.models import Item,User,Company,Offer,Transaction,Category,Quality_attributes
+from revelo_package.forms import CompanyRegisterForm ,UserRegisterForm,postItemForm,LoginForm,FilterMarketForm,makeOfferForm, rejectOfferForm,validateOfferForm,cancelOfferForm
 from flask_login import login_user ,logout_user,login_required,current_user
-from sqlalchemy import desc
+from sqlalchemy import desc,or_
 from datetime import datetime
 @app.route("/")
 def home_page():
@@ -51,14 +51,20 @@ def market_page():
     return render_template('market.html',items=items,filter_form=filter_form,make_offer_form=make_offer_form)
 @app.route("/summary")
 def summary_page():
-    return render_template('summary.html')
+    transactions=Transaction.query.filter(or_(Transaction.seller_company_id==current_user.id ,Transaction.buyer_company_id==current_user.company_id)).all()
+    print(transactions)
+    return render_template('summary.html',transactions=transactions)
 @app.route("/offers",methods=['POST','GET'])
 def offers_page():
     
-    offers_send=Offer.query.filter_by(buyer_company_id=current_user.company_id).all()
-    offers_received=Offer.query.filter_by(seller_company_id=current_user.company_id).all()
+    offers_send=Offer.query.filter_by(buyer_company_id=current_user.company_id).order_by(desc(Offer.created_at)).all()
+    offers_received=Offer.query.filter_by(seller_company_id=current_user.company_id).order_by(desc(Offer.created_at)).all()
     validate_form=validateOfferForm()
-    if validate_form.validate_on_submit():
+    cancel_form=cancelOfferForm()
+    reject_form=rejectOfferForm()
+    #------------------------------------------------ accept offer
+    if validate_form.validate_on_submit() and validate_form.submit1.data:
+        print('------------------------------validate form')
         offer=Offer.query.filter_by(id=validate_form.id.data).first()
         item=Item.query.filter_by(id=validate_form.item_id.data).first()
         offer.status="accepted"
@@ -90,23 +96,43 @@ def offers_page():
        
         db.session.add(transaction_to_create)
         db.session.commit()
+    #---------------------------------------------------end validate offer
+
+    #--------------------------------------------------- cancel offer
+    if cancel_form.validate_on_submit() and cancel_form.submit2.data:
+        offer_to_cancel=Offer.query.filter_by(id=cancel_form.id.data).first()
+        offer_to_cancel.status="canceled"
+        db.session.commit()
+    #---------------------------------------------------end cancel offer
     
-    
-    return render_template('offers.html',offers=offers_send,offers_received=offers_received,validate_form=validate_form)
+    #---------------------------------------------------reject offer
+    if reject_form.validate_on_submit() and reject_form.submit3.data:
+        offer_to_reject=Offer.query.filter_by(id=reject_form.id.data).first()
+        offer_to_reject.status="canceled"
+        db.session.commit()
+
+    return render_template('offers.html',offers=offers_send,offers_received=offers_received,validate_form=validate_form,cancel_form=cancel_form,reject_form=reject_form)
 
 @app.route("/listing")
 def listing_page():
     items=Item.query.filter_by(company_id=current_user.company_id).order_by(desc(Item.created_at)).all()
     return render_template('listing.html',items=items)
-@app.route('/listing/post',methods=['GET','POST'])
-def post_page():
+@app.route("/listing/category")
+def choose_category_page():
+    categories=Category.query.all()
+    return render_template('choose_category.html',categories=categories)
+    
+@app.route('/listing/category/<int:category_id>/post',methods=['GET','POST'])
+def post_page(category_id):
+    quality_attributes=Quality_attributes.query.filter_by(category_id=category_id).all()
     form=postItemForm()
     if form.validate_on_submit():
+        
         item_to_create=Item(name=form.name.data,
                             company_id=current_user.company_id,
                             user_id=current_user.id,
                             description=form.description.data,
-                            category_id=form.category.data,
+                            category_id=category_id,
                             unit=form.unit.data,
                             quantity=form.quantity.data,
                             location=form.location.data,
@@ -115,7 +141,7 @@ def post_page():
         db.session.add(item_to_create)
         db.session.commit()
         return redirect(url_for(('listing_page')))
-    return render_template('post_item.html',form=form)
+    return render_template('post_item.html',form=form,quality_attributes=quality_attributes)
 
 @app.route("/contact")
 def contact_page():
