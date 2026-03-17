@@ -1,5 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField,PasswordField,SubmitField,IntegerField,SelectField,HiddenField,TextAreaField
+from wtforms import StringField,PasswordField,SubmitField,IntegerField,SelectField,HiddenField,TextAreaField,MultipleFileField
+from flask_wtf.file import FileField, FileAllowed, FileRequired
 from wtforms.validators import Length,EqualTo,Email,DataRequired,ValidationError
 from revelo_package.models import User,Company,Category,Quality_attributes
 from wtforms.widgets import HiddenInput
@@ -53,6 +54,10 @@ class postItemForm(FlaskForm):
     quantity=IntegerField(label='QUANTITY',validators=[DataRequired()]) 
     location=StringField(label='PICKUP LOCATION',validators=[DataRequired()])
     price=IntegerField(label='PRICE') 
+    pictures = MultipleFileField('Image',validators=[
+        FileRequired(),
+        FileAllowed(['jpg', 'png'], 'Les fichiers doivent être des images !')
+    ])
     submit=SubmitField(label="POST WASTE")
        
 class FilterMarketForm(FlaskForm):
@@ -80,6 +85,7 @@ class validateOfferForm(FlaskForm):
     item_id=HiddenField(label="Price",validators=[])
     price=IntegerField(widget=HiddenInput())
     quantity=IntegerField(widget=HiddenInput())
+    unit=StringField(widget=HiddenInput())
     seller_company_id=HiddenField(label="Price",validators=[])
     buyer_company_id=HiddenField(label="Price",validators=[])
     submit1=SubmitField(label="Confirm offer")

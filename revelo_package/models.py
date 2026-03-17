@@ -73,6 +73,7 @@ class Transaction(db.Model):
     seller_company_id = db.Column(db.Integer(),db.ForeignKey('company.id'))
     price = db.Column(db.Integer(),nullable=False)
     quantity = db.Column(db.Integer(),nullable=False)
+    unit = db.Column(db.String(),nullable=False)
     payement_status = db.Column(db.String(length=30),nullable=False,default="pending") #pending/confirmed/in_progress/completed/disputed
     dilivery_status = db.Column(db.String(length=30),nullable=False,default="pending")
     total_amount=db.Column(db.Integer(),nullable=False)
@@ -117,6 +118,7 @@ class Item(db.Model):
     offers = db.relationship('Offer', back_populates='owned_offer',lazy=True)
     transactions = db.relationship('Transaction', back_populates='owned_transaction',lazy=True)
     images = db.relationship('Image', back_populates='owned_image',lazy=True)
+    qualities = db.relationship('Item_quality_values', back_populates='owned_item',lazy=True)
     def __repr__(self):
         return f'Item {self.name}'
 
@@ -162,9 +164,11 @@ class Quality_attribute_options(db.Model):
     attribute_id= db.Column(db.Integer(),db.ForeignKey('quality_attributes.id'))
     value=db.Column(db.String(length=30),nullable=False) #----cleanliness: clean ,mixed dirty, rust level: low,medium,high
     owned_attribute_options=db.relationship('Quality_attributes', back_populates='options',lazy=True)
-class item_quality_values(db.Model):
+class Item_quality_values(db.Model):
     id=db.Column(db.Integer(),primary_key=True)
     item_id= db.Column(db.Integer(),db.ForeignKey('item.id'))
     attribute_id= db.Column(db.Integer(),db.ForeignKey('quality_attributes.id'))
-    value_text=db.Column(db.String(length=30),nullable=False)
-    value_number=db.Column(db.Integer(),nullable=False)
+    option_id=db.Column(db.Integer(),db.ForeignKey('quality_attribute_options.id'))
+    value_text=db.Column(db.String(length=30))
+    value_number=db.Column(db.Integer())
+    owned_item = db.relationship('Item', back_populates='qualities',lazy=True)

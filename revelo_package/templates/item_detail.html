@@ -1,0 +1,131 @@
+{%extends'base.html' %}
+{% block title%}
+contact Page
+{% endblock%}
+{%block content%}
+<div class="container mt-5">
+
+<div class="row">
+<div class="col-md-5">
+<!-- Images -->
+<div class="row">
+
+<div class="col-md-7">
+
+<div class="gallery-container">
+
+<img id="mainImage" 
+src="{{ url_for('static', filename=item.images[0].uri ) }}"
+class="main-image">
+
+<div class="thumbnail-container">
+
+{% for img in item.images %}
+<img 
+src="{{ url_for('static', filename=img.uri) }}"
+class="thumbnail"
+onclick="changeImage('{{ url_for('static', filename=img.uri) }}')">
+{% endfor %}
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+<!-- Offer box -->
+<div class="col-md-5">
+
+<div class="offer-box">
+
+<h3>{{ item.name }}</h3>
+
+<p class="text-muted">{{ item.owned_category.name }}</p>
+
+<h4 class="text-success">
+{{ item.price }} DZD / ton
+</h4>
+
+<p>
+<strong>Quantity:</strong> {{ item.quantity }} tons
+</p>
+
+<p>
+<strong>Location:</strong> {{ item.location }}
+</p>
+
+<p>
+<span class="badge bg-success">
+Verified Seller
+</span>
+</p>
+
+<button class="btn btn-primary w-100">
+Make Offer
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+<hr class="my-4">
+
+<!-- Attributes -->
+<h4>Item Details</h4>
+
+<table class="table">
+
+<tbody>
+
+{% for attr in item.qualities %}
+<tr>
+<td><strong>{{ attr.option_id }}</strong></td>
+<td>{{ attr.option_id }}</td>
+</tr>
+{% endfor %}
+
+</tbody>
+
+</table>
+
+<!-- Description -->
+
+<h4>Description</h4>
+
+<p>
+{{ item.description }}
+</p>
+
+<hr>
+
+<!-- Seller info -->
+
+<h4>Seller Information</h4>
+
+<div class="card p-3">
+
+<p><strong>Seller Type:</strong> {{ item.owned_company.name }}</p>
+
+<p><strong>Member since:</strong> {{ item.owned_user.created_at }}</p>
+
+<p><strong>Total listings:</strong> 30</p>
+
+</div>
+
+</div>
+
+<script>
+
+function changeImage(src){
+    document.getElementById("mainImage").src = src;
+}
+
+</script>
+{%endblock%}
+
+
