@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField,PasswordField,SubmitField,IntegerField,SelectField,HiddenField,TextAreaField,MultipleFileField
 from flask_wtf.file import FileField, FileAllowed, FileRequired
 from wtforms.validators import Length,EqualTo,Email,DataRequired,ValidationError
-from revelo_package.models import User,Company,Category,Quality_attributes
+from app.models import User,Company,Category,Quality_attributes
 from wtforms.widgets import HiddenInput
 
 class CompanyRegisterForm(FlaskForm):

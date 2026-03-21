@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}EcoWaste - Sustainable Waste Management Marketplace{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="gradient-bg text-white py-20">
+    <div class="max-w-7xl mx-auto px-4 text-center">
+        <h1 class="text-5xl font-bold mb-6">Turn Waste into <span class="text-green-300">Value</span></h1>
+        <p class="text-xl mb-8 max-w-2xl mx-auto">Connect with verified recyclers, sell your waste materials, and contribute to a circular economy.</p>
+        <div class="flex justify-center space-x-4">
+            <a href="{{ url_for('market_category_page') }}" class="bg-white text-green-700 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition">
+                Browse Marketplace
+            </a>
+            {% if not current_user.is_authenticated %}
+            <a href="{{ url_for('auth.register') }}" class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-green-700 transition">
+                Get Started
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="py-12 bg-white">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div class="text-center">
+                <div class="text-4xl font-bold text-green-600">{{ total_listings }}+</div>
+                <div class="text-gray-600 mt-2">Active Listings</div>
+            </div>
+            <div class="text-center">
+                <div class="text-4xl font-bold text-green-600">{{ total_companies }}+</div>
+                <div class="text-gray-600 mt-2">Verified Companies</div>
+            </div>
+            <div class="text-center">
+                <div class="text-4xl font-bold text-green-600">{{ total_transactions }}+</div>
+                <div class="text-gray-600 mt-2">Successful Transactions</div>
+            </div>
+            <div class="text-center">
+                <div class="text-4xl font-bold text-green-600">10K+</div>
+                <div class="text-gray-600 mt-2">Tons Recycled</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Categories Section -->
+<section class="py-16 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4">
+        <h2 class="text-3xl font-bold text-center mb-12">Browse by Category</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {% for category in categories %}
+            <a href="{{ url_for('listings.market', category=category.id) }}" class="bg-white rounded-xl p-6 text-center hover:shadow-lg transition hover-scale">
+                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas {{ category.icon or 'fa-trash-alt' }} text-2xl text-green-600"></i>
+                </div>
+                <h3 class="font-semibold text-gray-800">{{ category.name }}</h3>
+                <p class="text-sm text-gray-500 mt-1">{{ category.listings|length }} listings</p>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Recent Listings -->
+<section class="py-16">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-3xl font-bold">Recent Listings</h2>
+            <a href="{{ url_for('market_category_page') }}" class="text-green-600 hover:text-green-700">View All →</a>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {% for listing in recent_listings %}
+            <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition">
+                <div class="h-48 bg-gray-200 relative">
+                    {% if listing.primary_image %}
+                    <img src="{{ listing.primary_image }}" class="w-full h-full object-cover">
+                    {% else %}
+                    <div class="w-full h-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center">
+                        <i class="fas fa-recycle text-5xl text-gray-500"></i>
+                    </div>
+                    {% endif %}
+                    <span class="absolute top-2 right-2 bg-green-600 text-white text-xs px-2 py-1 rounded">
+                        {{ listing.quantity }} {{ listing.unit }}
+                    </span>
+                </div>
+                <div class="p-4">
+                    <h3 class="font-semibold text-gray-800 mb-1 truncate">{{ listing.title }}</h3>
+                    <p class="text-sm text-gray-500 mb-2">{{ listing.company.name }}</p>
+                    <div class="flex justify-between items-center">
+                        {% if listing.price %}
+                        <span class="text-lg font-bold text-green-600">${{ "%.2f"|format(listing.price) }}</span>
+                        {% else %}
+                        <span class="text-sm text-gray-500">Make Offer</span>
+                        {% endif %}
+                        <a href="{{ url_for('listings.detail', listing_id=listing.id) }}" class="text-green-600 hover:text-green-700 text-sm font-medium">
+                            View Details →
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Featured Companies -->
+<section class="py-16 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4">
+        <h2 class="text-3xl font-bold text-center mb-12">Top Rated Companies</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {% for company in featured_companies %}
+            <div class="bg-white rounded-xl shadow-md p-6 text-center">
+                {% if company.logo_url %}
+                <img src="{{ company.logo_url }}" class="w-20 h-20 rounded-full mx-auto mb-4 object-cover">
+                {% else %}
+                <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-building text-3xl text-green-600"></i>
+                </div>
+                {% endif %}
+                <h3 class="font-semibold text-lg">{{ company.name }}</h3>
+                <div class="flex items-center justify-center mt-2">
+                    <i class="fas fa-star text-yellow-400"></i>
+                    <span class="ml-1 font-medium">{{ "%.1f"|format(company.rating_avg) }}</span>
+                    <span class="text-gray-500 text-sm ml-1">({{ company.total_reviews }})</span>
+                </div>
+                <p class="text-sm text-gray-500 mt-2">{{ company.city }}, {{ company.country }}</p>
+                <a href="#" class="mt-4 inline-block text-green-600 hover:text-green-700 text-sm font-medium">
+                    View Profile →
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

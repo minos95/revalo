@@ -5,7 +5,6 @@ from sqlalchemy import MetaData
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
 from flask_migrate import Migrate
-
 # ... your existing code (Flask app, db = SQLAlchemy(app), etc.)
 metadata = MetaData(naming_convention={
     "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
@@ -30,4 +29,4 @@ login_manager.login_message_category='info'
 migrate = Migrate(app, db)
 
 
-from revelo_package import routes
+from app import routes

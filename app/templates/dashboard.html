@@ -1,0 +1,91 @@
+{%extends'base.html' %}
+{% block title%}
+Home Page
+{% endblock%}
+{%block content%}
+
+
+
+<div class="container-fluid">
+<div class="row">
+
+{% include 'side_bar.html'%}
+<!-- CONTENT -->
+
+<div class="col-md-10 p-4">
+
+<h3>Welcome back 👋</h3>
+
+<div class="row mt-4">
+
+<div class="col-md-3 mt-2">
+<div class="card-box">
+<h5>Mes Articles</h5>
+<h3>{{ listings_count }}</h3>
+</div>
+</div>
+
+<div class="col-md-3 mt-2">
+<div class="card-box">
+<h5>Offres Envoyé</h5>
+<h3>{{ offers_sent_count }}</h3>
+</div>
+</div>
+<div class="col-md-3 mt-2">
+<div class="card-box">
+<h5>Offres Reçus</h5>
+<h3>{{ offers_received_count }}</h3>
+</div>
+</div>
+
+<div class="col-md-3 mt-2">
+<div class="card-box">
+<h5>Achats</h5>
+<h3>{{ buying_count }}</h3>
+</div>
+</div>
+<div class="col-md-3 mt-2">
+<div class="card-box">
+<h5>Ventes</h5>
+<h3>{{ selling_count }}</h3>
+</div>
+</div>
+
+</div>
+
+<hr>
+
+<h5 class="mt-4">Recent Listings</h5>
+
+<table class="table mt-3">
+
+<tr>
+<th>Title</th>
+<th>Quantity</th>
+<th>Status</th>
+</tr>
+
+{% for listing in listings %}
+<tr>
+<td>{{ listing.name }}</td>
+<td >{{ listing.quantity }}</td>
+{% if listing.status =='active' %}
+<td class="text-success">{{ listing.status }}</td>
+
+{% elif listing.status =='solde' %}
+<td class="text-warning">{{ listing.status }}</td>
+{% else %}
+<td class="text-danger">{{ listing.status }}</td>
+{% endif %}
+</tr>
+{% endfor %}
+
+</table>
+
+</div>
+
+</div>
+</div>
+
+
+{% endblock %}

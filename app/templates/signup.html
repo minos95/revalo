@@ -1,0 +1,102 @@
+{%extends'base.html' %}
+{% block title%}
+signup
+{% endblock%}
+{% block content %}
+
+<div class="signup-bg-body ">
+    <br>
+    <br>
+      <h1 class="text-center text-light ">REVELO</h1>
+    <div class="signup-body ">
+       
+        <form method="POST" class="form-register ">
+            {{form.hidden_tag()}}
+            <div class="auth-card ">
+                            {{form.name.label()}}
+                            {{form.name(class="form-control",placeholder="Company name")}}
+            
+                    <div class="row">
+                            <div class="form-group col-md-6 col-sm-8">
+                            {{form.company_type.label()}}
+                            {{form.company_type(class="form-control",placeholder="Company name")}}
+                            </div>
+                            <div class="form-group col-md-6 col-sm-8">
+                            {{form.activity.label()}}
+                            {{form.activity(class="form-control",placeholder="Company name")}}
+                            </div>
+                    </div>
+                    <div class="row">
+                            <div class="form-group col-md-6 col">
+                            {{form.address.label()}}
+                            {{form.address(class="form-control",placeholder="Company address")}}
+                            </div>
+                            <div class="form-group col-md-3">
+                            {{form.country.label()}}
+                            {{form.country(class="form-control",placeholder="Country")}}
+                            </div>
+                            <div class="form-group col-md-3">
+                            {{form.city.label()}}
+                            {{form.city(class="form-control",placeholder="City")}}
+                            </div>
+                    </div>
+                    <div class="row">
+                            <div class="form-group col-md-4">
+                            {{form.rc.label()}}
+                            {{form.rc(class="form-control",placeholder="Company rc")}}
+                            </div>
+                            <div class="form-group col-md-4">
+                            {{form.nif.label()}}
+                            {{form.nif(class="form-control",placeholder="Company nif")}}
+                            </div>
+                            <div class="form-group col-md-4">
+                            {{form.nis.label()}}
+                            {{form.nis(class="form-control",placeholder="Company nis")}}
+                            </div>
+                    </div>
+            </div>
+            <br>
+             <div class="auth-card">
+            {{form.full_name.label()}}
+            {{form.full_name(class="form-control",placeholder="Fullname user")}}
+            {{form.email.label()}}
+            {{form.email(class="form-control",placeholder="email")}}
+            <div class="row">
+                <div class="form-group col-md-4">
+                 {{form.password1.label()}}
+                 {{form.password1(class="form-control",placeholder="Password")}}
+                </div>
+                <div class="form-group col-md-4">
+                 {{form.password2.label()}}
+                 {{form.password2(class="form-control",placeholder="Confirm password")}}
+                </div>
+           
+            
+            </div>
+            <div class="row">
+                <div class="form-group col-md-4"> 
+                    {{form.phone.label()}}
+                    {{form.phone(class="form-control",placeholder="Phone")}}
+                </div>
+           
+                <div class="form-group col-md-4">
+                    {{form.role.label()}}
+                    {{form.role(class="form-control",placeholder="Role")}}
+                </div>
+         
+            </div>
+            </div>
+            <br>
+            <br>
+            {{form.submit(class="btn  w-100 btn-primary text-center")}}
+            <br>
+            <a href="{{url_for('login_page')}}" style="color: white;">Already have an account ?</a>
+            
+        </form>
+        
+
+    </div>
+</div>
+
+
+{% endblock%}

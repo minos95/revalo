@@ -1,0 +1,54 @@
+{%extends'base.html' %}
+{% block title%}
+Home Page
+{% endblock%}
+{%block content%}
+
+
+
+
+
+<div class="container-fluid">
+<div class="row">
+  
+        {% include 'side_bar.html'%}
+  
+    <div class="col">
+
+<h3 class="text-center">Transactions</h3>
+
+<table class="table mt-3">
+
+<tr>
+<th>ID</th>
+<th>Amount</th>
+<th>Status</th>
+<th>Delivery</th>
+<th>Action</th>
+</tr>
+
+{% for t in transactions %}
+
+<tr>
+<td>#{{ t.id }}</td>
+<td>{{ t.total_amount }} DA</td>
+<td>{{ t.status }}</td>
+<td>{{ t.dilivery_status }}</td>
+
+<td>
+<a href="/transaction/{{ t.id }}" class="btn btn-primary btn-sm">
+View
+</a>
+</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+</div>
+
+    </div>
+</div>
+{% endblock %}

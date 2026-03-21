@@ -1,0 +1,40 @@
+{%extends'base.html' %}
+{% block title%}
+Admin listings
+{% endblock%}
+{% block content%}
+<div class="row">
+    {% include 'admin/side_bar.html' %}
+    <div class="col">
+        <h3>Listings</h3>
+
+<table class="table">
+
+<tr>
+<th>Title</th>
+<th>Company</th>
+<th>Status</th>
+<th>Action</th>
+</tr>
+
+{% for l in listings %}
+<tr>
+
+<td>{{ l.name }}</td>
+<td>{{ l.owned_company.name }}</td>
+<td>{{ l.status }}</td>
+
+<td>
+<a href="/admin/listing/{{ l.id }}/delete" class="btn btn-danger btn-sm">
+Delete
+</a>
+</td>
+
+</tr>
+{% endfor %}
+
+</table>
+    </div>
+</div>
+
+{% endblock%}

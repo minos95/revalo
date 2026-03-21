@@ -1,0 +1,140 @@
+{%extends'base.html' %}
+{% block title%}
+OFFERS PAGE
+{% endblock%}
+{% block content%}
+
+<div class="container-fluid ">
+  <div class="row">
+    
+      {% include 'side_bar.html'%}
+    
+    <div class="col-md-10 p-4">
+      <h3>Offers</h3>
+        <!-- Tabs -->
+
+<ul class="nav nav-tabs mt-3">
+    <li class="nav-item">
+        <a class="nav-link active" data-bs-toggle="tab" href="#received">Received</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#sent">Sent</a>
+    </li>
+</ul>
+
+<div class="tab-content mt-3">
+
+<!-- RECEIVED -->
+
+<div class="tab-pane fade show active" id="received">
+
+{% for offer in offers_received %}
+  {% include 'includes/modals_offers_validate.html'%}
+  {% include 'includes/modal_offers_reject.html'%}
+<div class="offer-card d-flex justify-content-between align-items-center">
+
+<div>
+    <a href="{{url_for('item_detail_page',item_id=offer.owned_offer.id)}}"><strong>{{ offer.owned_offer.name }}</strong></a><br>
+    Price: {{ offer.offered_price }} DA / {{offer.unit}}<br>
+    Qty: {{ offer.quantity_requested }} {{offer.unit}}
+</div>
+
+<div>
+
+{% if offer.status == "pending" %}
+<span class="badge text-bg-primary">Pending</span>
+{% elif offer.status == "accepted" %}
+<span class="badge text-bg-success">Accepted</span>
+{% else %}
+<span class="badge text-bg-danger">Rejected</span>
+{% endif %}
+
+<br><br>
+
+{% if offer.status == "pending" %}
+<a href="/offer/{{ offer.id }}/accept" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#validate-offer-{{offer.id}}">Accept</a>
+<a href="/offer/{{ offer.id }}/reject" class="btn btn-danger btn-sm" data-bs-toggle="modal"  data-bs-target="#reject-offer-{{offer.id}}">Reject</a>
+{% endif %}
+
+</div>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+<!-- SENT -->
+
+<div class="tab-pane fade" id="sent">
+
+{% for offer in offers_sent %}
+
+<div class="offer-card d-flex justify-content-between align-items-center">
+
+<div>
+    <a href="{{url_for('item_detail_page',item_id=offer.owned_offer.id)}}"><strong>{{ offer.owned_offer.name }}</strong></a><br>
+    Your Price: {{ offer.offered_price }} DA /{{offer.unit}}<br>
+    Qty: {{ offer.quantity_requested }} {{offer.unit}}
+</div>
+
+<div>
+{% if offer.status == "pending" %}
+<span class="badge text-bg-primary">Pending</span>
+{% elif offer.status == "accepted" %}
+<span class="badge text-bg-success">Accepted</span>
+{% else %}
+<span class="badge text-bg-danger">Rejected</span>
+{% endif %}
+
+</div>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+</div>
+
+</div>
+
+    </div>
+  </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{% endblock%}

@@ -3,7 +3,79 @@
 Listing
 {% endblock%}
 {% block content %}
-<div class="container">
+<div class="container-fluid">
+    <div class="row">
+        {% include 'side_bar.html'%}
+        <div class="col">
+            <div class="container mt-4">
+
+<h3>My Listings</h3>
+
+<a href="/listing/category" class="btn btn-primary mb-3">
++ Add Listing
+</a>
+
+<table class="table table-hover">
+
+<tr>
+<th>Image</th>
+<th>Title</th>
+<th>Quantity</th>
+<th>Status</th>
+<th>Actions</th>
+</tr>
+
+{% for listing in listings %}
+<tr>
+
+<td>
+<img src="{{ url_for('static', filename=listing.images[0].uri ) }}" width="60" height="60" style="object-fit:cover; border-radius:6px;">
+</td>
+
+<td>{{ listing.name }}</td>
+<td>{{ listing.quantity }} {{listing.unit}}</td>
+
+<td>
+{%if listing.status == "active"%}
+                                <p><span>❇</span> Active</p>
+                                {% elif listing.status== "solde"%}
+                                <p><span>💸</span> Sold</p>
+                                {%else%}
+                                <p><span>🔴</span> Suspended</p>
+                                {%endif%}
+</td>
+
+<td>
+
+<a href="/listing/{{ listing.id }}" class="btn btn-sm btn-info">View</a>
+
+<a href="/listing/{{ listing.id }}/edit" class="btn btn-sm btn-warning">Edit</a>
+
+<a href="/listing/{{ listing.id }}/delete" class="btn btn-sm btn-danger">Delete</a>
+
+</td>
+
+</tr>
+{% endfor %}
+
+</table>
+
+</div>
+        </div>
+    </div>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     <div class="row mt-5 mb-5">
         <div class="col"></div>
         <div class="col-2">

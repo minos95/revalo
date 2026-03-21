@@ -46,11 +46,11 @@ onclick="changeImage('{{ url_for('static', filename=img.uri) }}')">
 <p class="text-muted">{{ item.owned_category.name }}</p>
 
 <h4 class="text-success">
-{{ item.price }} DZD / ton
+{{ item.price }} DZD / {{item.unit}}
 </h4>
 
 <p>
-<strong>Quantity:</strong> {{ item.quantity }} tons
+<strong>Quantity:</strong> {{ item.quantity }} {{item.unit}}
 </p>
 
 <p>
@@ -63,7 +63,7 @@ Verified Seller
 </span>
 </p>
 
-<button class="btn btn-primary w-100">
+<button class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#offer-request-{{item.id}}">
 Make Offer
 </button>
 
@@ -84,7 +84,7 @@ Make Offer
 
 {% for attr in item.qualities %}
 <tr>
-<td><strong>{{ attr.option_id }}</strong></td>
+<td><strong>{{ attr.owned_attribute.value }}</strong></td>
 <td>{{ attr.option_id }}</td>
 </tr>
 {% endfor %}
@@ -119,6 +119,7 @@ Make Offer
 
 </div>
 
+{% include 'includes/modals_offer_request.html' %}
 <script>
 
 function changeImage(src){
@@ -126,6 +127,7 @@ function changeImage(src){
 }
 
 </script>
+
 {%endblock%}
 
 

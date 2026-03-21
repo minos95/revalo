@@ -1,0 +1,33 @@
+{%extends'base.html' %}
+{% block title%}
+contact Page
+{% endblock%}
+{% block content%}
+<div class="row">
+    {% include 'admin/side_bar.html' %}
+    <div class="col">
+        <h3>Transactions</h3>
+
+<table class="table">
+
+<tr>
+<th>ID</th>
+<th>Amount</th>
+<th>Status</th>
+</tr>
+
+{% for t in transactions %}
+<tr>
+
+<td>#{{ t.id }}</td>
+<td>{{ t.total_amount }}</td>
+<td>{{ t.status }}</td>
+
+</tr>
+{% endfor %}
+
+</table>
+    </div>
+</div>
+
+{% endblock%}

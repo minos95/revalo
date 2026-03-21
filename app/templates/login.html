@@ -4,7 +4,10 @@ Login in Page
 {% endblock%}
 
 {% block content %}
-<div class="container">
+
+<div class="auth-body">
+    <div class="auth-card ">
+    <h1 class="text-center">REVELO</h1>
     <form method="POST">
     {{form.hidden_tag()}}
     {{form.email.label()}}
@@ -13,13 +16,14 @@ Login in Page
     {{form.password.label()}}
     {{form.password(class="form-control",placeholder="password")}}
     
+    <br>
     
-    {{form.submit(class="btn btn-block btn-lg btn-primary text-center")}}
-
-
+    {{form.submit(class="btn  btn-block btn-lg btn-primary text-center w-100")}}
+    <br>
+    <a href="{{url_for('signup_page')}}">Dont have account ?</a>
 </form>
-
 </div>
-<a href="{{url_for('signup_page')}}">Dont have account ?</a>
+</div>
+
 
 {% endblock %}

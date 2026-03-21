@@ -1,0 +1,79 @@
+
+{%extends'base.html' %}
+{% block title%}
+signup
+{% endblock%}
+{% block content %}
+
+<div class="row">
+    {% include 'side_bar.html'%}
+    <div class="col">
+        <div class="container mt-4">
+
+<h3>Settings</h3>
+
+<ul class="nav nav-tabs mt-3">
+    <li class="nav-item">
+        <a class="nav-link active" data-bs-toggle="tab" href="#profile">Profile</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#company">Company</a>
+    </li>
+</ul>
+
+<div class="tab-content mt-3">
+
+<!-- PROFILE -->
+
+<div class="tab-pane fade show active" id="profile">
+
+<form method="POST" action="{{url_for('update_profile')}}">
+
+<input type="text" name="name" class="form-control mb-3" value="{{ user.full_name }}" placeholder="Name">
+
+<input type="email" name="email" class="form-control mb-3" value="{{ user.email }}" placeholder="Email">
+
+<button class="btn btn-primary">Save</button>
+
+</form>
+
+</div>
+
+<!-- COMPANY -->
+
+<div class="tab-pane fade" id="company">
+
+<form method="POST" action="{{url_for('update_company')}}">
+
+<input type="text" name="company_name" class="form-control mb-3" value="{{ company.name }}">
+
+<textarea name="description" class="form-control mb-3" placeholder="Company description">
+{{ company.description }}
+</textarea>
+
+<button class="btn btn-success">Save</button>
+
+</form>
+
+<hr>
+
+<p>
+Verification Status:
+<strong>{{ company.verification_status }}</strong>
+</p>
+
+<a href="/verify-company" class="btn btn-warning">
+Verify Company
+</a>
+
+</div>
+
+</div>
+
+</div>
+    </div>
+
+</div>
+
+
+{% endblock %}
