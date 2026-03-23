@@ -1,7 +1,7 @@
-from revelo_package import app,db
-from revelo_package.models import Category
-from revelo_package.models import Quality_attributes
-from revelo_package.models import Quality_attribute_options
+from app import app,db
+from app.models import Category
+from app.models import Quality_attributes
+from app.models import Quality_attribute_options
 
 
 def seed_categories():

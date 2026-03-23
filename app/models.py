@@ -1,64 +1,16 @@
-from app import db,bcrypt,login_manager
-from flask_login import UserMixin
+from app import db
 
 
 
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
-class Company(db.Model):
-    id = db.Column(db.Integer(),primary_key=True)
-    name = db.Column(db.String(length=30),nullable=False,unique=True)
-    email = db.Column(db.String(200))
-    phone = db.Column(db.String(50))
-    website = db.Column(db.String(200))
-    
-    address = db.Column(db.String(length=30),nullable=False)
-    country = db.Column(db.String(length=30),nullable=False)
-    city = db.Column(db.String(length=30),nullable=False)
-    company_type = db.Column(db.String(length=30),nullable=False) #generator, recycler, trader
-    activity = db.Column(db.String(length=30),nullable=False)
-    rc = db.Column(db.String(length=30))
-    nif = db.Column(db.String(length=30))
-    nis = db.Column(db.String(length=30))
-    referal = db.Column(db.String(length=30))
-    verified=db.Column(db.String(),default="pending")
-    created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
-    
-    items = db.relationship('Item', back_populates='owned_company',lazy=True)
-    users = db.relationship('User', back_populates='owned_company',lazy=True)
-    buy_transactions=db.relationship('Transaction', back_populates='buyer_company',foreign_keys="Transaction.buyer_company_id",lazy=True)
-    sell_transactions=db.relationship('Transaction', back_populates='seller_company',foreign_keys="Transaction.seller_company_id",lazy=True)
-    
-class User(db.Model,UserMixin):
-    __tablename__ = 'user'
-    id = db.Column(db.Integer(),primary_key=True)
-    company_id = db.Column(db.Integer(),db.ForeignKey('company.id'))
-    full_name = db.Column(db.String(length=30),nullable=False)
-    phone = db.Column(db.String(length=30),nullable=False)
-    email = db.Column(db.String(length=50),nullable=False,index=True)
-    email_verified=db.Column(db.Boolean(),default=False)
-    password_hash=db.Column(db.String(length=50),nullable=False)
-    role = db.Column(db.String(length=30),nullable=False)  # owner, manager, employee
-    authorized=db.Column(db.Boolean(),default=True)
-    created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
-    owned_company = db.relationship("Company", back_populates="users")
-    items = db.relationship('Item', back_populates='owned_user',lazy=True)
-    @property
-    def password(self):
-        return self.password
-    
-    @password.setter
-    def password(self,plain_text_password):
-        self.password_hash=bcrypt.generate_password_hash(plain_text_password).decode('utf-8')
-    def check_password_correction(self,attempted_password):
-        return bcrypt.check_password_hash(self.password_hash,attempted_password)
+
+
 
 class Offer(db.Model):
     id = db.Column(db.Integer(),primary_key=True)
     item_id = db.Column(db.Integer(),db.ForeignKey('item.id'))
     buyer_company_id = db.Column(db.Integer(),db.ForeignKey('company.id'))
     seller_company_id = db.Column(db.Integer(),db.ForeignKey('company.id'))
+    sender_company_id = db.Column(db.Integer(),db.ForeignKey('company.id'))
     buyer_id=db.Column(db.Integer(),db.ForeignKey('user.id'))
     seller_id=db.Column(db.Integer(),db.ForeignKey('user.id'))
     offered_price = db.Column(db.Integer(),nullable=False)
@@ -69,117 +21,73 @@ class Offer(db.Model):
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
     accepted_at=db.Column(db.DateTime(timezone=True))
     owned_offer = db.relationship("Item", back_populates="offers")
+    sender_company = db.relationship("Company",foreign_keys=[sender_company_id],back_populates="offers")
 
 class Transaction(db.Model):
     id=db.Column(db.Integer(),primary_key=True)
+     # References
     offer_id = db.Column(db.Integer(),db.ForeignKey('offer.id'))
     item_id = db.Column(db.Integer(),db.ForeignKey('item.id'))
+    # Companies involved
     buyer_company_id = db.Column(db.Integer(),db.ForeignKey('company.id'))
     seller_company_id = db.Column(db.Integer(),db.ForeignKey('company.id'))
-    price = db.Column(db.Integer(),nullable=False)
-    quantity = db.Column(db.Integer(),nullable=False)
-    unit = db.Column(db.String(),nullable=False)
-    payement_status = db.Column(db.String(length=30),nullable=False,default="pending") #pending/confirmed/in_progress/completed/disputed
+    # Point of contact users
+    seller_manager_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    buyer_manager_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+     # Transaction details
+    price = db.Column(db.Numeric(10, 2), nullable=False)
+    quantity = db.Column(db.Numeric(10, 2))
+    unit = db.Column(db.String(20), default='kg')
+    # Payment
+    payment_status = db.Column(db.String(20), default='pending')  # pending, paid, refunded, failed
     dilivery_status = db.Column(db.String(length=30),nullable=False,default="pending")
+
+     # Invoice
+    invoice_number = db.Column(db.String(100), unique=True)
+    invoice_url = db.Column(db.String(255))
+
+     # Logistics
+    pickup_scheduled_at = db.Column(db.DateTime)
+    pickup_completed_at = db.Column(db.DateTime)
+    pickup_notes = db.Column(db.Text)
+    
+    delivery_scheduled_at = db.Column(db.DateTime)
+    delivery_completed_at = db.Column(db.DateTime)
+    delivery_notes = db.Column(db.Text)
+
+    # Status tracking
+    status = db.Column(db.String(20), default='pending', index=True)  # pending, confirmed, in_transit, completed, cancelled, dispute
+
     total_amount=db.Column(db.Integer(),nullable=False)
     commission_rate=db.Column(db.Integer(),nullable=False,default='0.07')
     commission_amount=db.Column(db.Integer(),nullable=False)
     seller_net_amount=db.Column(db.Integer(),nullable=False)
-    created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
 
-    transactions = db.relationship("Review", back_populates="owned_review",lazy=True)
-    owned_transaction = db.relationship("Item", back_populates="transactions",lazy=True)
+     # Waste tracking (important for compliance)
+    waste_manifest_number = db.Column(db.String(100))
+    waste_manifest_url = db.Column(db.String(255))
+    weight_certificate_url = db.Column(db.String(255))
+    coa_url = db.Column(db.String(255))  # Certificate of Analysis
+
+        # Timestamps
+    confirmed_at = db.Column(db.DateTime)
+    completed_at = db.Column(db.DateTime)
+    cancelled_at = db.Column(db.DateTime)
+    cancelled_reason = db.Column(db.Text)
+    
+    created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
+    updated_at = db.Column(db.DateTime(timezone=True), default=db.func.now(), onupdate=db.func.now())
+  
+   
+   #references
+    review = db.relationship("Review", back_populates="owned_review",lazy=True)
+    listing = db.relationship("Item", back_populates="transactions",lazy=True)
     buyer_company = db.relationship('Company', back_populates='buy_transactions',foreign_keys=[buyer_company_id],lazy=True)
     seller_company = db.relationship('Company', back_populates='sell_transactions',foreign_keys=[seller_company_id],lazy=True)
+    seller_manager = db.relationship('User', foreign_keys=[seller_manager_id],
+                                    back_populates='transactions_as_seller_manager')
+    buyer_manager = db.relationship('User', foreign_keys=[buyer_manager_id],
+                                    back_populates='transactions_as_buyer_manager')
 
 
-class Item(db.Model):
-    id=db.Column(db.Integer(),primary_key=True)
-    company_id= db.Column(db.Integer(),db.ForeignKey('company.id'))
-    category_id= db.Column(db.Integer(),db.ForeignKey('category.id'))
-    user_id=db.Column(db.Integer(),db.ForeignKey('user.id'))
-    name=db.Column(db.String(length=30),nullable=False)
-    description=db.Column(db.String(length=1024))
-    unit= db.Column(db.String(length=30),nullable=False)
-    quantity= db.Column(db.Integer(),nullable=False) 
-    price_negotiable = db.Column(db.Boolean, default=True)
-    minimum_order = db.Column(db.Numeric(10, 2), default=0)
-    location=db.Column(db.String(length=30))
-    sell_type=db.Column(db.String(length=30))
-    price=db.Column(db.Integer(),nullable=False) 
-    status=db.Column(db.String(length=30),default="closed") #active/closed/sold
-    created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
-    images=db.relationship('Image',backref='owned_item',lazy=True)
-    offers=db.relationship('Offer',backref='owned_item',lazy=True)
-    views=db.relationship('View',backref='owned_item',lazy=True)
-    owned_user = db.relationship("User", back_populates="items")
-    owned_company = db.relationship("Company", back_populates="items")
-    owned_category=db.relationship("Category",back_populates="items")
-    offers = db.relationship('Offer', back_populates='owned_offer',lazy=True)
-    transactions = db.relationship('Transaction', back_populates='owned_transaction',lazy=True)
-    images = db.relationship('Image', back_populates='owned_image',lazy=True)
-    qualities = db.relationship('Item_quality_values', back_populates='owned_item',lazy=True)
-    def __repr__(self):
-        return f'Item {self.name}'
-
-class Image(db.Model):
-    id=db.Column(db.Integer(),primary_key=True)
-    item_id= db.Column(db.Integer(),db.ForeignKey('item.id'))
-    default=db.Column(db.Boolean(),default=False)
-    uri=db.Column(db.String(length=30))
-    created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
-
-    owned_image = db.relationship('Item', back_populates='images',lazy=True)
-    
-
-class View(db.Model):
-    id=db.Column(db.Integer(),primary_key=True)
-    company_id= db.Column(db.Integer(),db.ForeignKey('company.id'))
-    item_id=db.Column(db.Integer(),db.ForeignKey('item.id'))
-    created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
-
-class Review(db.Model):
-    id=db.Column(db.Integer(),primary_key=True)
-    transaction_id= db.Column(db.Integer(),db.ForeignKey('transaction.id'))
-    reviewer_company_id = db.Column(db.Integer(),nullable=False)
-    reviewed_company_id = db.Column(db.Integer(),nullable=False)
-    comment = db.Column(db.String(length=300),nullable=False)
-    rating = db.Column(db.Integer(),nullable=False) #1-5
-    created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
-    owned_review = db.relationship("Transaction", back_populates="transactions",lazy=True)
-
-
-class Category(db.Model):
-    id=db.Column(db.Integer(),primary_key=True)
-    name=db.Column(db.String(length=30),nullable=False)
-    Description=db.Column(db.String(length=300),nullable=False)
-    items=db.relationship("Item", back_populates="owned_category",lazy=True)
-
-    qualities = db.relationship('Quality_attributes', back_populates='owned_quality',lazy=True)
-     
-    
-class Quality_attributes(db.Model):
-    id=db.Column(db.Integer(),primary_key=True)
-    category_id= db.Column(db.Integer(),db.ForeignKey('category.id'))
-    name=db.Column(db.String(length=30),nullable=False) #--- cleanliness, Compressed, Rust level, Crushed
-    field=db.Column(db.String(length=30),nullable=False) #-----select,boolean,number,text
-    unit=db.Column(db.String(length=30))
-    is_required=db.Column(db.Boolean())
-    owned_quality = db.relationship('Category', back_populates='qualities',lazy=True)
-    options=db.relationship('Quality_attribute_options', back_populates='owned_attribute_options',lazy=True)
-    qualities= db.relationship('Item_quality_values', back_populates='owned_attribute',lazy=True)
-
-class Quality_attribute_options(db.Model):
-    id=db.Column(db.Integer(),primary_key=True)
-    attribute_id= db.Column(db.Integer(),db.ForeignKey('quality_attributes.id'))
-    value=db.Column(db.String(length=30),nullable=False) #----cleanliness: clean ,mixed dirty, rust level: low,medium,high
-    owned_attribute_options=db.relationship('Quality_attributes', back_populates='options',lazy=True)
-class Item_quality_values(db.Model):
-    id=db.Column(db.Integer(),primary_key=True)
-    item_id= db.Column(db.Integer(),db.ForeignKey('item.id'))
-    attribute_id= db.Column(db.Integer(),db.ForeignKey('quality_attributes.id'))
-    option_id=db.Column(db.Integer(),db.ForeignKey('quality_attribute_options.id'))
-    value_text=db.Column(db.String(length=30))
-    value_number=db.Column(db.Integer())
-    owned_item = db.relationship('Item', back_populates='qualities',lazy=True)
-    owned_attribute = db.relationship('Quality_attributes', back_populates='qualities',lazy=True)

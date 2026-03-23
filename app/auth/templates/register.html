@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up - EcoWaste{% endblock %}
+
+{% block content %}
+<div class="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-lg">
+        <div class="text-center">
+            <i class="fas fa-recycle text-4xl text-green-600"></i>
+            <h2 class="mt-4 text-3xl font-bold text-gray-900">Create your account</h2>
+            <p class="mt-2 text-sm text-gray-600">Join the circular economy today</p>
+        </div>
+        
+        <form class="mt-8 space-y-6" method="POST">
+            {{ form.hidden_tag() }}
+            
+            <!-- Company Information -->
+            <div>
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Company Information</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Company Name</label>
+                        {{ form.company_name(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2") }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Business Type</label>
+                        {{ form.business_type(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2") }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Company Email</label>
+                        {{ form.company_email(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2") }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Company Phone</label>
+                        {{ form.company_phone(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2") }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Address -->
+            <div>
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Address</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Street Address</label>
+                        {{ form.address(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2") }}
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">City</label>
+                            {{ form.city(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2") }}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">State/Province</label>
+                            {{ form.state(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2") }}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Country</label>
+                            {{ form.country(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2") }}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Postal Code</label>
+                            {{ form.postal_code(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2") }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Account Information -->
+            <div>
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Account Information</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">First Name</label>
+                        {{ form.full_name(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2") }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Email</label>
+                        {{ form.email(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2") }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Phone</label>
+                        {{ form.phone(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2") }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Password</label>
+                        {{ form.password(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2") }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Confirm Password</label>
+                        {{ form.confirm_password(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2") }}
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                {{form.submit(class="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700")}} 
+                 
+            </div>
+        </form>
+        
+        <div class="mt-6 text-center">
+            <p class="text-sm text-gray-600">
+                Already have an account?
+                <a href="{{ url_for('auth.login_page') }}" class="font-medium text-green-600 hover:text-green-500">Sign in</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

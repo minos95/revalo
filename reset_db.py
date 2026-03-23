@@ -1,5 +1,5 @@
 from app import db,app,bcrypt
-from app.models import Company,User
+from app.auth.models import Company,User
 
 
 with app.app_context():

@@ -1,8 +1,9 @@
 
 from app import app,db
-from app.models import User, Company, Category, Item, Offer, Transaction, Review,Image,View,Quality_attribute_options,Quality_attributes,Item_quality_values
+from app.models import   Offer, Transaction
+from app.auth.models import User,Company 
 from flask_migrate import Migrate
-
+from app.listings.models import Category, Item, Review,Image,View,Quality_attribute_options,Quality_attributes,Item_quality_values
 
 migrate = Migrate(app, db)
 

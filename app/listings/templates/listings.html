@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}My Listings - EcoWaste{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold">My Listings</h1>
+        <a href="{{ url_for('listings.listing_select_category') }}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+            <i class="fas fa-plus mr-2"></i>Post New Listing
+        </a>
+    </div>
+    
+    <!-- Tabs -->
+    <div class="border-b border-gray-200 mb-6">
+        <nav class="flex space-x-8">
+            <a href="{{ url_for('listings.listings', status='active') }}" 
+               class="py-2 px-1 border-b-2 {% if status == 'active' %}border-green-500 text-green-600{% else %}border-transparent text-gray-500 hover:text-gray-700{% endif %}">
+                Active ({{ active }})
+            </a>
+            <a href="{{ url_for('listings.listings', status='pending') }}"
+               class="py-2 px-1 border-b-2 {% if status == 'pending' %}border-green-500 text-green-600{% else %}border-transparent text-gray-500 hover:text-gray-700{% endif %}">
+                Pending ({{ pending }})
+            </a>
+            <a href="{{ url_for('listings.listings', status='sold') }}"
+               class="py-2 px-1 border-b-2 {% if status == 'sold' %}border-green-500 text-green-600{% else %}border-transparent text-gray-500 hover:text-gray-700{% endif %}">
+                Sold ({{ sold }})
+            </a>
+            <a href="{{ url_for('listings.listings', status='expired') }}"
+               class="py-2 px-1 border-b-2 {% if status == 'expired' %}border-green-500 text-green-600{% else %}border-transparent text-gray-500 hover:text-gray-700{% endif %}">
+                Expired ({{ expired }})
+            </a>
+        </nav>
+    </div>
+    
+    <!-- Listings Table -->
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Listing</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Offers</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for listing in listings %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10">
+                                {% if listing.primary_image %}
+                                <img src="{{ listing.primary_image }}" class="h-10 w-10 rounded-lg object-cover">
+                                {% else %}
+                                <div class="h-10 w-10 bg-gray-200 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-recycle text-gray-400"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">{{ listing.name }}</div>
+                                <div class="text-sm text-gray-500">{{ listing.created_at.strftime('%Y-%m-%d') }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">{{ listing.owned_category.name }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500">{{ listing.quantity }} {{ listing.unit }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-900">
+                        {% if listing.price %}
+                        ${{ "%.2f"|format(listing.price) }}
+                        {% else %}
+                        Make Offer
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            {% if listing.status == 'active' %}bg-green-100 text-green-800
+                            {% elif listing.status == 'pending' %}bg-yellow-100 text-yellow-800
+                            {% elif listing.status == 'sold' %}bg-gray-100 text-gray-800
+                            {% else %}bg-red-100 text-red-800{% endif %}">
+                            {{ listing.status }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">
+                        <a href="{{ url_for('offers_page', listing_id=listing.id) }}" class="text-green-600 hover:text-green-900">
+                            {{ listings_count }} offers
+                        </a>
+                    </td>
+                    <td class="px-6 py-4 text-right text-sm font-medium">
+                        <a href="{{ url_for('listings.edit', listing_id=listing.id) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
+                        {% if listing.status == 'active' %}
+                        <button onclick="markSold({{ listing.id }})" class="text-green-600 hover:text-green-900 mr-3">Mark Sold</button>
+                        {% endif %}
+                        <button onclick="deleteListing({{ listing.id }})" class="text-red-600 hover:text-red-900">Delete</button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                        <i class="fas fa-box-open text-4xl mb-2"></i>
+                        <p>No listings found</p>
+                        <a href="{{ url_for('listings.listing_select_category') }}" class="inline-block mt-4 text-green-600 hover:text-green-700">
+                            Create your first listing →
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    function markSold(listingId) {
+        if (confirm('Mark this listing as sold?')) {
+            fetch(`/listings/${listingId}/mark-sold`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            }).then(response => {
+                if (response.ok) {
+                    location.reload();
+                }
+            });
+        }
+    }
+    
+    function deleteListing(listingId) {
+        if (confirm('Are you sure you want to delete this listing? This action cannot be undone.')) {
+            fetch(`/listings/${listingId}/delete`, {
+                method: 'POST',
+            }).then(response => {
+                if (response.ok) {
+                    location.reload();
+                }
+            });
+        }
+    }
+</script>
+{% endblock %}
+{% endblock %}

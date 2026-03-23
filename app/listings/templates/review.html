@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Review Listing - EcoWaste{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <div class="mb-8">
+        <div class="flex items-center justify-center">
+            <div class="flex items-center">
+                <div class="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center">1</div>
+                <div class="w-16 h-0.5 bg-green-600"></div>
+                <div class="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center">2</div>
+                <div class="w-16 h-0.5 bg-green-600"></div>
+                <div class="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center">3</div>
+            </div>
+        </div>
+        <div class="flex justify-center mt-2 text-sm">
+            <span class="text-green-600 font-medium mx-8">Select Category</span>
+            <span class="text-green-600 font-medium mx-8">Details</span>
+            <span class="text-green-600 font-medium mx-8">Review</span>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div class="bg-green-50 p-6 border-b">
+            <h1 class="text-2xl font-bold text-gray-900">Review Your Listing</h1>
+            <p class="text-gray-600 mt-1">Please verify all information before publishing</p>
+        </div>
+        
+        <div class="p-6 space-y-6">
+            <!-- Listing Preview -->
+            <div class="border rounded-lg p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <h2 class="text-xl font-semibold">{{ listing.name }}</h2>
+                    <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">Draft</span>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <p class="text-gray-600 mb-4">{{ listing.description }}</p>
+                        
+                        <div class="space-y-2">
+                            <div class="flex">
+                                <span class="w-32 text-gray-500">Category:</span>
+                                <span class="font-medium">{{ listing.owned_category.name }}</span>
+                            </div>
+                            <div class="flex">
+                                <span class="w-32 text-gray-500">Quantity:</span>
+                                <span class="font-medium">{{ listing.quantity }} {{ listing.unit }}</span>
+                            </div>
+                            {% if listing.price %}
+                            <div class="flex">
+                                <span class="w-32 text-gray-500">Price:</span>
+                                <span class="font-medium text-green-600">${{ "%.2f"|format(listing.price) }}</span>
+                                {% if listing.price_negotiable %}
+                                <span class="ml-2 text-sm text-gray-500">(Negotiable)</span>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <div class="flex">
+                                <span class="w-32 text-gray-500">Price:</span>
+                                <span class="font-medium">Make Offer</span>
+                            </div>
+                            {% endif %}
+                            <div class="flex">
+                                <span class="w-32 text-gray-500">Location:</span>
+                                <span class="font-medium">{{ listing.pickup_city }}, {{ listing.pickup_country }}</span>
+                            </div>
+                            <div class="flex">
+                            <span class="w-32 text-gray-500">Address:</span>
+                                <span class="font-medium">{{ listing.pickup_address }}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Category-specific specs -->
+                        {% if listing.qualities %}
+                        <div class="mt-4 pt-4 border-t">
+                            <h3 class="font-semibold mb-2">Material Specifications:</h3>
+                            <div class="space-y-1">
+                                {% for quality in listing.qualities %}
+                                <div class="flex">
+                                    <span class="w-32 text-gray-500">{{ quality.owned_attribute.name }}:</span>
+                                    <span>{{ quality.value_text or quality.owned_options.value }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <h3 class="font-semibold mb-2">Images:</h3>
+                        <div class="grid grid-cols-3 gap-2">
+                            {% for image in listing.images %}
+                            <img src="{{ url_for('static', filename=image.uri) }}" 
+                                 class="w-full h-24 object-cover rounded-lg">
+                            {% else %}
+                            <div class="col-span-3 text-center py-8 bg-gray-50 rounded-lg">
+                                <i class="fas fa-image text-4xl text-gray-400 mb-2"></i>
+                                <p class="text-gray-500 text-sm">No images uploaded</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Warning Messages -->
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div class="flex items-start space-x-3">
+                    <i class="fas fa-exclamation-triangle text-yellow-600 text-xl mt-0.5"></i>
+                    <div class="text-sm text-yellow-800">
+                        <p class="font-semibold mb-1">Before publishing, please ensure:</p>
+                        <ul class="list-disc list-inside space-y-1">
+                            <li>All information is accurate and complete</li>
+                            <li>Quantity and pricing are correct</li>
+                            <li>Images clearly show the waste materials</li>
+                            <li>You have the authority to sell/dispose of these materials</li>
+                            <li>Compliance with local waste regulations</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="flex justify-between pt-6 border-t">
+                <a href="{{ url_for('listing_edit_page', listing_id=listing.id) }}" 
+                   class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                    <i class="fas fa-edit mr-2"></i>Edit Listing
+                </a>
+                
+                <form method="POST" action="{{ url_for('listing_publish_page', listing_id=listing.id) }}">
+                    <button type="submit" class="px-8 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
+                        <i class="fas fa-check-circle mr-2"></i>Publish Listing
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

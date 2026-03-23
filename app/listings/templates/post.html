@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}Post Listing - {{ category.name }} - EcoWaste{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <!-- Progress Steps -->
+    <div class="mb-8">
+        <div class="flex items-center justify-center">
+            <div class="flex items-center">
+                <div class="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center">1</div>
+                <div class="w-16 h-0.5 bg-green-600"></div>
+                <div class="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center">2</div>
+                <div class="w-16 h-0.5 bg-gray-300"></div>
+                <div class="bg-gray-300 text-gray-600 rounded-full w-8 h-8 flex items-center justify-center">3</div>
+            </div>
+        </div>
+        <div class="flex justify-center mt-2 text-sm">
+            <span class="text-green-600 font-medium mx-8">Select Category</span>
+            <span class="text-green-600 font-medium mx-8">Details</span>
+            <span class="text-gray-400 mx-8">Review</span>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+        <!-- Category Header -->
+        <div class="bg-gradient-to-r from-green-50 to-green-100 p-6 border-b">
+            <div class="flex items-center space-x-4">
+                <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center">
+                    <i class="fas {{ category.icon or 'fa-trash-alt' }} text-2xl text-green-600"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Post a Listing in {{ category.name }}</h1>
+                    <p class="text-gray-600 mt-1">{{ category.description }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <form method="POST" enctype="multipart/form-data" class="p-6 space-y-8">
+            {{ form.hidden_tag() }}
+            
+            <!-- Basic Information -->
+            <div>
+                <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class="fas fa-info-circle text-green-600 mr-2"></i>
+                    Basic Information
+                </h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Listing Title <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.name(class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-green-500 focus:border-green-500", 
+                                     placeholder="e.g., 500kg Clean PET Bottles, Mixed E-waste Lot") }}
+                        {% for error in form.name.errors %}
+                            <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Description <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.description(class="w-full border border-gray-300 rounded-lg px-4 py-2 rows-4", rows="4",
+                                           placeholder="Describe your waste materials in detail...") }}
+                        {% for error in form.description.errors %}
+                            <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Category-Specific Fields -->
+            <div>
+                <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class="fas fa-clipboard-list text-green-600 mr-2"></i>
+                    Material Specifications
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for attribute in quality_attributes %}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ attribute.name }} {% if attribute.is_required %}<span class="text-red-500">*</span>{% endif %}
+                        </label>
+                        
+                        {% if attribute.field == 'select' %}
+                            <select name="attr_{{ attribute.id }}" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-green-500 focus:border-green-500"
+                                    {% if attribute.is_required %}required{% endif %}>
+                                <option value="{{ attribute.id }}">Select {{ attribute.name }}</option>
+                                {% for option in attribute.options %}
+                                <option value="{{ option.id }}">{{ option.value }}</option>
+                                {% endfor %}
+                            </select>
+                        {% elif attribute.field == 'radio' %}
+                            <div class="space-y-2">
+                                {% for option in attribute.options %}
+                                <label class="flex items-center">
+                                    <input type="radio" name="attr_{{ attribute.id }}" value="{{ option.id }}" 
+                                           class="text-green-600 focus:ring-green-500"
+                                           {% if attribute.is_required %}required{% endif %}>
+                                    <span class="ml-2 text-gray-700">{{ option.value }}</span>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <input type="{{ 'number' if attribute.attribute_type == 'number' else 'text' }}"
+                                   name="attr_{{ attribute.id }}"
+                                   placeholder="{{ attribute.placeholder or '' }}"
+                                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-green-500 focus:border-green-500"
+                                   {% if attribute.is_required %}required{% endif %}>
+                        {% endif %}
+                        
+                        {% if attribute.description %}
+                        <p class="text-xs text-gray-500 mt-1">{{ attribute.description }}</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Quantity & Pricing -->
+            <div>
+                <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class="fas fa-chart-line text-green-600 mr-2"></i>
+                    Quantity & Pricing
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Quantity <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.quantity(class="w-full border border-gray-300 rounded-lg px-4 py-2", type="number", step="0.01", placeholder="0.00") }}
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Unit <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.unit(class="w-full border border-gray-300 rounded-lg px-4 py-2") }}
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Price (USD)
+                        </label>
+                        {{ form.price(class="w-full border border-gray-300 rounded-lg px-4 py-2", type="number", step="0.01", placeholder="0.00") }}
+                    </div>
+                </div>
+                
+                <div class="mt-4 flex items-center">
+                    {{ form.price_negotiable(class="h-4 w-4 text-green-600 focus:ring-green-500") }}
+                    <label class="ml-2 text-sm text-gray-700">Price is negotiable</label>
+                </div>
+            </div>
+            
+            <!-- Location -->
+            <div>
+                <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class="fas fa-map-marker-alt text-green-600 mr-2"></i>
+                    Pickup Location
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                        {{ form.pickup_address(class="w-full border border-gray-300 rounded-lg px-4 py-2") }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
+                        {{ form.pickup_city(class="w-full border border-gray-300 rounded-lg px-4 py-2") }}
+                    </div>
+  
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                        {{ form.pickup_country(class="w-full border border-gray-300 rounded-lg px-4 py-2") }}
+                    </div>
+                  
+                </div>
+            </div>
+            
+            <!-- Images -->
+            <div>
+                <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class="fas fa-images text-green-600 mr-2"></i>
+                    Images
+                </h2>
+                
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-green-400 transition cursor-pointer"
+                     onclick="document.getElementById('image-upload').click()">
+                    <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3"></i>
+                    <p class="text-gray-600">Click to upload images or drag and drop</p>
+                    <p class="text-xs text-gray-500 mt-1">PNG, JPG, JPEG up to 10MB each (max 10 images)</p>
+                    <input type="file" name="images" id="image-upload" multiple accept="image/*" class="hidden">
+                    {{form.images(id="image-upload")}}
+                </div>
+                
+                <div id="image-preview" class="grid grid-cols-2 md:grid-cols-5 gap-4 mt-4"></div>
+            </div>
+            
+            <!-- Category Tips -->
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div class="flex items-start space-x-3">
+                    <i class="fas fa-lightbulb text-green-600 text-xl mt-0.5"></i>
+                    <div>
+                        <h3 class="font-semibold text-green-900 mb-1">Tips for listing {{ category.name }}</h3>
+                        <ul class="text-sm text-green-800 space-y-1">
+                            {% if category.name == 'E-waste' %}
+                            <li>• Include brand, model numbers, and whether items are working or for parts</li>
+                            <li>• Mention if batteries are included (requires special handling)</li>
+                            <li>• Specify if items have been tested or are sold as-is</li>
+                            {% elif category.name == 'Plastics' %}
+                            <li>• Specify the resin code (1-7) if known</li>
+                            <li>• Mention if plastics are sorted, baled, or shredded</li>
+                            <li>• Note any contamination levels</li>
+                            {% elif category.name == 'Hazardous' %}
+                            <li>• Include UN numbers and safety data sheet (SDS) if available</li>
+                            <li>• Specify proper packaging requirements</li>
+                            <li>• Mention any special handling certifications needed</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Submit Buttons -->
+            <div class="flex justify-between pt-6 border-t">
+                <a href="{{ url_for('listings.listing_select_category_page') }}" class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                    ← Back to Categories
+                </a>
+                {{form.submit(class="px-8 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium")}}
+               
+            </div>
+        </form>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Image preview
+    document.getElementById('image-upload').addEventListener('change', function(e) {
+        const preview = document.getElementById('image-preview');
+        preview.innerHTML = '';
+        
+        Array.from(e.target.files).slice(0, 10).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const div = document.createElement('div');
+                div.className = 'relative group';
+                div.innerHTML = `
+                    <img src="${e.target.result}" class="w-full h-32 object-cover rounded-lg">
+                    <button type="button" onclick="this.parentElement.remove()" 
+                            class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition">
+                        ×
+                    </button>
+                `;
+                preview.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

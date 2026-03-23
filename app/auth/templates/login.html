@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In - EcoWaste{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg">
+        <div>
+            <div class="flex justify-center">
+                <i class="fas fa-recycle text-4xl text-green-600"></i>
+            </div>
+            <h2 class="mt-6 text-center text-3xl font-bold text-gray-900">Sign in to your account</h2>
+            <p class="mt-2 text-center text-sm text-gray-600">
+                Or
+                <a href="{{ url_for('auth.signup_page') }}" class="font-medium text-green-600 hover:text-green-500">
+                    create a new account
+                </a>
+            </p>
+        </div>
+        
+        <form class="mt-8 space-y-6" method="POST">
+            {{ form.hidden_tag() }}
+            
+            <div class="space-y-4">
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700">Email address</label>
+                    {{ form.email(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-green-500 focus:border-green-500") }}
+                    {% for error in form.email.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                    {{ form.password(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-green-500 focus:border-green-500") }}
+                    {% for error in form.password.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    {{ form.remember_me(class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded") }}
+                    <label for="remember_me" class="ml-2 block text-sm text-gray-900">Remember me</label>
+                </div>
+                
+                <div class="text-sm">
+                    <a href="#" class="font-medium text-green-600 hover:text-green-500">Forgot password?</a>
+                </div>
+            </div>
+            
+            <div>
+                {{form.submit(class="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500")}}
+            
+            </div>
+        </form>
+        
+        <!-- Demo Credentials -->
+        <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+            <p class="text-xs text-gray-500 text-center mb-2">Demo Credentials:</p>
+            <p class="text-xs text-gray-500 text-center">Email: demo@company.com<br>Password: demo123</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

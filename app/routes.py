@@ -1,18 +1,20 @@
 import os
 from app import app,db
-from flask import render_template,redirect,url_for,flash,request
-from app.models import Item,User,Company,Offer,Transaction,Category,Quality_attributes,Item_quality_values,Image
-from app.forms import CompanyRegisterForm ,UserRegisterForm,postItemForm,LoginForm,FilterMarketForm,makeOfferForm, rejectOfferForm,validateOfferForm,cancelOfferForm
-from werkzeug.utils import secure_filename
+from flask import render_template,request
+from app.auth.models import Company, User
+from app.listings.models import Category,Item, Quality_attributes
+from app.models import Offer,Transaction
+from app.forms import  rejectOfferForm,validateOfferForm,cancelOfferForm
 
-from flask_login import login_user ,logout_user,login_required,current_user
+
+from flask_login import login_required,current_user
 from sqlalchemy import desc,or_
 from datetime import datetime
 @app.route("/")
 def home_page():
     return render_template('home2.html')
 
-@app.route("/dashboard")
+'''@app.route("/dashboard")
 def dashboard_page():
     listings=Item.query.filter_by(company_id=current_user.company_id).limit(5).all()
     listings_count=Item.query.filter_by(company_id=current_user.company_id).count()
@@ -21,39 +23,9 @@ def dashboard_page():
     buying_count = Transaction.query.filter_by( buyer_company_id = current_user.company_id ).count()
     selling_count = Transaction.query.filter_by( seller_company_id = current_user.company_id ).count()
     return render_template('dashboard.html',listings=listings,listings_count=listings_count,offers_received_count=offers_received_count,offers_sent_count=offers_sent_count,buying_count=buying_count,selling_count=selling_count)
-@app.route("/market")
-def market_category_page():
-    categories=Category.query.all()
-    return render_template('market_category.html',categories=categories)
+'''
 
-@app.route("/market/category/<int:category_id>/show",methods=['POST','GET'])
-#@login_required
-def market_page(category_id):
-    
-    page = request.args.get("page_num", 1, type=int)
-    per_page = request.args.get('per_page', 20, type=int)
-    filter_form=FilterMarketForm()
-    filters=[]
-   
-    if category_id!='all':
-        filters.append(Item.category_id==category_id)
-    if request.args.get("name"):
-        filters.append(Item.name.ilike(f"%{request.args.get("name")}%"))
-    if request.args.get("category"):
-        filters.append(Item.category_id==request.args.get("category"))
-    if request.args.get("quantity"):
-        filters.append(request.args.get("quantity")<=Item.quantity)
-    if request.args.get("location"):
-        filters.append(Item.location==request.args.get("location"))
 
-    if filters:   
-            items=Item.query.filter(*filters).paginate(page=page,per_page=per_page,error_out=False)
-    else:
-            items=Item.query.paginate(page=page,per_page=per_page,error_out=False)
-
-    attributes=Quality_attributes.query.filter_by(category_id=category_id).all()
- 
-    return render_template('market.html',items=items,filter_form=filter_form,category_id=category_id,attributes=attributes)
 @app.route("/transactions")
 def transactions_page():
     transactions=Transaction.query.filter(or_(Transaction.seller_company_id==current_user.id ,Transaction.buyer_company_id==current_user.company_id)).all()
@@ -94,6 +66,7 @@ def offers_page():
                                           unit=validate_form.unit.data,
                                           buyer_company_id=validate_form.buyer_company_id.data,
                                           seller_company_id=validate_form.seller_company_id.data,
+                                         
                                           total_amount=total_amount,
                                           commission_amount=commission_amount,
                                           seller_net_amount=seller_net_amount
@@ -120,183 +93,12 @@ def offers_page():
 
     return render_template('offers.html',offers_sent=offers_sent,offers_received=offers_received,validate_form=validate_form,cancel_form=cancel_form,reject_form=reject_form)
 
-@app.route("/listing")
-def listing_page():
-    items=Item.query.filter_by(company_id=current_user.company_id).order_by(desc(Item.created_at)).all()
-    listings=items
-    return render_template('listing.html',items=items,listings=listings)
-@app.route("/listing/category")
-def choose_category_page():
-    categories=Category.query.all()
-    return render_template('choose_category.html',categories=categories)
-    
-@app.route('/listing/category/<int:category_id>/post',methods=['GET','POST'])
-def listing_post_page(category_id):
-    quality_attributes=Quality_attributes.query.filter_by(category_id=category_id).all()
-    form=postItemForm()
-
-   
-    if form.validate_on_submit():
-        print('+++++++++++++++++validate form')
-        print(form.pictures)
-        
-        quality_item_to_create=[]
-        image_to_create=[]
-        item_to_create=Item(name=form.name.data,
-                            company_id=current_user.company_id,
-                            user_id=current_user.id,
-                            description=form.description.data,
-                            category_id=category_id,
-                            unit=form.unit.data,
-                            quantity=form.quantity.data,
-                            location=form.location.data,
-                            price=form.price.data,
-                            )
-        db.session.add(item_to_create)
-        db.session.commit()
-        for attribute in quality_attributes:
-            attr=attribute.name
-            quality_item_to_create.append(Item_quality_values(item_id=item_to_create.id,                                                        
-                                                       attribute_id=attribute.id,
-                                                        option_id=request.form[attr]
-                                                        ))
-        for picture in form.pictures.data:
-            if picture:
-                filename = secure_filename(picture.filename)
-                file_path=app.config['UPLOAD_FOLDER']+'listings/'
-                file_path = os.path.join(file_path, filename)
-                print(file_path)
-                picture.save(file_path)
-                image_to_create.append(Image(item_id=item_to_create.id, 
-                                             uri='uploads/listings/'+filename))
-        db.session.add_all(image_to_create)
-        db.session.add_all(quality_item_to_create)
-        db.session.commit()
-        return redirect(url_for(('listing_page')))
-    if form.errors!={}:
-        for err_msg in form.errors.values():
-                flash(f'error {err_msg}',category='danger')
-    return render_template('post_item.html',form=form,quality_attributes=quality_attributes)
-
-@app.route("/item/<int:item_id>",methods=['GET','POST'])
-def item_detail_page(item_id):
-    item=Item.query.filter_by(id=item_id).first()
-    make_offer_form=makeOfferForm()
-    if make_offer_form.validate_on_submit():
-        offer_to_create=Offer(offered_price=make_offer_form.price.data,
-                              quantity_requested=make_offer_form.quantity.data,
-                              message=make_offer_form.message.data,
-                              item_id=request.form['item_id'],
-                              buyer_company_id=current_user.company_id,
-                              buyer_id=current_user.company_id,
-                              seller_id=request.form['seller_id'],
-                              seller_company_id=request.form['seller_company_id'],
-                              unit=request.form['unit']
-                              )
-        db.session.add(offer_to_create)
-        db.session.commit()
-        return redirect(url_for("offers_page"))
-    #images=Image.filter_by(item_id=item_id)
-    #qualities=Item_quality_values(item_id=item_id)
-    return render_template('item_detail.html',item=item,make_offer_form=make_offer_form)
 
 @app.route("/contact")
 def contact_page():
     return render_template('contact.html')
 
-@app.route("/signup",methods=['GET','POST'])
-def signup_page():
-    form=CompanyRegisterForm()
-    if form.validate_on_submit():
-        company_to_create=Company(name=form.name.data,
-                                  company_type=form.company_type.data,
-                                  activity=form.activity.data,
-                                  address=form.address.data,
-                                  country=form.country.data,
-                                  city=form.city.data,
-                                  rc=form.rc.data,
-                                  nif=form.rc.data,
-                                  nis=form.nis.data)
-        db.session.add(company_to_create)
-        db.session.commit()
-        company_created=Company.query.filter_by(name=form.name.data).first().id
-        user_to_create=User(full_name=form.full_name.data,
-                            email=form.email.data,
-                            phone=form.phone.data,
-                            role=form.role.data,
-                            password=form.password1.data,
-                            company_id=company_created)
-        db.session.add(user_to_create)
-        db.session.commit()
-        return redirect(url_for('home_page'))
-    if form.errors!={}:
-        for err_msg in form.errors.values():
-            flash(f'error {err_msg}',category='danger')
-    return render_template('signup.html',form=form)
 
-@app.route("/login",methods=['GET','POST'])
-def login_page():
-   
-   
-   form=LoginForm()
-   if form.validate_on_submit():
-       attempted_user=User.query.filter_by(email=form.email.data).first()
-       if attempted_user and attempted_user.check_password_correction(
-           attempted_password=form.password.data):
-           login_user(attempted_user)
-           flash("success you are logged in",category='success')
-           return redirect(url_for('dashboard_page'))
-       else:
-           flash('Username or password are incorrect! please try again',category='danger')
-   return render_template('login.html',form=form)
-
-
-@app.route("/logout")
-def logout_page():
-    logout_user()
-    flash("You have been logout!",category="info")
-    return redirect(url_for('home_page'))
-@app.route("/setting")
-def setting_page():
-    company=Company.query.filter(User.company_id==current_user.company_id).first()
-
-    return render_template('setting.html',user=current_user,company=company)
-@app.route("/settings/company", methods=["POST"])
-@login_required
-def update_company():
-
-    company = Company.query.get(current_user.company_id)
-
-    company.name = request.form["company_name"]
-    company.description = request.form["description"]
-
-    db.session.commit()
-
-    return redirect(url_for("setting_page"))
-
-@app.route("/settings/profile", methods=["POST"])
-@login_required
-def update_profile():
-
-    user = User.query.get(current_user.id) 
-    print(user)
-    user.full_name = request.form["name"]
-    user.email = request.form["email"]
-    user.email_verified=False
-    db.session.commit()
-
-    return redirect(url_for("setting_page"))
-
-
-#-----------------------------------admin routes
-@app.route("/admin")
-@login_required
-def admin_page():
-   users_count=User.query.count()
-   companies_count=Company.query.count()
-   listings_count=Item.query.count()
-   transactions_count=Transaction.query.count()
-   return render_template('admin/dashboard.html',users_count=users_count,companies_count=companies_count,listings_count=listings_count,transactions_count=transactions_count)
 
 @app.route("/admin/offers")
 @login_required

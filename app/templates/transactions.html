@@ -1,54 +1,96 @@
-{%extends'base.html' %}
-{% block title%}
-Home Page
-{% endblock%}
-{%block content%}
+{% extends "base.html" %}
 
+{% block title %}Transactions - EcoWaste{% endblock %}
 
-
-
-
-<div class="container-fluid">
-<div class="row">
-  
-        {% include 'side_bar.html'%}
-  
-    <div class="col">
-
-<h3 class="text-center">Transactions</h3>
-
-<table class="table mt-3">
-
-<tr>
-<th>ID</th>
-<th>Amount</th>
-<th>Status</th>
-<th>Delivery</th>
-<th>Action</th>
-</tr>
-
-{% for t in transactions %}
-
-<tr>
-<td>#{{ t.id }}</td>
-<td>{{ t.total_amount }} DA</td>
-<td>{{ t.status }}</td>
-<td>{{ t.dilivery_status }}</td>
-
-<td>
-<a href="/transaction/{{ t.id }}" class="btn btn-primary btn-sm">
-View
-</a>
-</td>
-
-</tr>
-
-{% endfor %}
-
-</table>
-
-</div>
-
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-8">Transactions</h1>
+    
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction ID</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Listing</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for transaction in transactions %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 text-sm font-mono text-gray-900">{{ transaction.id }}</td>
+                    <td class="px-6 py-4">
+                        <div>
+                            <div class="text-sm font-medium text-gray-900">{{ transaction.listing.name }}</div>
+                            <div class="text-sm text-gray-500">{{ transaction.listing.owned_category.name }}</div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        {% if transaction.seller_company_id == current_user.company_id %}
+                        <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">Sale</span>
+                        {% else %}
+                        <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Purchase</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-sm font-semibold text-gray-900">{{ "%.2f"|format(transaction.price) }} DA</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            {% if transaction.status == 'completed' %}bg-green-100 text-green-800
+                            {% elif transaction.status == 'pending' %}bg-yellow-100 text-yellow-800
+                            {% elif transaction.status == 'confirmed' %}bg-blue-100 text-blue-800
+                            {% else %}bg-red-100 text-red-800{% endif %}">
+                            {{ transaction.status }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">{{ transaction.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td class="px-6 py-4 text-right text-sm font-medium">
+                        <a  href="#" class="text-green-600 hover:text-green-900">View Details</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                        <i class="fas fa-exchange-alt text-4xl mb-2"></i>
+                        <p>No transactions yet</p>
+                        <a href="{{ url_for('market_category_page') }}" class="inline-block mt-4 text-green-600 hover:text-green-700">
+                            Browse listings to get started →
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
+    
+    <!-- Pagination -->
+    {% if pagination and pagination.pages > 1 %}
+    <div class="flex justify-center mt-8">
+        <div class="flex space-x-2">
+            {% if pagination.has_prev %}
+            <a href="{{ url_for('transactions.index', page=pagination.prev_num) }}" class="px-3 py-2 bg-white border rounded-lg hover:bg-gray-50">Previous</a>
+            {% endif %}
+            
+            {% for page in pagination.iter_pages() %}
+                {% if page %}
+                    {% if page != pagination.page %}
+                    <a href="{{ url_for('transactions.index', page=page) }}" class="px-3 py-2 bg-white border rounded-lg hover:bg-gray-50">{{ page }}</a>
+                    {% else %}
+                    <span class="px-3 py-2 bg-green-600 text-white border rounded-lg">{{ page }}</span>
+                    {% endif %}
+                {% else %}
+                    <span class="px-3 py-2">...</span>
+                {% endif %}
+            {% endfor %}
+            
+            {% if pagination.has_next %}
+            <a href="{{ url_for('transactions.index', page=pagination.next_num) }}" class="px-3 py-2 bg-white border rounded-lg hover:bg-gray-50">Next</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

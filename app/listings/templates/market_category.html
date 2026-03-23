@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Select Category - Post Listing{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-12">
+    <div class="text-center mb-12">
+        <h1 class="text-4xl font-bold text-gray-900 mb-4">What type of waste are you looking for ?</h1>
+        <p class="text-xl text-gray-600">Select a category to get started with a tailored listing form</p>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for category in categories %}
+        <a href="{{ url_for('listings.market', category_id=category.id) }}" 
+           class="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden">
+            <div class="relative h-48 bg-gradient-to-br from-green-50 to-gray-100">
+                {% if category.default_image_url %}
+                <img src="{{url_for('static',filename=category.default_image_url)}}" class="w-full h-full object-cover">
+                {% else %}
+                <div class="w-full h-full flex items-center justify-center">
+                    <i class="fas {{ category.icon or 'fa-trash-alt' }} text-6xl text-green-500 group-hover:scale-110 transition-transform"></i>
+                </div>
+                {% endif %}
+                <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all"></div>
+            </div>
+            
+            <div class="p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-2">{{ category.name }}</h3>
+                <p class="text-gray-600 mb-4">{{ category.description or 'List your waste materials in this category' }}</p>
+                
+                
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    
+    <!-- Quick Tips -->
+    <div class="mt-12 bg-blue-50 rounded-xl p-6">
+        <div class="flex items-start space-x-3">
+            <i class="fas fa-lightbulb text-blue-500 text-xl mt-1"></i>
+            <div>
+                <h3 class="font-semibold text-blue-900 mb-2">Not sure which category to choose?</h3>
+                <p class="text-blue-800 text-sm">Select the category that best describes your waste material. If it falls into multiple categories, choose the primary type. You can always edit later.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

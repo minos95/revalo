@@ -17,7 +17,7 @@ metadata = MetaData(naming_convention={
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'   
 app.config['SECRET_KEY']='fb0dcdeb3a4223be7c444a52'
-UPLOAD_FOLDER="revelo_package/static/uploads/"
+UPLOAD_FOLDER="app/static/uploads/"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"]=UPLOAD_FOLDER
 ALLOWED_EXTENSIONS = { 'pdf', 'png', 'jpg', 'jpeg'}
@@ -28,5 +28,11 @@ login_manager.login_view="home_page"
 login_manager.login_message_category='info'
 migrate = Migrate(app, db)
 
+#Register blueprint
+from app.auth.routes import app as auth_bp
+from app.listings.routes import app as listings_bp
+app.register_blueprint(auth_bp)
+app.register_blueprint(listings_bp)
 
 from app import routes
+from app import dashboard_route
