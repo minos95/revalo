@@ -7,7 +7,7 @@ OFFERS PAGE
 <div class="container-fluid ">
   <div class="row">
     
-      {% include 'side_bar.html'%}
+     
     
     <div class="col-md-10 p-4">
       <h3>Offers</h3>
@@ -34,7 +34,7 @@ OFFERS PAGE
 <div class="offer-card d-flex justify-content-between align-items-center">
 
 <div>
-    <a href="{{url_for('listing_detail_page',listing_id=offer.owned_offer.id)}}"><strong>{{ offer.owned_offer.name }}</strong></a><br>
+    <a href="{{url_for('listings.detail',listing_id=offer.owned_offer.id)}}"><strong>{{ offer.owned_offer.name }}</strong></a><br>
     Price: {{ offer.offered_price }} DA / {{offer.unit}}<br>
     Qty: {{ offer.quantity_requested }} {{offer.unit}}
 </div>
@@ -73,7 +73,7 @@ OFFERS PAGE
 <div class="offer-card d-flex justify-content-between align-items-center">
 
 <div>
-    <a href="{{url_for('listing_detail_page',listing_id=offer.owned_offer.id)}}"><strong>{{ offer.owned_offer.name }}</strong></a><br>
+    <a href="{{url_for('listings.detail',listing_id=offer.owned_offer.id)}}"><strong>{{ offer.owned_offer.name }}</strong></a><br>
     Your Price: {{ offer.offered_price }} DA /{{offer.unit}}<br>
     Qty: {{ offer.quantity_requested }} {{offer.unit}}
 </div>

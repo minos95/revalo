@@ -47,7 +47,7 @@
                     </div>
                 </div>
                 <div class="mt-4">
-                    <a href="{{ url_for('my_listings_page') }}" class="text-green-600 text-sm hover:text-green-700">
+                    <a href="{{ url_for('listings.listings') }}" class="text-green-600 text-sm hover:text-green-700">
                         View all →
                     </a>
                 </div>
@@ -277,7 +277,7 @@
                             </div>
                             {% endif %}
                             <div>
-                                <a href="{{ url_for('listing_detail_page', listing_id=listing.id) }}" class="font-medium text-gray-900 hover:text-green-600">
+                                <a href="{{ url_for('listings.detail', listing_id=listing.id) }}" class="font-medium text-gray-900 hover:text-green-600">
                                     {{ listing.name }}
                                 </a>
                                 <p class="text-sm text-gray-500">{{ listing.quantity }} {{ listing.unit }} · {{ listing.created_at.strftime('%Y-%m-%d') }}</p>
@@ -290,7 +290,7 @@
                                 {% else %}bg-gray-100 text-gray-800{% endif %}">
                                 {{ listing.status }}
                             </span>
-                            <a href="{{ url_for('listing_detail_page', listing_id=listing.id) }}" class="text-green-600 hover:text-green-700">
+                            <a href="{{ url_for('listings.detail', listing_id=listing.id) }}" class="text-green-600 hover:text-green-700">
                                 View →
                             </a>
                         </div>
@@ -298,7 +298,7 @@
                     {% endfor %}
                 </div>
                 {% else %}
-                <p class="text-gray-500 text-center py-8">No listings yet. <a href="{{ url_for('listings.select_category') }}" class="text-green-600">Create your first listing →</a></p>
+                <p class="text-gray-500 text-center py-8">No listings yet. <a href="{{ url_for('listings.listing_select_category') }}" class="text-green-600">Create your first listing →</a></p>
                 {% endif %}
             </div>
             

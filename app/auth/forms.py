@@ -15,7 +15,7 @@ class CompanyRegisterForm(FlaskForm):
         if name:
             raise ValidationError('The Company already exist')
     company_name=StringField(label="COMPANY NAME",validators=[Length(min=2,max=30),DataRequired()])
-    business_type=StringField(label="BUSINESS TYPE",validators=[Length(min=2,max=30),DataRequired()])
+    business_type=StringField(label="Busniss type",validators=[Length(min=2,max=30),DataRequired()])
     company_activity=StringField(label="BUSINESS ACTIVITY",validators=[Length(min=2,max=30),DataRequired()])
     company_email=StringField(label="COMPANY EMAIL",validators=[Email(),DataRequired()])
     company_phone=StringField(label="COMPANY PHONE",validators=[DataRequired()])
@@ -32,7 +32,7 @@ class CompanyRegisterForm(FlaskForm):
     phone=StringField(label="PHONE",validators=[DataRequired()])
     role=StringField(label="ROLE")
     password=PasswordField(label='PASSWORD',validators=[Length(min=6),DataRequired()])
-    confirm_password=PasswordField(label='CONFIRM PASSWORD',validators=[EqualTo('password1')])
+    confirm_password=PasswordField(label='CONFIRM PASSWORD',validators=[EqualTo('password')])
     submit=SubmitField(label="Create Account")
 
 class UserRegisterForm(FlaskForm):
@@ -40,8 +40,8 @@ class UserRegisterForm(FlaskForm):
     email=StringField(label="EMAIL",validators=[Email(),DataRequired()])
     phone=StringField(label="PHONE",validators=[DataRequired()])
     role=StringField(label="ROLE")
-    password1=PasswordField(label='PASSWORD',validators=[Length(min=6),DataRequired()])
-    password2=PasswordField(label='CONFIRM PASSWORD',validators=[EqualTo('password1')])
+    password=PasswordField(label='PASSWORD',validators=[Length(min=6),DataRequired()])
+    confirm_password=PasswordField(label='CONFIRM PASSWORD',validators=[EqualTo('password1')])
     submit=SubmitField(label="Create Account")
 class LoginForm(FlaskForm):
     email=StringField(label="EMAIL",validators=[Email(),DataRequired()])

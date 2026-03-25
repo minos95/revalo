@@ -27,6 +27,10 @@
                         {{ form.business_type(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2") }}
                     </div>
                     <div>
+                        <label class="block text-sm font-medium text-gray-700">{{form.company_activity.label()}}</label>
+                        {{ form.company_activity(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2") }}
+                    </div>
+                    <div>
                         <label class="block text-sm font-medium text-gray-700">Company Email</label>
                         {{ form.company_email(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2") }}
                     </div>
@@ -89,6 +93,10 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Confirm Password</label>
                         {{ form.confirm_password(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2") }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">{{form.role.label()}}</label>
+                        {{ form.role(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2") }}
                     </div>
                 </div>
             </div>

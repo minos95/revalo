@@ -22,13 +22,13 @@ def signup_page():
                                   nif=form.rc.data,
                                   nis=form.nis.data)
         db.session.add(company_to_create)
-        db.session.commit()
-        company_created=Company.query.filter_by(name=form.name.data).first().id
+        
+        company_created=Company.query.filter_by(name=form.company_name.data).first().id
         user_to_create=User(full_name=form.full_name.data,
                             email=form.email.data,
                             phone=form.phone.data,
                             role=form.role.data,
-                            password=form.password1.data,
+                            password=form.password.data,
                             company_id=company_created)
         db.session.add(user_to_create)
         db.session.commit()

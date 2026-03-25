@@ -157,7 +157,7 @@ def post(category_id):
         form.pickup_city.data = current_user.owned_company.city
         form.pickup_country.data = current_user.owned_company.country
        
-    return render_template('post_listing.html',form=form,quality_attributes=quality_attributes,category=category)
+    return render_template('post.html',form=form,quality_attributes=quality_attributes,category=category)
 
 @app.route('/review/<int:listing_id>')
 @login_required

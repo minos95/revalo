@@ -113,7 +113,7 @@
                     <div class="p-4 border-t">
                         <div class="flex space-x-2 overflow-x-auto">
                             {% for image in listing.images %}
-                            <img src="{{ url_for('static', filename='uploads/' + image) }}" 
+                            <img src="{{ url_for('static', filename=image.uri) }}" 
                                  onclick="changeMainImage(this.src)"
                                  class="gallery-thumb w-20 h-20 object-cover rounded-lg border-2 {% if loop.first %}border-green-500{% else %}border-transparent{% endif %}">
                             {% endfor %}
@@ -179,7 +179,7 @@
                                 <i class="fas fa-check-circle"></i>
                                 <div>
                                     <p class="text-xs text-gray-500">{{ quality.attribute.name }}</p>
-                                    <p class="font-medium text-gray-900">{{ quality.custom_value or quality.option.value }}</p>
+                                    <p class="font-medium text-gray-900">{{ quality.value_text or quality.option.value }}</p>
                                 </div>
                             </div>
                             {% else %}
@@ -335,7 +335,7 @@
                             </div>
                         {% endif %}
                     {% else %}
-                        <a href="{{ url_for('auth.login', next=request.url) }}" class="block w-full mt-6 bg-green-600 text-white text-center py-3 rounded-lg hover:bg-green-700 transition">
+                        <a href="{{ url_for('auth.login_page', next=request.url) }}" class="block w-full mt-6 bg-green-600 text-white text-center py-3 rounded-lg hover:bg-green-700 transition">
                             <i class="fas fa-sign-in-alt mr-2"></i>Sign in to Make Offer
                         </a>
                     {% endif %}

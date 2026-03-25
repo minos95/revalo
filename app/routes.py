@@ -10,9 +10,17 @@ from app.forms import  rejectOfferForm,validateOfferForm,cancelOfferForm
 from flask_login import login_required,current_user
 from sqlalchemy import desc,or_
 from datetime import datetime
+
 @app.route("/")
 def home_page():
-    return render_template('home2.html')
+
+    recent_listings=Item.query.order_by(desc(Item.created_at)).limit(4).all()
+    categories=Category.query.all()
+    featured_companies=Company.query.limit(5).all()
+    total_listings=Item.query.count()
+    total_companies=Company.query.count()
+    total_transactions=Transaction.query.count()
+    return render_template('home2.html',recent_listings=recent_listings,categories=categories,featured_companies=featured_companies,total_companies=total_companies,total_listings=total_listings,total_transactions=total_transactions)
 
 '''@app.route("/dashboard")
 def dashboard_page():

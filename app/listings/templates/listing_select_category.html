@@ -11,7 +11,7 @@
     
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for category in categories %}
-        <a href="{{ url_for('listings.listing_post_page', category_id=category.id) }}" 
+        <a href="{{ url_for('listings.post', category_id=category.id) }}" 
            class="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden">
             <div class="relative h-48 bg-gradient-to-br from-green-50 to-gray-100">
                 {% if category.default_image_url %}
