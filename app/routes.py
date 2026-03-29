@@ -3,16 +3,17 @@ from app import app,db
 from flask import render_template,request
 from app.auth.models import Company, User
 from app.listings.models import Category,Item, Quality_attributes
-from app.models import Offer,Transaction
-from app.forms import  rejectOfferForm,validateOfferForm,cancelOfferForm
+from app.transactions.models import Transaction
 
 
 from flask_login import login_required,current_user
 from sqlalchemy import desc,or_
 from datetime import datetime
 
+from app.offers.models import Offer
+
 @app.route("/")
-def home_page():
+def home():
 
     recent_listings=Item.query.order_by(desc(Item.created_at)).limit(4).all()
     categories=Category.query.all()
@@ -20,7 +21,7 @@ def home_page():
     total_listings=Item.query.count()
     total_companies=Company.query.count()
     total_transactions=Transaction.query.count()
-    return render_template('home2.html',recent_listings=recent_listings,categories=categories,featured_companies=featured_companies,total_companies=total_companies,total_listings=total_listings,total_transactions=total_transactions)
+    return render_template('home.html',recent_listings=recent_listings,categories=categories,featured_companies=featured_companies,total_companies=total_companies,total_listings=total_listings,total_transactions=total_transactions)
 
 '''@app.route("/dashboard")
 def dashboard_page():
@@ -34,72 +35,6 @@ def dashboard_page():
 '''
 
 
-@app.route("/transactions")
-def transactions_page():
-    transactions=Transaction.query.filter(or_(Transaction.seller_company_id==current_user.id ,Transaction.buyer_company_id==current_user.company_id)).all()
-    print(transactions)
-    return render_template('transactions.html',transactions=transactions)
-@app.route("/offers",methods=['POST','GET'])
-def offers_page():
-    
-    offers_sent=Offer.query.filter_by(buyer_company_id=current_user.company_id).order_by(desc(Offer.created_at)).all()
-    offers_received=Offer.query.filter_by(seller_company_id=current_user.company_id).order_by(desc(Offer.created_at)).all()
-    validate_form=validateOfferForm()
-    cancel_form=cancelOfferForm()
-    reject_form=rejectOfferForm()
-    #------------------------------------------------ accept offer
-    if validate_form.validate_on_submit() and validate_form.submit1.data:
-        print('------------------------------validate form')
-        offer=Offer.query.filter_by(id=validate_form.id.data).first()
-        item=Item.query.filter_by(id=validate_form.item_id.data).first()
-        offer.status="accepted"
-        offer.accepted_at=datetime.now()
-        offers_to_reject=Offer.query.filter(Offer.item_id==validate_form.item_id.data , Offer.id!=validate_form.id.data,Offer.status=="pending" ).all()
-        quantity_avalaibale=item.quantity-validate_form.quantity.data
-        item.quantity=quantity_avalaibale     
-        if quantity_avalaibale==0:
-            item.status="solde"
-        
-        for offer in offers_to_reject:
-            if offer.quantity_requested>quantity_avalaibale:
-                offer.status="rejected"
-
-        total_amount=validate_form.price.data*validate_form.quantity.data
-        commission_amount=total_amount*0.07
-        seller_net_amount=total_amount-commission_amount
-        transaction_to_create=Transaction(offer_id=validate_form.id.data,
-                                          item_id=validate_form.item_id.data,
-                                          price=validate_form.price.data,
-                                          quantity=validate_form.quantity.data,
-                                          unit=validate_form.unit.data,
-                                          buyer_company_id=validate_form.buyer_company_id.data,
-                                          seller_company_id=validate_form.seller_company_id.data,
-                                         
-                                          total_amount=total_amount,
-                                          commission_amount=commission_amount,
-                                          seller_net_amount=seller_net_amount
-                                          )
-  
-        
-       
-        db.session.add(transaction_to_create)
-        db.session.commit()
-    #---------------------------------------------------end validate offer
-
-    #--------------------------------------------------- cancel offer
-    if cancel_form.validate_on_submit() and cancel_form.submit2.data:
-        offer_to_cancel=Offer.query.filter_by(id=cancel_form.id.data).first()
-        offer_to_cancel.status="canceled"
-        db.session.commit()
-    #---------------------------------------------------end cancel offer
-    
-    #---------------------------------------------------reject offer
-    if reject_form.validate_on_submit() and reject_form.submit3.data:
-        offer_to_reject=Offer.query.filter_by(id=reject_form.id.data).first()
-        offer_to_reject.status="canceled"
-        db.session.commit()
-
-    return render_template('offers.html',offers_sent=offers_sent,offers_received=offers_received,validate_form=validate_form,cancel_form=cancel_form,reject_form=reject_form)
 
 
 @app.route("/contact")

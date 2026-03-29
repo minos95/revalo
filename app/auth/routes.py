@@ -1,14 +1,15 @@
 from flask import Blueprint, flash,redirect,render_template, request,url_for
 from app import db
+from app.auth import bp
 from flask_login import current_user, login_required, login_user, logout_user
 from app.auth.forms import CompanyRegisterForm, LoginForm
 from app.auth.models import User
 from app.auth.models import Company
 
 
-app = Blueprint('auth', __name__, url_prefix='/auth',template_folder='templates')
 
-@app.route("/signup",methods=['GET','POST'])
+
+@bp.route("/signup",methods=['GET','POST'])
 def signup_page():
     form=CompanyRegisterForm()
     if form.validate_on_submit():
@@ -38,7 +39,7 @@ def signup_page():
             flash(f'error {err_msg}',category='danger')
     return render_template('register.html',form=form)
 
-@app.route("/login",methods=['GET','POST'])
+@bp.route("/login",methods=['GET','POST'])
 def login_page():
    
    
@@ -55,17 +56,17 @@ def login_page():
    return render_template('login.html',form=form)
 
 
-@app.route("/logout")
+@bp.route("/logout")
 def logout_page():
     logout_user()
     flash("You have been logout!",category="info")
-    return redirect(url_for('home_page'))
-@app.route("/setting")
+    return redirect(url_for('home'))
+@bp.route("/setting")
 def setting_page():
     company=Company.query.filter(User.company_id==current_user.company_id).first()
 
     return render_template('setting.html',user=current_user,company=company)
-@app.route("/settings/company", methods=["POST"])
+@bp.route("/settings/company", methods=["POST"])
 @login_required
 def update_company():
 
@@ -78,7 +79,7 @@ def update_company():
 
     return redirect(url_for("setting_page"))
 
-@app.route("/settings/profile", methods=["POST"])
+@bp.route("/settings/profile", methods=["POST"])
 @login_required
 def update_profile():
 

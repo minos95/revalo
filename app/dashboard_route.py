@@ -6,11 +6,12 @@ from flask_login import login_required, current_user
 from datetime import datetime, timedelta
 from sqlalchemy import func, and_, desc
 
-from app.models import Offer,Transaction
+from app.transactions.models import Transaction
+from app.offers.models import Offer
 from app.auth.models import User,Company
 
-from app.listings.models import Item,Review,Category
-
+from app.listings.models import Item,Category
+from app.auth.models import Review
 
 @app.route('/dashboard')
 @login_required

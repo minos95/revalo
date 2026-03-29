@@ -58,7 +58,7 @@
         <!-- Breadcrumb -->
         <nav class="flex mb-6 text-sm">
             <ol class="flex items-center space-x-2">
-                <li><a href="{{ url_for('home_page') }}" class="text-gray-500 hover:text-green-600">Home</a></li>
+                <li><a href="{{ url_for('home') }}" class="text-gray-500 hover:text-green-600">Home</a></li>
                 <li><i class="fas fa-chevron-right text-xs text-gray-400"></i></li>
                 <li><a href="{{ url_for('listings.market_category') }}" class="text-gray-500 hover:text-green-600">Marketplace</a></li>
                 <li><i class="fas fa-chevron-right text-xs text-gray-400"></i></li>
@@ -275,7 +275,7 @@
                 <div class="bg-white rounded-xl shadow-md p-6 mb-6">
                     <div class="text-center mb-4">
                         {% if listing.price %}
-                        <p class="text-3xl font-bold text-green-600">${{ "%.2f"|format(listing.price) }}</p>
+                        <p class="text-3xl font-bold text-green-600">{{ "%.2f"|format(listing.price) }} DA</p>
                         <p class="text-sm text-gray-500">per {{ listing.unit }}</p>
                         {% else %}
                         <p class="text-2xl font-bold text-gray-900">Make an Offer</p>
@@ -291,7 +291,7 @@
                         {% if listing.price %}
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-500">Estimated Total:</span>
-                            <span class="font-medium text-green-600">${{ "%.2f"|format(listing.price) }}</span>
+                            <span class="font-medium text-green-600">{{ "%.2f"|format(listing.price) }} DA</span>
                         </div>
                         {% endif %}
                         <div class="flex justify-between text-sm">
@@ -308,9 +308,9 @@
                     {% if current_user.is_authenticated %}
                         {% if listing.company_id != current_user.company_id %}
                             {% if listing.status == 'active' and listing.expires_at > now %}
-                                <button onclick="openOfferModal()" class="w-full mt-6 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-medium">
+                                <a href="{{url_for('offers.create_offer',listing_id=listing.id)}}" class="w-full mt-6 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-medium">
                                     <i class="fas fa-handshake mr-2"></i>Make an Offer
-                                </button>
+                                </a>
                                 <button onclick="contactSeller()" class="w-full mt-3 border border-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-50 transition">
                                     <i class="fas fa-envelope mr-2"></i>Contact Seller
                                 </button>
@@ -329,7 +329,7 @@
                                 <a href="{{ url_for('listings.edit', listing_id=listing.id) }}" class="block w-full text-center border border-blue-500 text-blue-600 py-2 rounded-lg hover:bg-blue-50 transition">
                                     <i class="fas fa-edit mr-2"></i>Edit Listing
                                 </a>
-                                <a href="{{ url_for('offers_page') }}" class="block w-full text-center border border-green-500 text-green-600 py-2 rounded-lg hover:bg-green-50 transition">
+                                <a href="{{ url_for('offers.index') }}" class="block w-full text-center border border-green-500 text-green-600 py-2 rounded-lg hover:bg-green-50 transition">
                                     <i class="fas fa-handshake mr-2"></i>View Offers
                                 </a>
                             </div>
@@ -342,8 +342,8 @@
                 </div>
              
                 <!-- Seller Info Card -->
-{#
-                 <!--  <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+
+                  <div class="bg-white rounded-xl shadow-md p-6 mb-6">
                     <div class="flex items-center space-x-3 mb-4">
                         {% if seller.logo_url %}
                         <img src="{{ seller.logo_url }}" class="w-12 h-12 rounded-full object-cover">
@@ -396,7 +396,7 @@
 
                 
                 </div>
-            -->#}
+            
                 <!-- Share Card -->
                 <div class="bg-white rounded-xl shadow-md p-6">
                     <h3 class="font-semibold text-gray-900 mb-3">Share this Listing</h3>
@@ -431,29 +431,31 @@
                 </button>
             </div>
             
-            <form method="POST" >
+            <form method="POST" action='{{url_for("offers.create_offer",listing_id=listing.id)}}'>
+                {{form.hidden_tag()}}
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Your Offer Price *</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{form.price.label()}}</label>
                         <div class="relative">
-                            <span class="absolute left-3 top-2 text-gray-500">$</span>
-                            <input type="number" name="price" step="0.01" required
-                                   class="w-full pl-8 border border-gray-300 rounded-lg px-3 py-2 focus:ring-green-500 focus:border-green-500">
+                            
+                            
+                            {{form.price(class="w-full pl-8 border border-gray-300 rounded-lg px-3 py-2 focus:ring-green-500 focus:border-green-500")}}
+                            <span class="absolute left-3 top-2 text-gray-500">DA</span>
                         </div>
-                        <p class="text-xs text-gray-500 mt-1">Listed price: {% if listing.price %}${{ "%.2f"|format(listing.price) }}{% else %}Make Offer{% endif %}</p>
+                        <p class="text-xs text-gray-500 mt-1">Listed price: {% if listing.price %}{{ "%.2f"|format(listing.price) }}DA{% else %}Make Offer{% endif %}</p>
                     </div>
                     
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Quantity ({{ listing.unit }})</label>
-                        <input type="number" name="quantity" step="0.01" value="{{ listing.quantity }}"
-                               class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{form.quantity.label()}} ({{ listing.unit }})</label>
+                        
+                               {{form.quantity(class="w-full border border-gray-300 rounded-lg px-3 py-2",value= listing.quantity)}}
                         <p class="text-xs text-gray-500 mt-1">Available: {{ listing.quantity }} {{ listing.unit }}</p>
                     </div>
                     
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Message (Optional)</label>
-                        <textarea name="message" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2" 
-                                  placeholder="Add any additional details about your offer..."></textarea>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{form.message.label()}}</label>
+                        
+                                  {{form.message(class="w-full border border-gray-300 rounded-lg px-3 py-2",placeholder="Add any additional details about your offer..." )}}
                     </div>
                     
                     <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
@@ -462,10 +464,8 @@
                             <p class="text-xs text-yellow-800">By making an offer, you agree to our terms. The seller has 7 days to respond.</p>
                         </div>
                     </div>
-                    
-                    <button type="submit" class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700">
-                        Submit Offer
-                    </button>
+                
+                    {{form.submit(class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700")}}
                 </div>
             </form>
         </div>

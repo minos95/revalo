@@ -1,0 +1,657 @@
+{% extends "base.html" %}
+
+{% block title %}Transaction #{{ transaction.id }} - EcoWaste{% endblock %}
+
+{% block extra_css %}
+<style>
+    .status-timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+    .status-timeline::before {
+        content: '';
+        position: absolute;
+        left: 0.5rem;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #e5e7eb;
+    }
+    .status-step {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+    .status-step::before {
+        content: '';
+        position: absolute;
+        left: -2rem;
+        top: 0.25rem;
+        width: 1rem;
+        height: 1rem;
+        border-radius: 50%;
+        background: #d1d5db;
+        border: 2px solid white;
+        box-shadow: 0 0 0 2px #e5e7eb;
+    }
+    .status-step.completed::before {
+        background: #10b981;
+        box-shadow: 0 0 0 2px #10b981;
+    }
+    .status-step.active::before {
+        background: #f59e0b;
+        box-shadow: 0 0 0 2px #f59e0b;
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 2px #f59e0b; }
+        50% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.3); }
+        100% { box-shadow: 0 0 0 2px #f59e0b; }
+    }
+    .document-card {
+        transition: all 0.2s;
+    }
+    .document-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    .action-button {
+        transition: all 0.2s;
+    }
+    .action-button:hover {
+        transform: translateY(-1px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Header -->
+        <div class="mb-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div>
+                    <div class="flex items-center space-x-3">
+                        <h1 class="text-2xl font-bold text-gray-900">Transaction #{{ transaction.id }}</h1>
+                        <span class="px-3 py-1 text-sm rounded-full 
+                            {% if transaction.status == 'completed' %}bg-green-100 text-green-800
+                            {% elif transaction.status == 'pending' %}bg-yellow-100 text-yellow-800
+                            {% elif transaction.status == 'confirmed' %}bg-blue-100 text-blue-800
+                            {% elif transaction.status == 'in_transit' %}bg-purple-100 text-purple-800
+                            {% elif transaction.status == 'cancelled' %}bg-red-100 text-red-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ transaction.status|title }}
+                        </span>
+                    </div>
+                    <p class="text-gray-500 mt-1">Created on {{ transaction.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                </div>
+                
+                {% if transaction.status == 'pending' and (transaction.seller_company_id == current_user.company_id) %}
+                <div class="mt-4 md:mt-0 flex space-x-3">
+                    <button onclick="openConfirmModal()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 action-button">
+                        <i class="fas fa-check-circle mr-2"></i>Confirm Transaction
+                    </button>
+                    <button onclick="openCancelModal()" class="px-4 py-2 border border-red-500 text-red-600 rounded-lg hover:bg-red-50 action-button">
+                        <i class="fas fa-times-circle mr-2"></i>Cancel
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- LEFT COLUMN: Transaction Details -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- Listing Summary Card -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <div class="border-b px-6 py-4 bg-gray-50">
+                        <h2 class="font-semibold text-gray-900">
+                            <i class="fas fa-box text-green-600 mr-2"></i>Listing Details
+                        </h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex items-start space-x-4">
+                            {% if transaction.listing.images and transaction.listing.images|length > 0 %}
+                            <img src="{{ url_for('static', filename=transaction.listing.images[0].uri) }}" 
+                                 class="w-24 h-24 rounded-lg object-cover">
+                            {% else %}
+                            <div class="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-recycle text-3xl text-gray-400"></i>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="flex-1">
+                                <a href="{{ url_for('listings.detail', listing_id=transaction.listing.id) }}" 
+                                   class="text-lg font-semibold text-gray-900 hover:text-green-600">
+                                    {{ transaction.listing.name }}
+                                </a>
+                                <div class="grid grid-cols-2 gap-4 mt-3 text-sm">
+                                    <div>
+                                        <span class="text-gray-500">Quantity:</span>
+                                        <span class="font-medium ml-2">{{ transaction.quantity }} {{ transaction.listing.unit }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-500">Unit Price:</span>
+                                        <span class="font-medium ml-2">
+                                            {% if transaction.listing.price %}
+                                            ${{ "%.2f"|format(transaction.listing.price) }}
+                                            {% else %}
+                                            Negotiated
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-500">Category:</span>
+                                        <span class="font-medium ml-2">{{ transaction.listing.owned_category.name }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-500">Listed:</span>
+                                        <span class="font-medium ml-2">{{ transaction.listing.created_at.strftime('%b %d, %Y') }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Transaction Amount Card -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <div class="border-b px-6 py-4 bg-gray-50">
+                        <h2 class="font-semibold text-gray-900">
+                            <i class="fas fa-dollar-sign text-green-600 mr-2"></i>Transaction Amount
+                        </h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center pb-3 border-b">
+                                <span class="text-gray-600">Item Price</span>
+                                <span class="font-medium">${{ "%.2f"|format(transaction.price) }}</span>
+                            </div>
+                            <div class="flex justify-between items-center pb-3 border-b">
+                                <span class="text-gray-600">Platform Fee (5%)</span>
+                                <span class="font-medium">${{ "%.2f"|format(transaction.commission_amount) }}</span>
+                            </div>
+                            <div class="flex justify-between items-center pt-2">
+                                <span class="text-lg font-semibold text-gray-900">Total Amount</span>
+                                <span class="text-2xl font-bold text-green-600">${{ "%.2f"|format(transaction.price) }}</span>
+                            </div>
+                        </div>
+                        
+                        {% if transaction.payment_status == 'paid' %}
+                        <div class="mt-4 bg-green-50 border border-green-200 rounded-lg p-3">
+                            <div class="flex items-center">
+                                <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                                <span class="text-green-800">Payment confirmed via {{ transaction.payment_method|title }}</span>
+                            </div>
+                            {% if transaction.payment_id %}
+                            <p class="text-xs text-green-600 mt-1">Transaction ID: {{ transaction.payment_id }}</p>
+                            {% endif %}
+                        </div>
+                        {% elif transaction.payment_status == 'pending' %}
+                        <div class="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                            <div class="flex items-center">
+                                <i class="fas fa-clock text-yellow-600 mr-2"></i>
+                                <span class="text-yellow-800">Awaiting payment confirmation</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Logistics & Timeline Card -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <div class="border-b px-6 py-4 bg-gray-50">
+                        <h2 class="font-semibold text-gray-900">
+                            <i class="fas fa-truck text-green-600 mr-2"></i>Logistics & Timeline
+                        </h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="status-timeline">
+                            <!-- Step 1: Order Placed -->
+                            <div class="status-step {% if transaction.created_at %}completed{% endif %}">
+                                <div class="ml-4">
+                                    <p class="font-medium text-gray-900">Order Placed</p>
+                                    <p class="text-sm text-gray-500">{{ transaction.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                                    <p class="text-xs text-gray-400 mt-1">Transaction created and awaiting confirmation</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Step 2: Payment Confirmed -->
+                            <div class="status-step {% if transaction.payment_status == 'paid' %}completed{% endif %}">
+                                <div class="ml-4">
+                                    <p class="font-medium text-gray-900">Payment Confirmed</p>
+                                    {% if transaction.payment_status == 'paid' %}
+                                    <p class="text-sm text-gray-500">Payment received and verified</p>
+                                    {% else %}
+                                    <p class="text-sm text-gray-400">Awaiting payment confirmation</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Step 3: Order Confirmed -->
+                            <div class="status-step {% if transaction.confirmed_at %}completed{% endif %}">
+                                <div class="ml-4">
+                                    <p class="font-medium text-gray-900">Order Confirmed</p>
+                                    {% if transaction.confirmed_at %}
+                                    <p class="text-sm text-gray-500">{{ transaction.confirmed_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                                    {% else %}
+                                    <p class="text-sm text-gray-400">Awaiting seller confirmation</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Step 4: Pickup Scheduled -->
+                            <div class="status-step {% if transaction.pickup_scheduled_at %}completed{% elif transaction.status == 'in_transit' %}active{% endif %}">
+                                <div class="ml-4">
+                                    <p class="font-medium text-gray-900">Pickup Scheduled</p>
+                                    {% if transaction.pickup_scheduled_at %}
+                                    <p class="text-sm text-gray-500">{{ transaction.pickup_scheduled_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                                    <p class="text-xs text-gray-400 mt-1">{{ transaction.pickup_address or transaction.listing.pickup_address }}</p>
+                                    {% else %}
+                                    <p class="text-sm text-gray-400">Awaiting pickup scheduling</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Step 5: In Transit -->
+                            <div class="status-step {% if transaction.delivery_completed_at %}completed{% elif transaction.pickup_completed_at %}active{% endif %}">
+                                <div class="ml-4">
+                                    <p class="font-medium text-gray-900">In Transit</p>
+                                    {% if transaction.pickup_completed_at %}
+                                    <p class="text-sm text-gray-500">Picked up on {{ transaction.pickup_completed_at.strftime('%B %d, %Y') }}</p>
+                                    {% else %}
+                                    <p class="text-sm text-gray-400">Awaiting pickup</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Step 6: Delivered -->
+                            <div class="status-step {% if transaction.delivery_completed_at %}completed{% endif %}">
+                                <div class="ml-4">
+                                    <p class="font-medium text-gray-900">Delivered</p>
+                                    {% if transaction.delivery_completed_at %}
+                                    <p class="text-sm text-gray-500">{{ transaction.delivery_completed_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                                    {% else %}
+                                    <p class="text-sm text-gray-400">Awaiting delivery</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Step 7: Completed -->
+                            <div class="status-step {% if transaction.completed_at %}completed{% endif %}">
+                                <div class="ml-4">
+                                    <p class="font-medium text-gray-900">Transaction Completed</p>
+                                    {% if transaction.completed_at %}
+                                    <p class="text-sm text-gray-500">{{ transaction.completed_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons for Logistics -->
+                        {% if transaction.status == 'confirmed' and transaction.seller_company_id == current_user.company_id %}
+                        <div class="mt-6 pt-6 border-t">
+                            <button onclick="openSchedulePickupModal()" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 action-button">
+                                <i class="fas fa-calendar-alt mr-2"></i>Schedule Pickup
+                            </button>
+                        </div>
+                        {% endif %}
+                        
+                        {% if transaction.status == 'in_transit' and transaction.seller_company_id == current_user.company_id and not transaction.pickup_completed_at %}
+                        <div class="mt-4">
+                            <button onclick="markPickedUp()" class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 action-button">
+                                <i class="fas fa-check-circle mr-2"></i>Mark as Picked Up
+                            </button>
+                        </div>
+                        {% endif %}
+                        
+                        {% if transaction.status == 'in_transit' and transaction.buyer_company_id == current_user.company_id and not transaction.delivery_completed_at %}
+                        <div class="mt-4">
+                            <button onclick="markDelivered()" class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 action-button">
+                                <i class="fas fa-check-circle mr-2"></i>Confirm Delivery
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- RIGHT COLUMN: Parties & Documents -->
+            <div class="lg:col-span-1 space-y-6">
+                
+                <!-- Seller Info Card -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <div class="border-b px-6 py-4 bg-gray-50">
+                        <h2 class="font-semibold text-gray-900">
+                            <i class="fas fa-store text-green-600 mr-2"></i>Seller
+                        </h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex items-center space-x-3 mb-4">
+                            {% if transaction.seller_company.logo_url %}
+                            <img src="{{ transaction.seller_company.logo_url }}" class="w-12 h-12 rounded-full object-cover">
+                            {% else %}
+                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-building text-green-600 text-xl"></i>
+                            </div>
+                            {% endif %}
+                            <div>
+                                <p class="font-semibold text-gray-900">{{ transaction.seller_company.name }}</p>
+                                <div class="flex items-center mt-1">
+                                    {% for i in range(5) %}
+                                        {% if i < transaction.seller_company.rating_avg|int %}
+                                            <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                        {% else %}
+                                            <i class="far fa-star text-yellow-400 text-xs"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <span class="text-xs text-gray-500 ml-1">({{ transaction.seller_company.total_reviews }})</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">Contact:</span>
+                                <span>{{ transaction.seller_company.email }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">Phone:</span>
+                                <span>{{ transaction.seller_company.phone or 'Not provided' }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">Location:</span>
+                                <span>{{ transaction.seller_company.city }}, {{ transaction.seller_company.country }}</span>
+                            </div>
+                        </div>
+                        <button onclick="contactSeller()" class="w-full mt-4 border border-green-600 text-green-600 py-2 rounded-lg hover:bg-green-50 transition">
+                            <i class="fas fa-envelope mr-2"></i>Contact Seller
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Buyer Info Card -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <div class="border-b px-6 py-4 bg-gray-50">
+                        <h2 class="font-semibold text-gray-900">
+                            <i class="fas fa-user text-green-600 mr-2"></i>Buyer
+                        </h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex items-center space-x-3 mb-4">
+                            {% if transaction.buyer_company.logo_url %}
+                            <img src="{{ transaction.buyer_company.logo_url }}" class="w-12 h-12 rounded-full object-cover">
+                            {% else %}
+                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-building text-blue-600 text-xl"></i>
+                            </div>
+                            {% endif %}
+                            <div>
+                                <p class="font-semibold text-gray-900">{{ transaction.buyer_company.name }}</p>
+                                <div class="flex items-center mt-1">
+                                    {% for i in range(5) %}
+                                        {% if i < transaction.buyer_company.rating_avg|int %}
+                                            <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                        {% else %}
+                                            <i class="far fa-star text-yellow-400 text-xs"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <span class="text-xs text-gray-500 ml-1">({{ transaction.buyer_company.total_reviews }})</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">Contact:</span>
+                                <span>{{ transaction.buyer_company.email }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">Phone:</span>
+                                <span>{{ transaction.buyer_company.phone or 'Not provided' }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">Location:</span>
+                                <span>{{ transaction.buyer_company.city }}, {{ transaction.buyer_company.country }}</span>
+                            </div>
+                        </div>
+                        <button onclick="contactBuyer()" class="w-full mt-4 border border-blue-600 text-blue-600 py-2 rounded-lg hover:bg-blue-50 transition">
+                            <i class="fas fa-envelope mr-2"></i>Contact Buyer
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Documents Card -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <div class="border-b px-6 py-4 bg-gray-50">
+                        <h2 class="font-semibold text-gray-900">
+                            <i class="fas fa-file-alt text-green-600 mr-2"></i>Documents
+                        </h2>
+                    </div>
+                    <div class="p-6 space-y-3">
+                        {% if transaction.invoice_url %}
+                        <a href="{{ transaction.invoice_url }}" target="_blank" class="document-card flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
+                            <div class="flex items-center">
+                                <i class="fas fa-file-invoice text-green-600 mr-3"></i>
+                                <div>
+                                    <p class="font-medium text-gray-900">Invoice #{{ transaction.invoice_number }}</p>
+                                    <p class="text-xs text-gray-500">Download PDF</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-download text-gray-400"></i>
+                        </a>
+                        {% endif %}
+                        
+                        {% if transaction.waste_manifest_url %}
+                        <a href="{{ transaction.waste_manifest_url }}" target="_blank" class="document-card flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
+                            <div class="flex items-center">
+                                <i class="fas fa-trash-alt text-orange-600 mr-3"></i>
+                                <div>
+                                    <p class="font-medium text-gray-900">Waste Manifest</p>
+                                    <p class="text-xs text-gray-500">#{{ transaction.waste_manifest_number or 'N/A' }}</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-download text-gray-400"></i>
+                        </a>
+                        {% endif %}
+                        
+                        {% if transaction.weight_certificate_url %}
+                        <a href="{{ transaction.weight_certificate_url }}" target="_blank" class="document-card flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
+                            <div class="flex items-center">
+                                <i class="fas fa-weight-hanging text-blue-600 mr-3"></i>
+                                <div>
+                                    <p class="font-medium text-gray-900">Weight Certificate</p>
+                                    <p class="text-xs text-gray-500">Verified weight: {{ transaction.quantity }} {{ transaction.listing.unit }}</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-download text-gray-400"></i>
+                        </a>
+                        {% endif %}
+                        
+                        {% if not transaction.invoice_url and not transaction.waste_manifest_url and not transaction.weight_certificate_url %}
+                        <p class="text-gray-500 text-center py-4">No documents available yet</p>
+                        {% endif %}
+                        
+                        {% if transaction.status == 'completed' and transaction.buyer_company_id == current_user.company_id and not transaction_review %}
+                        <div class="mt-4 pt-4 border-t">
+                            <button onclick="openReviewModal()" class="w-full bg-yellow-500 text-white py-2 rounded-lg hover:bg-yellow-600 action-button">
+                                <i class="fas fa-star mr-2"></i>Leave a Review
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Transaction Modal -->
+<div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-md w-full">
+        <div class="p-6">
+            <h3 class="text-xl font-bold mb-4">Confirm Transaction</h3>
+            <p class="text-gray-600 mb-4">Are you sure you want to confirm this transaction? This will notify the buyer and initiate the logistics process.</p>
+            <div class="flex justify-end space-x-3">
+                <button onclick="closeConfirmModal()" class="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
+                <form method="POST" action="{{ url_for('transactions.confirm', transaction_id=transaction.id) }}">
+                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Confirm</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Schedule Pickup Modal -->
+{#<div id="scheduleModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-md w-full">
+        <div class="p-6">
+            <h3 class="text-xl font-bold mb-4">Schedule Pickup</h3>
+            <form method="POST" action="{{ url_for('transactions.schedule_pickup', transaction_id=transaction.id) }}">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Pickup Date & Time</label>
+                        <input type="datetime-local" name="pickup_datetime" required class="w-full border rounded-lg px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Pickup Address</label>
+                        <textarea name="pickup_address" rows="2" class="w-full border rounded-lg px-3 py-2">{{ transaction.listing.pickup_address }}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
+                        <textarea name="notes" rows="2" class="w-full border rounded-lg px-3 py-2" placeholder="Any special instructions for pickup..."></textarea>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" onclick="closeScheduleModal()" class="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Schedule</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+#}
+<!-- Review Modal -->
+<div id="reviewModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-md w-full">
+        <div class="p-6">
+            <h3 class="text-xl font-bold mb-4">Leave a Review</h3>
+            <form method="POST" action="{{ url_for('transactions.review', transaction_id=transaction.id) }}">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                        <div class="flex space-x-2">
+                            {% for i in range(1, 6) %}
+                            <label class="cursor-pointer">
+                                <input type="radio" name="rating" value="{{ i }}" class="hidden rating-input">
+                                <i class="far fa-star text-2xl text-yellow-400 rating-star" data-rating="{{ i }}"></i>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Your Review</label>
+                        <textarea name="comment" rows="4" class="w-full border rounded-lg px-3 py-2" placeholder="Share your experience with this seller..."></textarea>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" onclick="closeReviewModal()" class="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">Submit Review</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Modal functions
+    function openConfirmModal() {
+        document.getElementById('confirmModal').classList.remove('hidden');
+    }
+    function closeConfirmModal() {
+        document.getElementById('confirmModal').classList.add('hidden');
+    }
+    
+    function openSchedulePickupModal() {
+        document.getElementById('scheduleModal').classList.remove('hidden');
+    }
+    function closeScheduleModal() {
+        document.getElementById('scheduleModal').classList.add('hidden');
+    }
+    
+    function openReviewModal() {
+        document.getElementById('reviewModal').classList.remove('hidden');
+    }
+    function closeReviewModal() {
+        document.getElementById('reviewModal').classList.add('hidden');
+    }
+   
+    function markPickedUp() {
+        if(confirm('Confirm that the materials have been picked up?')) {
+            fetch('{{ url_for("transactions.mark_picked_up", transaction_id=transaction.id) }}', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            }).then(response => {
+                if(response.ok) location.reload();
+            });
+        }
+    }
+    
+    function markDelivered() {
+        if(confirm('Confirm that the materials have been delivered?')) {
+            fetch('{{ url_for("transactions.mark_delivered", transaction_id=transaction.id) }}', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            }).then(response => {
+                if(response.ok) location.reload();
+            });
+        }
+    }
+ {#   
+    function contactSeller() {
+        window.location.href = "{{ url_for('profile.contact', company_id=transaction.seller_company.id, transaction_id=transaction.id) }}";
+    }
+    
+    function contactBuyer() {
+        window.location.href = "{{ url_for('profile.contact', company_id=transaction.buyer_company.id, transaction_id=transaction.id) }}";
+    }
+    #}
+    // Rating stars
+    document.querySelectorAll('.rating-input').forEach(input => {
+        input.addEventListener('change', function() {
+            const rating = this.value;
+            document.querySelectorAll('.rating-star').forEach((star, index) => {
+                if(index < rating) {
+                    star.classList.remove('far');
+                    star.classList.add('fas');
+                } else {
+                    star.classList.remove('fas');
+                    star.classList.add('far');
+                }
+            });
+        });
+    });
+    
+    // Close modals on outside click
+    document.getElementById('confirmModal').addEventListener('click', function(e) {
+        if(e.target === this) closeConfirmModal();
+    });
+    document.getElementById('scheduleModal').addEventListener('click', function(e) {
+        if(e.target === this) closeScheduleModal();
+    });
+    document.getElementById('reviewModal').addEventListener('click', function(e) {
+        if(e.target === this) closeReviewModal();
+    });
+    
+    // ESC key to close modals
+    document.addEventListener('keydown', function(e) {
+        if(e.key === 'Escape') {
+            closeConfirmModal();
+            closeScheduleModal();
+            closeReviewModal();
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}

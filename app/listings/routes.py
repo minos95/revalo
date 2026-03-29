@@ -1,26 +1,32 @@
 from datetime import datetime
+import os
 
 from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required
+from sqlalchemy import  desc
 
-from app import db
-from app.forms import makeOfferForm
+from app import db,app
+from app.listings import bp
+from app.auth.models import Review
 from app.listings.forms import FilterMarketForm, postItemForm
 from app.listings.models import Category, Image, Item, Item_quality_values, Quality_attributes
-from app.models import Offer
+from app.offers.models import Offer
+from app.transactions.models import Transaction
 from werkzeug.utils import secure_filename
 
-app = Blueprint('listings', __name__, url_prefix='/listings',template_folder='templates')
+from app.offers.forms import makeOfferForm
+
+
 
 
 """-----------------------------Market Routes ----------------------"""
 
-@app.route("/market/category")
+@bp.route("/market/category")
 def market_category():
     categories=Category.query.all()
     return render_template('market_category.html',categories=categories)
 
-@app.route("/market/category/<int:category_id>/show",methods=['POST','GET'])
+@bp.route("/market/category/<int:category_id>/show",methods=['POST','GET'])
 #@login_required
 def market(category_id):
     
@@ -60,7 +66,7 @@ def market(category_id):
 
 
 
-@app.route("/")
+@bp.route("/")
 def listings():
         status = request.args.get('status', 'active')
     
@@ -88,17 +94,17 @@ def listings():
                                     ).count()
                 }
        
-        return render_template('listings.html',listings=listings,status=status,**counts,listings_count=listings_count)
+        return render_template('listings_index.html',listings=listings,status=status,**counts,listings_count=listings_count)
 
 
-@app.route("/category")
+@bp.route("/category")
 def listing_select_category():
    
     categories=Category.query.all()
     
     return render_template('listing_select_category.html',categories=categories)
     
-@app.route('/category/<int:category_id>/post',methods=['GET','POST'])
+@bp.route('/category/<int:category_id>/post',methods=['GET','POST'])
 def post(category_id):
     category=Category.query.filter_by(id=category_id).all()
     quality_attributes=Quality_attributes.query.filter_by(category_id=category_id).all()
@@ -146,7 +152,7 @@ def post(category_id):
         session['pending_listing_id'] = item_to_create.id
         
         flash('Listing created! Please review before publishing.', 'success')
-        return redirect(url_for('listings.listing_review_page', listing_id=item_to_create.id))
+        return redirect(url_for('listings.listing_review', listing_id=item_to_create.id))
     if form.errors!={}:
         for err_msg in form.errors.values():
                 flash(f'error {err_msg}',category='danger')
@@ -157,9 +163,9 @@ def post(category_id):
         form.pickup_city.data = current_user.owned_company.city
         form.pickup_country.data = current_user.owned_company.country
        
-    return render_template('post.html',form=form,quality_attributes=quality_attributes,category=category)
+    return render_template('listing_post.html',form=form,quality_attributes=quality_attributes,category=category)
 
-@app.route('/review/<int:listing_id>')
+@bp.route('/review/<int:listing_id>')
 @login_required
 def review(listing_id):
     """Step 3: Review listing before publishing"""
@@ -170,9 +176,9 @@ def review(listing_id):
         flash('You do not have permission to review this listing.', 'danger')
         return redirect(url_for('main.index'))
     
-    return render_template('review.html', listing=listing)
+    return render_template('listing_review.html', listing=listing)
 
-@app.route('/edit/<int:listing_id>', methods=['GET', 'POST'])
+@bp.route('/edit/<int:listing_id>', methods=['GET', 'POST'])
 @login_required
 def edit(listing_id):
     """Edit existing listing"""
@@ -194,7 +200,7 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
 
-@app.route('/publish/<int:listing_id>', methods=['POST'])
+@bp.route('/publish/<int:listing_id>', methods=['POST'])
 @login_required
 def publish(listing_id):
     """Publish the listing"""
@@ -219,17 +225,58 @@ def publish(listing_id):
     flash('Your listing is now live!', 'success')
     return redirect(url_for('listings.listing_detail_page', listing_id=listing_id))
 
-@app.route("/<int:listing_id>",methods=['GET','POST'])
+@bp.route("/<int:listing_id>",methods=['GET','POST'])
 def detail(listing_id):
     listing=Item.query.filter_by(id=listing_id).first()
-    make_offer_form=makeOfferForm()
+    form=makeOfferForm()
     now = datetime.now()
-    print(now)
-    print(listing.expires_at)
-    if make_offer_form.validate_on_submit():
-        offer_to_create=Offer(offered_price=make_offer_form.price.data,
-                              quantity_requested=make_offer_form.quantity.data,
-                              message=make_offer_form.message.data,
+        # Increment view count
+    listing.views += 1
+    db.session.commit()
+    
+    # Check if listing is expired
+    is_expired = listing.expires_at and datetime.utcnow() > listing.expires_at
+    
+    # Get seller info
+    seller = listing.owned_company
+    #seller_user = listing.manager
+    
+    # Get seller stats
+    seller_listings_count = Item.query.filter_by(
+        company_id=seller.id, 
+        status='active'
+    ).count()
+    
+    seller_transactions_count = Transaction.query.filter(
+        (Transaction.seller_company_id == seller.id) |
+        (Transaction.buyer_company_id == seller.id),
+        Transaction.status == 'completed'
+    ).count()
+    
+    seller_rating = seller.rating_avg or 0
+    seller_reviews_count = seller.total_reviews or 0
+    
+
+    # Get seller reviews (latest 3)
+    seller_reviews = Review.query.filter_by(
+        company_id=seller.id
+    ).order_by(desc(Review.created_at)).limit(3).all()
+    
+    # Get quality attributes for this listing
+    qualities = listing.qualities if hasattr(listing, 'qualities') else []
+    # Get current user's pending offer if any
+    user_pending_offer = None
+    if current_user.is_authenticated:
+        user_pending_offer = Offer.query.filter(
+            Offer.item_id == listing.id,
+            Offer.sender_company_id == current_user.company_id,
+            Offer.status == 'pending'
+        ).first()
+    
+    if form.validate_on_submit():
+        offer_to_create=Offer(offered_price=form.price.data,
+                              quantity_requested=form.quantity.data,
+                              message=form.message.data,
                               item_id=request.form['item_id'],
                               buyer_company_id=current_user.company_id,
                               buyer_id=current_user.company_id,
@@ -244,4 +291,8 @@ def detail(listing_id):
         
         return redirect(url_for("offers_page"))
   
-    return render_template('detail.html',listing=listing,make_offer_form=make_offer_form,now=now)
+    return render_template('listing_detail.html',listing=listing,form=form,now=now,seller_listings_count=seller_listings_count
+                           ,seller_transactions_count=seller_transactions_count,
+                           seller_reviews=seller_reviews,
+                           seller_rating=seller_rating,
+                           seller_reviews_count=seller_reviews_count,seller=seller)

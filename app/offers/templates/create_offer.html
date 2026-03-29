@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+
+{% block title %}Make an Offer - {{ listing.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .price-suggestion {
+        transition: all 0.2s;
+    }
+    .price-suggestion:hover {
+        background: #f3f4f6;
+        cursor: pointer;
+    }
+    .validation-error {
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <!-- Breadcrumb -->
+    <nav class="flex mb-6 text-sm">
+        <ol class="flex items-center space-x-2">
+            <li><a href="{{ url_for('home') }}" class="text-gray-500 hover:text-green-600">Home</a></li>
+            <li><i class="fas fa-chevron-right text-xs text-gray-400"></i></li>
+            <li><a href="{{ url_for('listings.market_category') }}" class="text-gray-500 hover:text-green-600">Marketplace</a></li>
+            <li><i class="fas fa-chevron-right text-xs text-gray-400"></i></li>
+            <li><a href="{{ url_for('listings.detail', listing_id=listing.id) }}" class="text-gray-500 hover:text-green-600">{{ listing.name|truncate(30) }}</a></li>
+            <li><i class="fas fa-chevron-right text-xs text-gray-400"></i></li>
+            <li class="text-gray-900 font-medium">Make an Offer</li>
+        </ol>
+    </nav>
+    
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-green-50 to-green-100 p-6 border-b">
+            <div class="flex items-center space-x-4">
+                <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center">
+                    <i class="fas fa-handshake text-2xl text-green-600"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Make an Offer</h1>
+                    <p class="text-gray-600 mt-1">Submit your offer for "{{ listing.name }}"</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
+            <!-- Left Column: Form -->
+            <div class="lg:col-span-2">
+                <form method="POST" id="offerForm" class="space-y-6">
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- Price Field -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                          {{ form.price.label() }}<span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            
+                            {{ form.price(class="w-full pl-8 border border-gray-300 rounded-lg px-3 py-2 focus:ring-green-500 focus:border-green-500", 
+                                         type="number", step="0.01", placeholder="0.00", id="offerPrice") }}
+                                        <span class="absolute left-3 top-2 text-gray-500">DA</span>
+                                        </div>
+                        <div id="priceError" class="validation-error text-red-500 hidden"></div>
+                        
+                        <!-- Price Suggestions -->
+                        <div class="mt-2 flex flex-wrap gap-2">
+                            <span class="text-xs text-gray-500">Suggestions:</span>
+                            {% if listing.price %}
+                            <button type="button" onclick="setPrice({{ listing.price }})" class="price-suggestion text-xs bg-gray-100 px-2 py-1 rounded">
+                                List price: ${{ "%.2f"|format(listing.price) }}
+                            </button>
+                            <button type="button" onclick="setPrice({{ listing.price * 0.9 }})" class="price-suggestion text-xs bg-gray-100 px-2 py-1 rounded">
+                                10% off: ${{ "%.2f"|format(listing.price * 0.9) }}
+                            </button>
+                            <button type="button" onclick="setPrice({{ listing.price * 0.8 }})" class="price-suggestion text-xs bg-gray-100 px-2 py-1 rounded">
+                                20% off: ${{ "%.2f"|format(listing.price * 0.8) }}
+                            </button>
+                            {% else %}
+                            <button type="button" onclick="setPrice(1000)" class="price-suggestion text-xs bg-gray-100 px-2 py-1 rounded">
+                                $1,000
+                            </button>
+                            <button type="button" onclick="setPrice(5000)" class="price-suggestion text-xs bg-gray-100 px-2 py-1 rounded">
+                                $5,000
+                            </button>
+                            <button type="button" onclick="setPrice(10000)" class="price-suggestion text-xs bg-gray-100 px-2 py-1 rounded">
+                                $10,000
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Quantity Field -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            {{form.quantity.label() }}({{ listing.unit }})
+                        </label>
+                        {{ form.quantity(class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-green-500 focus:border-green-500", 
+                                         type="number", step="0.01", id="offerQuantity") }}
+                        <p class="text-xs text-gray-500 mt-1">Available: {{ listing.quantity }} {{ listing.unit }}</p>
+                        <div id="quantityError" class="validation-error text-red-500 hidden"></div>
+                    </div>
+                    
+                    <!-- Message Field -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Message (Optional)
+                        </label>
+                        {{ form.message(class="w-full border border-gray-300 rounded-lg px-3 py-2 rows-3", rows="3", 
+                                       placeholder="Add any additional details about your offer...", id="offerMessage") }}
+                        <div id="messageCount" class="text-xs text-gray-500 text-right mt-1">0/5000</div>
+                    </div>
+                    
+                    <!-- Delivery Options -->
+                    <div class="border rounded-lg p-4">
+                        <label class="flex items-center cursor-pointer">
+                            {{ form.requires_delivery(class="h-4 w-4 text-green-600 focus:ring-green-500", id="requiresDelivery") }}
+                            <span class="ml-2 text-sm text-gray-700">I require delivery</span>
+                        </label>
+                        
+                        <div id="deliveryAddressContainer" class="hidden mt-3">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Delivery Address
+                            </label>
+                            {{ form.delivery_address(class="w-full border border-gray-300 rounded-lg px-3 py-2 rows-2", rows="2", 
+                                                    placeholder="Enter the full delivery address...") }}
+                            <div id="deliveryError" class="validation-error text-red-500 hidden"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Info Box -->
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <div class="flex items-start space-x-3">
+                            <i class="fas fa-info-circle text-yellow-600 text-xl mt-0.5"></i>
+                            <div class="text-sm text-yellow-800">
+                                <p class="font-semibold mb-1">What happens next?</p>
+                                <ul class="list-disc list-inside space-y-1">
+                                    <li>Seller will be notified of your offer</li>
+                                    <li>Offers expire after 7 days if not responded</li>
+                                    <li>You can withdraw your offer anytime before acceptance</li>
+                                    <li>If accepted, a transaction will be created automatically</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex justify-end space-x-4 pt-4 border-t">
+                        <a href="{{ url_for('listings.detail', listing_id=listing.id) }}" 
+                           class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                            Cancel
+                        </a>
+                        
+                        {{form.submit( class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700")}}
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Right Column: Listing Summary -->
+            <div class="lg:col-span-1">
+                <div class="bg-gray-50 rounded-lg p-4 sticky top-20">
+                    <h3 class="font-semibold text-gray-900 mb-3">Listing Summary</h3>
+                    
+                    <div class="flex items-start space-x-3 mb-4">
+                        {% if listing.images and listing.images|length > 0 %}
+                        <img src="{{ url_for('static', filename=listing.images[0].uri) }}" 
+                             class="w-16 h-16 rounded-lg object-cover">
+                        {% else %}
+                        <div class="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-recycle text-2xl text-gray-400"></i>
+                        </div>
+                        {% endif %}
+                        <div class="flex-1">
+                            <p class="font-medium text-gray-900">{{ listing.name }}</p>
+                            <p class="text-sm text-gray-500">{{ listing.owned_company.name }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Quantity Available:</span>
+                            <span class="font-medium">{{ listing.quantity }} {{ listing.unit }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Listed Price:</span>
+                            <span class="font-medium">
+                                {% if listing.price %}
+                                ${{ "%.2f"|format(listing.price) }}
+                                {% else %}
+                                Make Offer
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Price Negotiable:</span>
+                            <span class="font-medium">{{ 'Yes' if listing.price_negotiable else 'No' }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Location:</span>
+                            <span class="font-medium">{{ listing.pickup_city }}, {{ listing.pickup_state }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Posted:</span>
+                            <span class="font-medium">{{ listing.created_at.strftime('%b %d, %Y') }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t">
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-500">Seller Rating:</span>
+                            <div class="flex items-center">
+                                {% for i in range(5) %}
+                                    {% if i < listing.owned_company.rating_avg|int %}
+                                        <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                    {% else %}
+                                        <i class="far fa-star text-yellow-400 text-xs"></i>
+                                    {% endif %}
+                                {% endfor %}
+                                <span class="ml-1 text-gray-600">({{ listing.owned_company.total_reviews }})</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Set price from suggestion
+    function setPrice(price) {
+        document.getElementById('offerPrice').value = price.toFixed(2);
+        validatePrice();
+    }
+    
+    // Real-time price validation
+    const priceInput = document.getElementById('offerPrice');
+    const quantityInput = document.getElementById('offerQuantity');
+    const messageInput = document.getElementById('offerMessage');
+    const requiresDelivery = document.getElementById('requiresDelivery');
+    const deliveryContainer = document.getElementById('deliveryAddressContainer');
+    const deliveryAddress = document.querySelector('[name="delivery_address"]');
+    
+    function validatePrice() {
+        const price = parseFloat(priceInput.value);
+        const errorDiv = document.getElementById('priceError');
+        
+        if (isNaN(price) || price <= 0) {
+            errorDiv.textContent = 'Price must be greater than 0';
+            errorDiv.classList.remove('hidden');
+            return false;
+        }
+        
+        {% if listing.price %}
+        if (price > {{ listing.price * 2 }}) {
+            errorDiv.textContent = 'Price seems high. Consider lowering your offer.';
+            errorDiv.classList.remove('hidden');
+            return false;
+        }
+        if (price < {{ listing.price * 0.1 }}) {
+            errorDiv.textContent = 'Price seems very low. The seller may not accept.';
+            errorDiv.classList.remove('hidden');
+            return false;
+        }
+        {% endif %}
+        
+        errorDiv.classList.add('hidden');
+        return true;
+    }
+    
+    function validateQuantity() {
+        const quantity = parseFloat(quantityInput.value);
+        const errorDiv = document.getElementById('quantityError');
+        
+        if (quantityInput.value && (isNaN(quantity) || quantity <= 0)) {
+            errorDiv.textContent = 'Quantity must be greater than 0';
+            errorDiv.classList.remove('hidden');
+            return false;
+        }
+        
+        if (quantity > {{ listing.quantity }}) {
+            errorDiv.textContent = 'Quantity cannot exceed available {{ listing.quantity }} {{ listing.unit }}';
+            errorDiv.classList.remove('hidden');
+            return false;
+        }
+        
+        errorDiv.classList.add('hidden');
+        return true;
+    }
+    
+    function validateDelivery() {
+        if (requiresDelivery.checked && !deliveryAddress.value.trim()) {
+            document.getElementById('deliveryError').textContent = 'Please provide a delivery address';
+            document.getElementById('deliveryError').classList.remove('hidden');
+            return false;
+        }
+        document.getElementById('deliveryError').classList.add('hidden');
+        return true;
+    }
+    
+    // Message character counter
+    messageInput.addEventListener('input', function() {
+        const count = this.value.length;
+        document.getElementById('messageCount').textContent = `${count}/5000`;
+    });
+    
+    // Toggle delivery address
+    requiresDelivery.addEventListener('change', function() {
+        if (this.checked) {
+            deliveryContainer.classList.remove('hidden');
+        } else {
+            deliveryContainer.classList.add('hidden');
+            deliveryAddress.value = '';
+        }
+    });
+    
+    // Real-time validation
+    priceInput.addEventListener('input', validatePrice);
+    quantityInput.addEventListener('input', validateQuantity);
+    deliveryAddress.addEventListener('input', validateDelivery);
+    
+    // Form submission validation
+    document.getElementById('offerForm').addEventListener('submit', function(e) {
+        const isPriceValid = validatePrice();
+        const isQuantityValid = validateQuantity();
+        const isDeliveryValid = validateDelivery();
+        
+        if (!isPriceValid || !isQuantityValid || !isDeliveryValid) {
+            e.preventDefault();
+            alert('Please fix the validation errors before submitting.');
+        }
+    });
+    
+    // Check for existing offer on page load
+  {# fetch('{{ url_for("offers.check_offer_status", listing_id=listing.id) }}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.has_offer) {
+                alert('You already have a pending offer on this listing. Redirecting to your offers page.');
+                window.location.href = '{{ url_for("offers.index") }}';
+            }
+        }); #}
+</script>
+{% endblock %}
+{% endblock %}

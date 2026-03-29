@@ -69,7 +69,7 @@
                     </div>
                 </div>
                 <div class="mt-4">
-                    <a href="{{ url_for('offers_page') }}" class="text-yellow-600 text-sm hover:text-yellow-700">
+                    <a href="{{ url_for('offers.index') }}" class="text-yellow-600 text-sm hover:text-yellow-700">
                         Manage offers →
                     </a>
                 </div>
@@ -87,7 +87,7 @@
                     </div>
                 </div>
                 <div class="mt-4">
-                    <a href="{{ url_for('transactions_page') }}" class="text-blue-600 text-sm hover:text-blue-700">
+                    <a href="{{ url_for('transactions.index') }}" class="text-blue-600 text-sm hover:text-blue-700">
                         View transactions →
                     </a>
                 </div>
@@ -309,7 +309,7 @@
                     {% for offer in recent_offers_received %}
                     <div class="flex items-center justify-between border-b pb-4">
                         <div>
-                            <p class="font-medium text-gray-900">{{ offer.owned_offer.name }}</p>
+                            <p class="font-medium text-gray-900">{{ offer.item.name }}</p>
                             <p class="text-sm text-gray-500">From {{offer.sender_company.name}}· ${{ "%.2f"|format(offer.offered_price) }}</p>
                         </div>
                         <div class="flex items-center space-x-4">
@@ -319,7 +319,7 @@
                                 {% else %}bg-gray-100 text-gray-800{% endif %}">
                                 {{ offer.status }}
                             </span>
-                            <a href="{{ url_for('offers_page') }}" class="text-green-600 hover:text-green-700">
+                            <a href="{{ url_for('offers.index') }}" class="text-green-600 hover:text-green-700">
                                 Manage →
                             </a>
                         </div>

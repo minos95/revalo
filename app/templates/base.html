@@ -19,7 +19,8 @@
             font-family: 'Inter', sans-serif;
         }
         .gradient-bg {
-            background: linear-gradient(135deg, #1e5f45 0%, #2c8e64 100%);
+            
+            background-image: linear-gradient(rgba(30, 95, 69, 0.9), rgba(44, 142, 100, 0.9)), url("static/uploads/raw.jpg");
         }
         .hover-scale {
             transition: transform 0.2s ease;
@@ -56,7 +57,7 @@
                     </a>
                     
                     <div class="hidden md:flex ml-10 space-x-8">
-                        <a href="{{ url_for('home_page') }}" class="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium {% if request.endpoint == 'main.index' %}text-green-600 border-b-2 border-green-600{% endif %}">
+                        <a href="{{ url_for('home') }}" class="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium {% if request.endpoint == 'main.index' %}text-green-600 border-b-2 border-green-600{% endif %}">
                             Home
                         </a>
                         <a  href="{{url_for('listings.market_category')}}" class="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium {% if request.endpoint == 'listings.market' %}text-green-600 border-b-2 border-green-600{% endif %}">
@@ -66,10 +67,10 @@
                         <a href="{{ url_for('listings.listings') }}" class="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium">
                             My Listings
                         </a>
-                        <a href="{{ url_for('offers_page') }}" class="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium">
+                        <a href="{{ url_for('offers.index') }}" class="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium">
                             Offers
                         </a>
-                        <a href="{{ url_for('transactions_page') }}" class="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium">
+                        <a href="{{ url_for('transactions.index') }}" class="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium">
                             Transactions
                         </a>
                         {% endif %}
@@ -167,7 +168,7 @@
                 <div>
                     <h3 class="font-semibold mb-4">Quick Links</h3>
                     <ul class="space-y-2 text-sm text-gray-400">
-                        <li><a href="{{ url_for('home_page') }}" class="hover:text-green-400">Home</a></li>
+                        <li><a href="{{ url_for('home') }}" class="hover:text-green-400">Home</a></li>
                         <li><a href="{{ url_for('listings.market_category') }}" class="hover:text-green-400">Marketplace</a></li>
                         <li><a href="#" class="hover:text-green-400">How It Works</a></li>
                         <li><a href="#" class="hover:text-green-400">About Us</a></li>

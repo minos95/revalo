@@ -12,7 +12,7 @@ class Item(db.Model):
     quantity= db.Column(db.Integer(),nullable=False) 
     price_negotiable = db.Column(db.Boolean, default=True)
     minimum_order = db.Column(db.Numeric(10, 2), default=0)
-    views=db.Column(db.Integer())
+    views=db.Column(db.Integer(),default=0)
     #pickup field
     pickup_address=db.Column(db.String(length=30))
     pickup_city=db.Column(db.String(length=30))
@@ -20,19 +20,19 @@ class Item(db.Model):
 
     sell_type=db.Column(db.String(length=30))
     price=db.Column(db.Integer(),nullable=False) 
-    status=db.Column(db.String(length=30),default="pending") #active/closed/sold
+    status=db.Column(db.String(length=30),default="pending") #active/closed/sold/published/pending
     expires_at= db.Column(db.DateTime())
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
     images=db.relationship('Image',backref='owned_item',lazy=True)
     offers=db.relationship('Offer',backref='owned_item',lazy=True)
-    views=db.relationship('View',backref='owned_item',lazy=True)
     owned_user = db.relationship("User", back_populates="items")
     owned_company = db.relationship("Company", back_populates="items")
     owned_category=db.relationship("Category",back_populates="items")
-    offers = db.relationship('Offer', back_populates='owned_offer',lazy=True)
+    offers = db.relationship('Offer', back_populates='item',lazy=True)
     transactions = db.relationship('Transaction', back_populates='listing',lazy=True)
     images = db.relationship('Image', back_populates='owned_image',lazy=True)
     qualities = db.relationship('Item_quality_values', back_populates='owned_item',lazy=True)
+    reviews = db.relationship('Review', back_populates='item')
     
     
     def __repr__(self):
@@ -63,15 +63,6 @@ class View(db.Model):
     item_id=db.Column(db.Integer(),db.ForeignKey('item.id'))
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
 
-class Review(db.Model):
-    id=db.Column(db.Integer(),primary_key=True)
-    transaction_id= db.Column(db.Integer(),db.ForeignKey('transaction.id'))
-    reviewer_company_id = db.Column(db.Integer(),nullable=False)
-    reviewed_company_id = db.Column(db.Integer(),nullable=False)
-    comment = db.Column(db.String(length=300),nullable=False)
-    rating = db.Column(db.Integer(),nullable=False) #1-5
-    created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
-    owned_review = db.relationship("Transaction", back_populates="review",lazy=True)
 
 
 class Category(db.Model):

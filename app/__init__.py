@@ -29,10 +29,16 @@ login_manager.login_message_category='info'
 migrate = Migrate(app, db)
 
 #Register blueprint
-from app.auth.routes import app as auth_bp
-from app.listings.routes import app as listings_bp
+from app.auth import bp as auth_bp
+from app.listings import bp as listings_bp
+from app.offers import bp as offers_bp
+from app.transactions import bp as transactions_bp
+
 app.register_blueprint(auth_bp)
 app.register_blueprint(listings_bp)
+app.register_blueprint(transactions_bp)
+app.register_blueprint(offers_bp)
+
 
 from app import routes
 from app import dashboard_route

@@ -1,10 +1,11 @@
 
 from app import app,db
-from app.models import   Offer, Transaction
+from app.transactions.models import Transaction
+from app.offers.models import Offer
 from app.auth.models import User,Company 
 from flask_migrate import Migrate
-from app.listings.models import Category, Item, Review,Image,View,Quality_attribute_options,Quality_attributes,Item_quality_values
-
+from app.listings.models import Category, Item,Image,View,Quality_attribute_options,Quality_attributes,Item_quality_values
+from app.auth.models import Review
 migrate = Migrate(app, db)
 
 @app.shell_context_processor

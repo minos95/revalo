@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+
+{% block title %}Offers - EcoWaste{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Offers</h1>
+            <p class="text-gray-600 mt-1">Manage all your incoming and outgoing offers</p>
+        </div>
+        
+        <div class="mt-4 md:mt-0 flex space-x-3">
+            <a href="{{ url_for('listings.market_category') }}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
+                <i class="fas fa-search mr-2"></i>Browse Listings
+            </a>
+        </div>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm">Total Offers</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ total_offers }}</p>
+                </div>
+                <i class="fas fa-handshake text-3xl text-blue-400"></i>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm">Pending Responses</p>
+                    <p class="text-2xl font-bold text-yellow-600">{{ pending_total }}</p>
+                </div>
+                <i class="fas fa-clock text-3xl text-yellow-400"></i>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm">Accepted Offers</p>
+                    <p class="text-2xl font-bold text-green-600">{{ accepted_total }}</p>
+                </div>
+                <i class="fas fa-check-circle text-3xl text-green-400"></i>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm">Avg. Response Time</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ avg_response_hours }}<span class="text-sm">h</span></p>
+                </div>
+                <i class="fas fa-chart-line text-3xl text-purple-400"></i>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tabs: Received / Sent / All -->
+    <div class="mb-6">
+        <div class="border-b border-gray-200">
+            <nav class="flex space-x-8">
+                <a href="{{ url_for('offers.index', type='all', status=current_status) }}" 
+                   class="py-2 px-1 border-b-2 {% if current_type == 'all' %}border-green-500 text-green-600{% else %}border-transparent text-gray-500 hover:text-gray-700{% endif %} font-medium">
+                    All Offers
+                    <span class="ml-1 text-xs bg-gray-100 px-2 py-0.5 rounded-full">{{ total_offers }}</span>
+                </a>
+                <a href="{{ url_for('offers.index', type='received', status=current_status) }}"
+                   class="py-2 px-1 border-b-2 {% if current_type == 'received' %}border-green-500 text-green-600{% else %}border-transparent text-gray-500 hover:text-gray-700{% endif %} font-medium">
+                    Received
+                    <span class="ml-1 text-xs bg-gray-100 px-2 py-0.5 rounded-full">{{ received_counts.total }}</span>
+                </a>
+                <a href="{{ url_for('offers.index', type='sent', status=current_status) }}"
+                   class="py-2 px-1 border-b-2 {% if current_type == 'sent' %}border-green-500 text-green-600{% else %}border-transparent text-gray-500 hover:text-gray-700{% endif %} font-medium">
+                    Sent
+                    <span class="ml-1 text-xs bg-gray-100 px-2 py-0.5 rounded-full">{{ sent_counts.total }}</span>
+                </a>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- Status Filters -->
+    <div class="flex flex-wrap gap-2 mb-6">
+        <a href="{{ url_for('offers.index', type=current_type, status='all') }}" 
+           class="px-3 py-1 rounded-full text-sm {% if current_status == 'all' %}bg-green-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+            All
+        </a>
+        <a href="{{ url_for('offers.index', type=current_type, status='pending') }}"
+           class="px-3 py-1 rounded-full text-sm {% if current_status == 'pending' %}bg-yellow-500 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+            Pending
+            {% if current_type == 'received' and received_counts.pending > 0 %}
+            <span class="ml-1 text-xs">{{ received_counts.pending }}</span>
+            {% elif current_type == 'sent' and sent_counts.pending > 0 %}
+            <span class="ml-1 text-xs">{{ sent_counts.pending }}</span>
+            {% endif %}
+        </a>
+        <a href="{{ url_for('offers.index', type=current_type, status='accepted') }}"
+           class="px-3 py-1 rounded-full text-sm {% if current_status == 'accepted' %}bg-green-500 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+            Accepted
+        </a>
+        <a href="{{ url_for('offers.index', type=current_type, status='rejected') }}"
+           class="px-3 py-1 rounded-full text-sm {% if current_status == 'rejected' %}bg-red-500 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+            Rejected
+        </a>
+        <a href="{{ url_for('offers.index', type=current_type, status='countered') }}"
+           class="px-3 py-1 rounded-full text-sm {% if current_status == 'countered' %}bg-blue-500 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+            Countered
+        </a>
+        <a href="{{ url_for('offers.index', type=current_type, status='expired') }}"
+           class="px-3 py-1 rounded-full text-sm {% if current_status == 'expired' %}bg-gray-500 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+            Expired
+        </a>
+    </div>
+    
+    <!-- Offers List -->
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        {% if offers %}
+        <div class="divide-y divide-gray-200">
+            {% for offer in offers %}
+            <div class="p-6 hover:bg-gray-50 transition {% if offer.status == 'pending' %}bg-yellow-50{% endif %}">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <!-- Offer Info -->
+                    <div class="flex-1">
+                        <div class="flex items-start space-x-4">
+                            <!-- Listing Image -->
+                            <div class="flex-shrink-0">
+                                {% if offer.item.images[0] %}
+                                <img src="{{ url_for('static',filename=offer.item.images[0].uri) }}" class="w-16 h-16 rounded-lg object-cover">
+                                {% else %}
+                                <div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-recycle text-2xl text-gray-400"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Offer Details -->
+                            <div class="flex-1">
+                                <div class="flex flex-wrap items-center gap-2 mb-1">
+                                    <a href="{{ url_for('listings.detail', listing_id=offer.item.id) }}" 
+                                       class="text-lg font-semibold text-gray-900 hover:text-green-600">
+                                        {{ offer.item.name }}
+                                    </a>
+                                    <span class="px-2 py-0.5 text-xs rounded-full 
+                                        {% if offer.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                        {% elif offer.status == 'accepted' %}bg-green-100 text-green-800
+                                        {% elif offer.status == 'rejected' %}bg-red-100 text-red-800
+                                        {% elif offer.status == 'countered' %}bg-blue-100 text-blue-800
+                                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {{ offer.status|title }}
+                                    </span>
+                                </div>
+                                
+                                <div class="text-sm text-gray-600 mb-2">
+                                    {% if offer.sender_company_id == current_user.company_id %}
+                                        <span class="font-medium text-blue-600">You made an offer</span> to 
+                                        <a href="#" class="hover:text-green-600">{# offer.item.company.name #}</a>
+                                    {% else %}
+                                        <span class="font-medium text-green-600">{# offer.company.name #}</span> made an offer to you
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="flex flex-wrap gap-4 text-sm">
+                                    <div>
+                                        <span class="text-gray-500">Amount:</span>
+                                        <span class="font-semibold text-green-600">{{ "%.2f"|format(offer.offered_price) }} DA</span>
+                                    </div>
+                                    {% if offer.quantity %}
+                                    <div>
+                                        <span class="text-gray-500">Quantity:</span>
+                                        <span>{{ offer.quantity }} {{ offer.listing.unit }}</span>
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <span class="text-gray-500">Made:</span>
+                                        <span>{{ offer.created_at.strftime('%b %d, %Y') }}</span>
+                                    </div>
+                                    {% if offer.expires_at %}
+                                    <div>
+                                        <span class="text-gray-500">Expires:</span>
+                                        <span class="{% if offer.expires_at < now %}text-red-500{% endif %}">
+                                            {{ offer.expires_at.strftime('%b %d, %Y') }}
+                                        </span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if offer.message %}
+                                <div class="mt-2 p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
+                                    <i class="fas fa-quote-left text-gray-400 mr-1"></i>
+                                    {{ offer.message }}
+                                </div>
+                                {% endif %}
+                                
+                                {% if offer.parent_offer %}
+                                <div class="mt-2 text-xs text-gray-500">
+                                    <i class="fas fa-exchange-alt mr-1"></i>
+                                    Counter offer to original offer of ${{ "%.2f"|format(offer.parent_offer.price) }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Actions -->
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        {% if offer.sender_company_id != current_user.company_id and offer.status == 'pending' %}
+                            <!-- Received offer - Actions for seller -->
+                            <form method="POST" action="{{ url_for('offers.accept_offer', offer_id=offer.id) }}" class="inline">
+                                <button type="submit" class="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                                    <i class="fas fa-check mr-1"></i>Accept
+                                </button>
+                            </form>
+                            <a href="{{ url_for('offers.counter_offer', offer_id=offer.id) }}" 
+                               class="w-full sm:w-auto px-4 py-2 border border-blue-500 text-blue-600 rounded-lg hover:bg-blue-50 transition text-center">
+                                <i class="fas fa-exchange-alt mr-1"></i>Counter
+                            </a>
+                            <form method="POST" action="{{ url_for('offers.reject_offer', offer_id=offer.id) }}" class="inline">
+                                <button type="submit" class="w-full sm:w-auto px-4 py-2 border border-red-500 text-red-600 rounded-lg hover:bg-red-50 transition">
+                                    <i class="fas fa-times mr-1"></i>Decline
+                                </button>
+                            </form>
+                            
+                        {% elif offer.company_id == current_user.company_id and offer.status == 'pending' %}
+                            <!-- Sent offer - Actions for buyer -->
+                            <form method="POST" action="{{ url_for('offers.withdraw_offer', offer_id=offer.id) }}" class="inline">
+                                <button type="submit" class="w-full sm:w-auto px-4 py-2 border border-red-500 text-red-600 rounded-lg hover:bg-red-50 transition">
+                                    <i class="fas fa-undo-alt mr-1"></i>Withdraw
+                                </button>
+                            </form>
+                            
+                        {% elif offer.status == 'accepted' %}
+                            <!-- Accepted offer -->
+                            <a href="{{ url_for('transactions.detail', transaction_id=offer.transaction.id) }}" 
+                               class="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-center">
+                                <i class="fas fa-exchange-alt mr-1"></i>View Transaction
+                            </a>
+                            
+                        {% elif offer.status == 'countered' and offer.company_id != current_user.company_id %}
+                            <!-- Countered offer - Original buyer can respond -->
+                            <a href="{{ url_for('offers.respond_counter', offer_id=offer.id) }}" 
+                               class="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-center">
+                                <i class="fas fa-reply mr-1"></i>Respond to Counter
+                            </a>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('listings.detail', listing_id=offer.item.id) }}" 
+                           class="w-full sm:w-auto px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-center">
+                            <i class="fas fa-eye mr-1"></i>View Listing
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if pagination and pagination.pages > 1 %}
+        <div class="px-6 py-4 border-t border-gray-200">
+            <div class="flex justify-center space-x-2">
+                {% if pagination.has_prev %}
+                <a href="{{ url_for('offers.index', type=current_type, status=current_status, page=pagination.prev_num) }}" 
+                   class="px-3 py-2 bg-white border rounded-lg hover:bg-gray-50">Previous</a>
+                {% endif %}
+                
+                {% for page in pagination.iter_pages() %}
+                    {% if page %}
+                        {% if page != pagination.page %}
+                        <a href="{{ url_for('offers.index', type=current_type, status=current_status, page=page) }}" 
+                           class="px-3 py-2 bg-white border rounded-lg hover:bg-gray-50">{{ page }}</a>
+                        {% else %}
+                        <span class="px-3 py-2 bg-green-600 text-white border rounded-lg">{{ page }}</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="px-3 py-2">...</span>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if pagination.has_next %}
+                <a href="{{ url_for('offers.index', type=current_type, status=current_status, page=pagination.next_num) }}" 
+                   class="px-3 py-2 bg-white border rounded-lg hover:bg-gray-50">Next</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <!-- Empty State -->
+        <div class="text-center py-12">
+            <i class="fas fa-handshake text-6xl text-gray-300 mb-4"></i>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No offers yet</h3>
+            <p class="text-gray-500 mb-6">
+                {% if current_type == 'received' %}
+                    You haven't received any offers on your listings yet.
+                {% elif current_type == 'sent' %}
+                    You haven't made any offers on listings yet.
+                {% else %}
+                    You don't have any offers yet.
+                {% endif %}
+            </p>
+            <a href="{{ url_for('listings.market_category') }}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                <i class="fas fa-search mr-2"></i>Browse Marketplace
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Quick Tips -->
+    <div class="mt-8 bg-blue-50 rounded-xl p-6">
+        <div class="flex items-start space-x-3">
+            <i class="fas fa-lightbulb text-blue-500 text-xl mt-1"></i>
+            <div>
+                <h3 class="font-semibold text-blue-900 mb-2">Offer Tips</h3>
+                <ul class="text-sm text-blue-800 space-y-1">
+                    <li>• <strong>Respond quickly</strong> - Offers expire after 7 days if no response</li>
+                    <li>• <strong>Counter offers</strong> - Don't like the price? Make a counter offer!</li>
+                    <li>• <strong>Check seller ratings</strong> - Review company ratings before making offers</li>
+                    <li>• <strong>Be specific</strong> - Include quantity and pickup preferences in your offer message</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Add timestamp for expiry comparison
+window.now = new Date();
+</script>
+{% endblock %}
