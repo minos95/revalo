@@ -1,3 +1,7 @@
+from datetime import datetime, timedelta
+
+from flask import current_app
+
 from app import db
 
 
@@ -9,7 +13,7 @@ class Item(db.Model):
     name=db.Column(db.String(length=30),nullable=False)
     description=db.Column(db.String(length=1024))
     unit= db.Column(db.String(length=30),nullable=False)
-    quantity= db.Column(db.Integer(),nullable=False) 
+    quantity= db.Column(db.Numeric(10,2),nullable=False) 
     price_negotiable = db.Column(db.Boolean, default=True)
     minimum_order = db.Column(db.Numeric(10, 2), default=0)
     views=db.Column(db.Integer(),default=0)
@@ -19,7 +23,7 @@ class Item(db.Model):
     pickup_country=db.Column(db.String(length=30))
 
     sell_type=db.Column(db.String(length=30))
-    price=db.Column(db.Integer(),nullable=False) 
+    price=db.Column(db.Numeric(10,2),nullable=False) 
     status=db.Column(db.String(length=30),default="pending") #active/closed/sold/published/pending
     expires_at= db.Column(db.DateTime())
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
@@ -37,11 +41,11 @@ class Item(db.Model):
     
     def __repr__(self):
         return f'Item {self.name}'
-        def __init__(self, **kwargs):
-            super().__init__(**kwargs)
-            if not self.expires_at:
-                days = current_app.config.get('LISTING_EXPIRY_DAYS', 30)
-                self.expires_at = datetime.utcnow() + timedelta(days=days)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if not self.expires_at:
+            days = current_app.config.get('LISTING_EXPIRY_DAYS', 30)
+            self.expires_at = datetime.utcnow() + timedelta(days=days)
     
     @property
     def is_expired(self):

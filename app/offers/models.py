@@ -7,8 +7,8 @@ class Offer(db.Model):
     sender_company_id = db.Column(db.Integer(),db.ForeignKey('company.id'))
     buyer_id=db.Column(db.Integer(),db.ForeignKey('user.id'))
     seller_id=db.Column(db.Integer(),db.ForeignKey('user.id'))
-    offered_price = db.Column(db.Integer(),nullable=False)
-    quantity_requested = db.Column(db.Integer(),nullable=False)
+    offered_price = db.Column(db.Numeric(10,2),nullable=False)
+    quantity_requested = db.Column(db.Numeric(10,2),nullable=False)
     unit = db.Column(db.String(length=300),nullable=False)
     message = db.Column(db.String(length=300))
     status = db.Column(db.String(length=30),default="pending")#pending/countred/accepted/rejected/cancelled/expired

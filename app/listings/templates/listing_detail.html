@@ -335,7 +335,7 @@
                             </div>
                         {% endif %}
                     {% else %}
-                        <a href="{{ url_for('auth.login_page', next=request.url) }}" class="block w-full mt-6 bg-green-600 text-white text-center py-3 rounded-lg hover:bg-green-700 transition">
+                        <a href="{{ url_for('auth.login', next=request.url) }}" class="block w-full mt-6 bg-green-600 text-white text-center py-3 rounded-lg hover:bg-green-700 transition">
                             <i class="fas fa-sign-in-alt mr-2"></i>Sign in to Make Offer
                         </a>
                     {% endif %}

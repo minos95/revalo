@@ -1,0 +1,401 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Listing - {{ listing.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .image-preview {
+        position: relative;
+        display: inline-block;
+    }
+    .image-preview:hover .delete-image {
+        display: flex;
+    }
+    .delete-image {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: red;
+        color: white;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 12px;
+    }
+    .quality-badge {
+        background: #f3f4f6;
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+    }
+    .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    .status-active { background: #d1fae5; color: #065f46; }
+    .status-pending { background: #fef3c7; color: #92400e; }
+    .status-expired { background: #fee2e2; color: #991b1b; }
+    .status-sold { background: #e5e7eb; color: #374151; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex justify-between items-start">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Edit Listing</h1>
+                <p class="text-gray-600 mt-1">Update your waste listing information</p>
+            </div>
+            <div>
+                <span class="status-badge status-{{ listing.status }}">
+                    <i class="fas 
+                        {% if listing.status == 'active' %}fa-check-circle
+                        {% elif listing.status == 'pending' %}fa-clock
+                        {% elif listing.status == 'expired' %}fa-exclamation-circle
+                        {% else %}fa-check-double{% endif %} mr-1"></i>
+                    {{ listing.status|title }}
+                </span>
+            </div>
+        </div>
+        
+        <!-- Warning for expired listings -->
+        {% if listing.status == 'expired' %}
+        <div class="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div class="flex items-start">
+                <i class="fas fa-exclamation-triangle text-yellow-600 mt-0.5 mr-3"></i>
+                <div class="text-sm text-yellow-800">
+                    <p class="font-semibold">This listing has expired</p>
+                    <p>Updating this listing will reactivate it for {{ config.LISTING_EXPIRY_DAYS }} days.</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <form method="POST" enctype="multipart/form-data" class="space-y-8">
+        {{ form.hidden_tag() }}
+        
+        <!-- Basic Information -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+            <div class="border-b px-6 py-4 bg-gray-50">
+                <h2 class="font-semibold text-gray-900">
+                    <i class="fas fa-info-circle text-green-600 mr-2"></i>Basic Information
+                </h2>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Title <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.name(class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-green-500 focus:border-green-500") }}
+                    {% for error in form.name.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Description <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.description(class="w-full border border-gray-300 rounded-lg px-4 py-2 rows-4", rows="4") }}
+                    {% for error in form.description.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                
+            </div>
+        </div>
+        
+        <!-- Quantity & Pricing -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+            <div class="border-b px-6 py-4 bg-gray-50">
+                <h2 class="font-semibold text-gray-900">
+                    <i class="fas fa-chart-line text-green-600 mr-2"></i>Quantity & Pricing
+                </h2>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Quantity <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.quantity(class="w-full border border-gray-300 rounded-lg px-4 py-2", type="number", step="0.01") }}
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Unit</label>
+                        {{ form.unit(class="w-full border border-gray-300 rounded-lg px-4 py-2") }}
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Price (USD)</label>
+                        {{ form.price(class="w-full border border-gray-300 rounded-lg px-4 py-2", type="number", step="0.01", placeholder="Leave blank for Make Offer") }}
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <label class="flex items-center">
+                        {{ form.price_negotiable(class="h-4 w-4 text-green-600 focus:ring-green-500") }}
+                        <span class="ml-2 text-sm text-gray-700">Price is negotiable</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quality Attributes -->
+        {% if quality_attributes %}
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+            <div class="border-b px-6 py-4 bg-gray-50">
+                <h2 class="font-semibold text-gray-900">
+                    <i class="fas fa-clipboard-list text-green-600 mr-2"></i>Material Specifications
+                </h2>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for attr in quality_attributes %}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ attr.name }}
+                            {% if attr.is_required %}<span class="text-red-500">*</span>{% endif %}
+                        </label>
+                        
+                        {% if attr.field == 'select' %}
+                            <select name="attr_{{ attr.id }}" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                                <option value="">Select {{ attr.name }}</option>
+                                {% for option in attr.options %}
+                                <option value="{{ option.id }}" 
+                                    {% if quality_values.get('attr_' ~ attr.id) == option.id|string %}selected{% endif %}>
+                                    {{ option.value }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        {% elif attr.field == 'radio' %}
+                            <div class="space-y-2">
+                                {% for option in attr.options %}
+                                <label class="flex items-center">
+                                    <input type="radio" name="attr_{{ attr.id }}" value="{{ option.id }}"
+                                           {% if quality_values.get('attr_' ~ attr.id) == option.id|string %}checked{% endif %}
+                                           class="h-4 w-4 text-green-600 focus:ring-green-500">
+                                    <span class="ml-2 text-sm text-gray-700">{{ option.value }}</span>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <input type="text" name="attr_{{ attr.id }}" 
+                                   value="{{ quality_values.get('attr_' ~ attr.id, '') }}"
+                                   placeholder="{{ attr.placeholder or '' }}"
+                                   class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Location -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+            <div class="border-b px-6 py-4 bg-gray-50">
+                <h2 class="font-semibold text-gray-900">
+                    <i class="fas fa-map-marker-alt text-green-600 mr-2"></i>Pickup Location
+                </h2>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                        {{ form.pickup_address(class="w-full border border-gray-300 rounded-lg px-4 py-2") }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
+                        {{ form.pickup_city(class="w-full border border-gray-300 rounded-lg px-4 py-2") }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">State</label>
+                        {{ form.pickup_state(class="w-full border border-gray-300 rounded-lg px-4 py-2") }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                        {{ form.pickup_country(class="w-full border border-gray-300 rounded-lg px-4 py-2") }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
+                        {{ form.pickup_postal_code(class="w-full border border-gray-300 rounded-lg px-4 py-2") }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Images Section -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+            <div class="border-b px-6 py-4 bg-gray-50">
+                <h2 class="font-semibold text-gray-900">
+                    <i class="fas fa-images text-green-600 mr-2"></i>Images
+                </h2>
+            </div>
+            <div class="p-6">
+                <!-- Existing Images -->
+                {% if existing_images %}
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">Current Images</label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {% for image in existing_images %}
+                        <div class="image-preview relative">
+                            <img src="{{ url_for('static', filename=image.uri) }}" 
+                                 class="w-full h-32 object-cover rounded-lg border">
+                            <div class="delete-image" onclick="markForDeletion({{ loop.index0 }})">
+                                <i class="fas fa-times"></i>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Hidden field for image deletion -->
+                    {{ form.delete_images(class="hidden", id="deleteImages") }}
+                    <p id="deletionMessage" class="text-xs text-gray-500 mt-2"></p>
+                </div>
+                {% endif %}
+                
+                <!-- Add New Images -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-3">Add New Images</label>
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-400 transition cursor-pointer"
+                         onclick="document.getElementById('newImages').click()">
+                        <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
+                        <p class="text-gray-600">Click to upload new images</p>
+                        <p class="text-xs text-gray-500 mt-1">PNG, JPG, JPEG up to 10MB each</p>
+                        <input type="file" name="new_images" id="newImages" multiple accept="image/*" class="hidden">
+                    </div>
+                    <div id="newImagePreview" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Logistics -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+            <div class="border-b px-6 py-4 bg-gray-50">
+                <h2 class="font-semibold text-gray-900">
+                    <i class="fas fa-truck text-green-600 mr-2"></i>Logistics
+                </h2>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    <label class="flex items-center">
+                        {{ form.pickup_available(class="h-4 w-4 text-green-600 focus:ring-green-500") }}
+                        <span class="ml-2 text-sm text-gray-700">Buyer can pickup</span>
+                    </label>
+                    
+                    <label class="flex items-center">
+                        {{ form.delivery_available(class="h-4 w-4 text-green-600 focus:ring-green-500", id="deliveryAvailable") }}
+                        <span class="ml-2 text-sm text-gray-700">I can deliver</span>
+                    </label>
+                    
+                    <div id="deliveryCostContainer" class="hidden ml-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Delivery Cost (USD)</label>
+                        {{ form.delivery_cost(class="w-48 border border-gray-300 rounded-lg px-4 py-2", type="number", step="0.01", placeholder="0.00") }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="flex justify-end space-x-4">
+            <a href="{{ url_for('listings.detail', listing_id=listing.id) }}" 
+               class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                Cancel
+            </a>
+            <button type="submit" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                <i class="fas fa-save mr-2"></i>Save Changes
+            </button>
+        </div>
+    </form>
+</div>
+
+{% block extra_js %}
+<script>
+    // Image deletion tracking
+    let imagesToDelete = [];
+    
+    function markForDeletion(index) {
+        if (confirm('Remove this image?')) {
+            imagesToDelete.push(index);
+            document.getElementById('deleteImages').value = index;
+            document.getElementById('deletionMessage').textContent = 
+                `${imagesToDelete.length} image(s) marked for deletion. Save to confirm.`;
+            
+            // Visual feedback
+            const imageDivs = document.querySelectorAll('.image-preview');
+            if (imageDivs[index]) {
+                imageDivs[index].style.opacity = '0.5';
+                imageDivs[index].style.border = '2px solid red';
+            }
+        }
+    }
+    
+    // New image preview
+    document.getElementById('newImages').addEventListener('change', function(e) {
+        const preview = document.getElementById('newImagePreview');
+        preview.innerHTML = '';
+        
+        Array.from(e.target.files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const div = document.createElement('div');
+                div.className = 'relative';
+                div.innerHTML = `
+                    <img src="${e.target.result}" class="w-full h-32 object-cover rounded-lg border">
+                    <button type="button" onclick="this.parentElement.remove()" 
+                            class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">
+                        ×
+                    </button>
+                `;
+                preview.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        });
+    });
+    
+    // Delivery cost toggle
+    const deliveryCheckbox = document.getElementById('deliveryAvailable');
+    const deliveryContainer = document.getElementById('deliveryCostContainer');
+    
+    function toggleDeliveryCost() {
+        if (deliveryCheckbox.checked) {
+            deliveryContainer.classList.remove('hidden');
+        } else {
+            deliveryContainer.classList.add('hidden');
+        }
+    }
+    
+    deliveryCheckbox.addEventListener('change', toggleDeliveryCost);
+    toggleDeliveryCost();
+    
+    // Warn before leaving with unsaved changes
+    let formChanged = false;
+    const form = document.querySelector('form');
+    const inputs = form.querySelectorAll('input, select, textarea');
+    
+    inputs.forEach(input => {
+        input.addEventListener('change', () => { formChanged = true; });
+    });
+    
+    window.addEventListener('beforeunload', (e) => {
+        if (formChanged) {
+            e.preventDefault();
+            e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+            return 'You have unsaved changes. Are you sure you want to leave?';
+        }
+    });
+    
+    form.addEventListener('submit', () => { formChanged = false; });
+</script>
+{% endblock %}
+{% endblock %}

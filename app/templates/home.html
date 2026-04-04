@@ -13,7 +13,7 @@
                 Browse Marketplace
             </a>
             {% if not current_user.is_authenticated %}
-            <a href="{{ url_for('auth.signup_page') }}" class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-green-700 transition">
+            <a href="{{ url_for('auth.signup') }}" class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-green-700 transition">
                 Get Started
             </a>
             {% endif %}
@@ -51,13 +51,27 @@
         <h2 class="text-3xl font-bold text-center mb-12">Browse by Category</h2>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
             {% for category in categories %}
-            <a href="{{ url_for('listings.market', category_id=category.id) }}" class="bg-white rounded-xl p-6 text-center hover:shadow-lg transition hover-scale">
-                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas {{ category.icon or 'fa-trash-alt' }} text-2xl text-green-600"></i>
+            <a href="{{ url_for('listings.market', category_id=category.id) }}" 
+           class="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden">
+            <div class="relative h-48 bg-gradient-to-br from-green-50 to-gray-100">
+                {% if category.default_image_url %}
+                <img src="{{url_for('static',filename=category.default_image_url)}}" class="w-full h-full object-cover">
+                {% else %}
+                <div class="w-full h-full flex items-center justify-center">
+                    <i class="fas {{ category.icon or 'fa-trash-alt' }} text-6xl text-green-500 group-hover:scale-110 transition-transform"></i>
                 </div>
-                <h3 class="font-semibold text-gray-800">{{ category.name }}</h3>
+                {% endif %}
+                <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all"></div>
+            </div>
+            
+            <div class="p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-2">{{ category.name }}</h3>
                 <p class="text-sm text-gray-500 mt-1">{{ category.items|length }} listings</p>
-            </a>
+                <p class="text-gray-600 mb-4">{{ category.description or 'List your waste materials in this category' }}</p>
+                
+                
+            </div>
+        </a>
             {% endfor %}
         </div>
     </div>

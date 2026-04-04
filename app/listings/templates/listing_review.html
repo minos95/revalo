@@ -79,8 +79,8 @@
                             <div class="space-y-1">
                                 {% for quality in listing.qualities %}
                                 <div class="flex">
-                                    <span class="w-32 text-gray-500">{{ quality.owned_attribute.name }}:</span>
-                                    <span>{{ quality.value_text or quality.owned_options.value }}</span>
+                                    <span class="w-32 text-gray-500">{{ quality.attribute.name }}:</span>
+                                    <span>{{ quality.value_text or quality.option.value }}</span>
                                 </div>
                                 {% endfor %}
                             </div>
@@ -124,12 +124,12 @@
             
             <!-- Action Buttons -->
             <div class="flex justify-between pt-6 border-t">
-                <a href="{{ url_for('listing_edit_page', listing_id=listing.id) }}" 
+                <a href="{{ url_for('listings.edit', listing_id=listing.id) }}" 
                    class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
                     <i class="fas fa-edit mr-2"></i>Edit Listing
                 </a>
                 
-                <form method="POST" action="{{ url_for('listing_publish_page', listing_id=listing.id) }}">
+                <form method="POST" action="{{ url_for('listings.publish', listing_id=listing.id) }}">
                     <button type="submit" class="px-8 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
                         <i class="fas fa-check-circle mr-2"></i>Publish Listing
                     </button>

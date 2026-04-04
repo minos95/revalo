@@ -1,3 +1,7 @@
+from datetime import datetime
+
+from flask_login import current_user
+
 from app import db
 
 class Transaction(db.Model):
@@ -52,6 +56,29 @@ class Transaction(db.Model):
     completed_at = db.Column(db.DateTime)
     cancelled_at = db.Column(db.DateTime)
     cancelled_reason = db.Column(db.Text)
+
+      # Dispute tracking
+    is_disputed = db.Column(db.Boolean, default=False)
+    dispute_reason = db.Column(db.Text)
+    dispute_raised_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    dispute_raised_at = db.Column(db.DateTime)
+    dispute_resolved_at = db.Column(db.DateTime)
+
+        # Delivery confirmation (buyer side)
+    delivery_confirmed = db.Column(db.Boolean, default=False)
+    delivery_confirmed_at = db.Column(db.DateTime)
+    delivery_confirmed_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    
+    # Quality acceptance (buyer side)
+    quality_accepted = db.Column(db.Boolean, default=False)
+    quality_accepted_at = db.Column(db.DateTime)
+    quality_notes = db.Column(db.Text)
+    rejection_reason = db.Column(db.Text)
+    
+    # Payment confirmation (seller side)
+    payment_confirmed = db.Column(db.Boolean, default=False)
+    payment_confirmed_at = db.Column(db.DateTime)
+    payment_confirmed_by = db.Column(db.Integer, db.ForeignKey('user.id'))
     
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
     updated_at = db.Column(db.DateTime(timezone=True), default=db.func.now(), onupdate=db.func.now())
@@ -71,4 +98,77 @@ class Transaction(db.Model):
 
     review = db.relationship('Review', back_populates='transaction')
     
+
+    def mark_in_transit(self):
+        if self.status=="pending" and self.seller_company_id==current_user.company_id:
+          print("+++++++++++++++++++++++++++")
+          self.status = 'in_transit'
+          db.session.commit()
+        else :
+            raise ValueError('Cannot confirm delivery at this stage')
+          
+    
+
+    def can_buyer_confirm_delivery(self):
+        """Check if buyer can confirm delivery"""
+        return (
+            self.status == 'in_transit' and
+            not self.delivery_confirmed and
+            not self.is_disputed
+        )
+    
+    def buyer_confirm_delivery(self, user_id, notes=None):
+        """Buyer confirms receipt of materials"""
+        if not self.can_buyer_confirm_delivery():
+            raise ValueError('Cannot confirm delivery at this stage')
+        
+        self.delivery_confirmed = True
+        self.delivery_confirmed_at = datetime.utcnow()
+        self.delivery_confirmed_by = user_id
+        
+        if notes:
+            self.quality_notes = notes
+        
+        # Move to quality review stage
+        self.status = 'quality_review'
+        db.session.commit()
+    
+    def buyer_accept_quality(self, user_id, weight_certificate=None):
+        """Buyer accepts material quality"""
+        if self.status != 'quality_review':
+            raise ValueError('Cannot accept quality at this stage')
+        
+        self.quality_accepted = True
+        self.quality_accepted_at = datetime.utcnow()
+        
+        if weight_certificate:
+            self.weight_certificate_url = weight_certificate
+        
+        # Move to payment release stage
+        self.status = 'payment_pending'
+        db.session.commit()
+    
+    def buyer_reject_quality(self, user_id, reason):
+        """Buyer rejects material quality - opens dispute"""
+        if self.status != 'quality_review':
+            raise ValueError('Cannot reject quality at this stage')
+        
+        self.is_disputed = True
+        self.dispute_reason = reason
+        self.dispute_raised_by = user_id
+        self.dispute_raised_at = datetime.utcnow()
+        self.status = 'disputed'
+        db.session.commit()
+    
+    def seller_confirm_payment(self, user_id):
+        """Seller confirms payment received"""
+        if self.status != 'payment_pending':
+            raise ValueError('Cannot confirm payment at this stage')
+        
+        self.payment_confirmed = True
+        self.payment_confirmed_at = datetime.utcnow()
+        self.payment_confirmed_by = user_id
+        self.status = 'completed'
+        self.completed_at = datetime.utcnow()
+        db.session.commit()
 

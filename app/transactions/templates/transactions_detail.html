@@ -85,17 +85,88 @@
                     </div>
                     <p class="text-gray-500 mt-1">Created on {{ transaction.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
                 </div>
-                
-                {% if transaction.status == 'pending' and (transaction.seller_company_id == current_user.company_id) %}
-                <div class="mt-4 md:mt-0 flex space-x-3">
-                    <button onclick="openConfirmModal()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 action-button">
-                        <i class="fas fa-check-circle mr-2"></i>Confirm Transaction
-                    </button>
-                    <button onclick="openCancelModal()" class="px-4 py-2 border border-red-500 text-red-600 rounded-lg hover:bg-red-50 action-button">
-                        <i class="fas fa-times-circle mr-2"></i>Cancel
-                    </button>
+                <!--delivery confirmation seller-->
+                 {%if transaction.status=='pending' and transaction.seller_company_id == current_user.company_id %}
+                  <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+                    <h3 class="text-xl font-bold mb-4">Confirm Pickup</h3>
+            <p class="text-gray-600 mb-4">Confirm that the materials have been picked up from the seller's location.</p>
+                    
+                    <form method="POST" class="space-y-4">
+                        
+                        <div class="flex space-x-3">
+                            {{mark_in_transit_form.submit(class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700")}}
+                           
+                            <button onclick="openDisputeModal()" class="px-4 py-2 border border-red-500 text-red-600 rounded-lg hover:bg-red-50">
+                                <i class="fas fa-flag mr-2"></i>Report Issue
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                {%endif%}
+                <!-- Delivery Confirmation (Buyer) -->
+                {% if transaction.status == 'in_transit' and transaction.buyer_company_id == current_user.company_id and not transaction.delivery_confirmed %}
+                <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+                    <h3 class="font-semibold text-gray-900 mb-4">Confirm Delivery</h3>
+                    <p class="text-gray-600 mb-4">Have you received the materials? Please confirm delivery to proceed.</p>
+                    
+                    <form method="POST" action="{{ url_for('transactions.confirm_delivery', transaction_id=transaction.id) }}" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
+                            <textarea name="notes" rows="2" class="w-full border rounded-lg px-3 py-2" 
+                                    placeholder="Add any notes about the delivery..."></textarea>
+                        </div>
+                        
+                        <div class="flex space-x-3">
+                            <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                                <i class="fas fa-check-circle mr-2"></i>Confirm Delivery
+                            </button>
+                            <button onclick="openDisputeModal()" class="px-4 py-2 border border-red-500 text-red-600 rounded-lg hover:bg-red-50">
+                                <i class="fas fa-flag mr-2"></i>Report Issue
+                            </button>
+                        </div>
+                    </form>
                 </div>
                 {% endif %}
+
+                <!-- Quality Acceptance (Buyer) -->
+                {% if transaction.status == 'quality_review' and transaction.buyer_company_id == current_user.company_id and not transaction.quality_accepted %}
+                <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+                    <h3 class="font-semibold text-gray-900 mb-4">Verify Material Quality</h3>
+                    <p class="text-gray-600 mb-4">Please verify that the materials meet the agreed specifications.</p>
+                    
+                    <form method="POST" action="{{ url_for('transactions.accept_quality', transaction_id=transaction.id) }}" enctype="multipart/form-data" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Weight Certificate (Optional)</label>
+                            <input type="file" name="weight_certificate" accept=".pdf,.jpg,.png" class="w-full">
+                            <p class="text-xs text-gray-500 mt-1">Upload scale ticket or weight certificate</p>
+                        </div>
+                        
+                        <div class="flex space-x-3">
+                            <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                                <i class="fas fa-check-circle mr-2"></i>Accept Quality
+                            </button>
+                            <button onclick="openRejectQualityModal()" class="px-4 py-2 border border-red-500 text-red-600 rounded-lg hover:bg-red-50">
+                                <i class="fas fa-times-circle mr-2"></i>Reject Quality
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                {% endif %}
+
+                <!-- Payment Confirmation (Seller) -->
+                {% if transaction.status == 'payment_pending' and transaction.seller_company_id == current_user.company_id and not transaction.payment_confirmed %}
+                <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+                    <h3 class="font-semibold text-gray-900 mb-4">Confirm Payment Received</h3>
+                    <p class="text-gray-600 mb-4">Have you received the payment? Confirm to complete the transaction.</p>
+                    
+                    <form method="POST" action="{{ url_for('transactions.confirm_payment', transaction_id=transaction.id) }}">
+                        <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                            <i class="fas fa-check-circle mr-2"></i>Confirm Payment Received
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+               
             </div>
         </div>
         
@@ -136,7 +207,7 @@
                                         <span class="text-gray-500">Unit Price:</span>
                                         <span class="font-medium ml-2">
                                             {% if transaction.listing.price %}
-                                            ${{ "%.2f"|format(transaction.listing.price) }}
+                                            {{ "%.2f"|format(transaction.listing.price) }} DA
                                             {% else %}
                                             Negotiated
                                             {% endif %}
@@ -167,15 +238,15 @@
                         <div class="space-y-3">
                             <div class="flex justify-between items-center pb-3 border-b">
                                 <span class="text-gray-600">Item Price</span>
-                                <span class="font-medium">${{ "%.2f"|format(transaction.price) }}</span>
+                                <span class="font-medium">{{ "%.2f"|format(transaction.price) }} DA /{{transaction.unit}}</span>
                             </div>
                             <div class="flex justify-between items-center pb-3 border-b">
                                 <span class="text-gray-600">Platform Fee (5%)</span>
-                                <span class="font-medium">${{ "%.2f"|format(transaction.commission_amount) }}</span>
+                                <span class="font-medium">{{ "%.2f"|format(transaction.commission_amount) }} DA</span>
                             </div>
                             <div class="flex justify-between items-center pt-2">
                                 <span class="text-lg font-semibold text-gray-900">Total Amount</span>
-                                <span class="text-2xl font-bold text-green-600">${{ "%.2f"|format(transaction.price) }}</span>
+                                <span class="text-2xl font-bold text-green-600">{{ "%.2f"|format(transaction.total_amount) }} DA</span>
                             </div>
                         </div>
                         
@@ -320,7 +391,7 @@
             
             <!-- RIGHT COLUMN: Parties & Documents -->
             <div class="lg:col-span-1 space-y-6">
-                
+                {%if current_user.comapny_id==transaction.buyer_company_id%}
                 <!-- Seller Info Card -->
                 <div class="bg-white rounded-xl shadow-md overflow-hidden">
                     <div class="border-b px-6 py-4 bg-gray-50">
@@ -370,7 +441,7 @@
                         </button>
                     </div>
                 </div>
-                
+                {%else%}
                 <!-- Buyer Info Card -->
                 <div class="bg-white rounded-xl shadow-md overflow-hidden">
                     <div class="border-b px-6 py-4 bg-gray-50">
@@ -420,7 +491,7 @@
                         </button>
                     </div>
                 </div>
-                
+                {%endif%}
                 <!-- Documents Card -->
                 <div class="bg-white rounded-xl shadow-md overflow-hidden">
                     <div class="border-b px-6 py-4 bg-gray-50">

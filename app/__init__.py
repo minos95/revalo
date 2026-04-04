@@ -24,7 +24,7 @@ ALLOWED_EXTENSIONS = { 'pdf', 'png', 'jpg', 'jpeg'}
 db=SQLAlchemy(app,metadata=metadata)
 bcrypt=Bcrypt(app)
 login_manager=LoginManager(app)
-login_manager.login_view="home_page"
+login_manager.login_view="home"
 login_manager.login_message_category='info'
 migrate = Migrate(app, db)
 
@@ -41,4 +41,4 @@ app.register_blueprint(offers_bp)
 
 
 from app import routes
-from app import dashboard_route
+

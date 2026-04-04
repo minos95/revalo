@@ -11,78 +11,7 @@ from app.offers.forms import cancelOfferForm, makeOfferForm, rejectOfferForm, va
 from app.offers.models import Offer
 from app.auth.models import Notification
 from sqlalchemy import desc,or_
-
 from app.offers import bp
-
-
-
-"""
-@app.route("/index",methods=['POST','GET'])
-def index():
-    
-    offers_sent=Offer.query.filter_by(buyer_company_id=current_user.company_id).order_by(desc(Offer.created_at)).all()
-    offers_received=Offer.query.filter_by(seller_company_id=current_user.company_id).order_by(desc(Offer.created_at)).all()
-    validate_form=validateOfferForm()
-    cancel_form=cancelOfferForm()
-    reject_form=rejectOfferForm()
-    #------------------------------------------------ accept offer
-    if validate_form.validate_on_submit() and validate_form.submit1.data:
-        print('------------------------------validate form')
-        offer=Offer.query.filter_by(id=validate_form.id.data).first()
-        item=Item.query.filter_by(id=validate_form.item_id.data).first()
-        offer.status="accepted"
-        offer.accepted_at=datetime.now()
-        offers_to_reject=Offer.query.filter(Offer.item_id==validate_form.item_id.data , Offer.id!=validate_form.id.data,Offer.status=="pending" ).all()
-        quantity_avalaibale=item.quantity-validate_form.quantity.data
-        item.quantity=quantity_avalaibale     
-        if quantity_avalaibale==0:
-            item.status="solde"
-        
-        for offer in offers_to_reject:
-            if offer.quantity_requested>quantity_avalaibale:
-                offer.status="rejected"
-
-        total_amount=validate_form.price.data*validate_form.quantity.data
-        commission_amount=total_amount*0.07
-        seller_net_amount=total_amount-commission_amount
-        transaction_to_create=Transaction(offer_id=validate_form.id.data,
-                                          item_id=validate_form.item_id.data,
-                                          price=validate_form.price.data,
-                                          quantity=validate_form.quantity.data,
-                                          unit=validate_form.unit.data,
-                                          buyer_company_id=validate_form.buyer_company_id.data,
-                                          seller_company_id=validate_form.seller_company_id.data,
-                                         
-                                          total_amount=total_amount,
-                                          commission_amount=commission_amount,
-                                          seller_net_amount=seller_net_amount
-                                          )
-  
-        
-       
-        db.session.add(transaction_to_create)
-        db.session.commit()
-    #---------------------------------------------------end validate offer
-
-    #--------------------------------------------------- cancel offer
-    if cancel_form.validate_on_submit() and cancel_form.submit2.data:
-        offer_to_cancel=Offer.query.filter_by(id=cancel_form.id.data).first()
-        offer_to_cancel.status="canceled"
-        db.session.commit()
-    #---------------------------------------------------end cancel offer
-    
-    #---------------------------------------------------reject offer
-    if reject_form.validate_on_submit() and reject_form.submit3.data:
-        offer_to_reject=Offer.query.filter_by(id=reject_form.id.data).first()
-        offer_to_reject.status="canceled"
-        db.session.commit()
-
-    return render_template('index.html',offers_sent=offers_sent,offers_received=offers_received,validate_form=validate_form,cancel_form=cancel_form,reject_form=reject_form)
-"""
-
-
-
-
 
 
 @bp.route('/')
@@ -376,6 +305,8 @@ def accept_offer(offer_id):
     """Accept an offer"""
     offer = Offer.query.get_or_404(offer_id)
     listing = offer.item
+    commission_rate=0.05
+    buyer_commission_rate=0
     
     # Check if user can accept this offer (must be seller of the listing)
     if listing.company_id != current_user.company_id:
@@ -390,7 +321,7 @@ def accept_offer(offer_id):
     offer.status="accepted"
     offer.accepted_at=datetime.now()
     # Create transaction
-    commission_rate=0.07
+    
     total_amount=offer.offered_price*offer.quantity_requested
     commission_amount=total_amount*commission_rate
     seller_net_amount=total_amount-commission_amount

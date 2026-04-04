@@ -10,7 +10,7 @@ from app.auth.models import Company
 
 
 @bp.route("/signup",methods=['GET','POST'])
-def signup_page():
+def signup():
     form=CompanyRegisterForm()
     if form.validate_on_submit():
         company_to_create=Company(name=form.company_name.data,
@@ -33,14 +33,14 @@ def signup_page():
                             company_id=company_created)
         db.session.add(user_to_create)
         db.session.commit()
-        return redirect(url_for('home_page'))
+        return redirect(url_for('home'))
     if form.errors!={}:
         for err_msg in form.errors.values():
             flash(f'error {err_msg}',category='danger')
     return render_template('register.html',form=form)
 
 @bp.route("/login",methods=['GET','POST'])
-def login_page():
+def login():
    
    
    form=LoginForm()
@@ -50,19 +50,19 @@ def login_page():
            attempted_password=form.password.data):
            login_user(attempted_user)
            flash("success you are logged in",category='success')
-           return redirect(url_for('dashboard_page'))
+           return redirect(url_for('dashboard'))
        else:
            flash('Username or password are incorrect! please try again',category='danger')
    return render_template('login.html',form=form)
 
 
 @bp.route("/logout")
-def logout_page():
+def logout():
     logout_user()
     flash("You have been logout!",category="info")
     return redirect(url_for('home'))
 @bp.route("/setting")
-def setting_page():
+def setting():
     company=Company.query.filter(User.company_id==current_user.company_id).first()
 
     return render_template('setting.html',user=current_user,company=company)
@@ -77,7 +77,7 @@ def update_company():
 
     db.session.commit()
 
-    return redirect(url_for("setting_page"))
+    return redirect(url_for("setting"))
 
 @bp.route("/settings/profile", methods=["POST"])
 @login_required
@@ -90,4 +90,4 @@ def update_profile():
     user.email_verified=False
     db.session.commit()
 
-    return redirect(url_for("setting_page"))
+    return redirect(url_for("setting"))

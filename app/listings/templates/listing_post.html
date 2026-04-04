@@ -51,9 +51,9 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">
                             Listing Title <span class="text-red-500">*</span>
                         </label>
-                        {{ form.name(class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-green-500 focus:border-green-500", 
+                        {{ form.title(class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-green-500 focus:border-green-500", 
                                      placeholder="e.g., 500kg Clean PET Bottles, Mixed E-waste Lot") }}
-                        {% for error in form.name.errors %}
+                        {% for error in form.title.errors %}
                             <p class="text-red-500 text-xs mt-1">{{ error }}</p>
                         {% endfor %}
                     </div>
@@ -88,7 +88,7 @@
                         {% if attribute.field == 'select' %}
                             <select name="attr_{{ attribute.id }}" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-green-500 focus:border-green-500"
                                     {% if attribute.is_required %}required{% endif %}>
-                                <option value="{{ attribute.id }}">Select {{ attribute.name }}</option>
+                                <option disabled selected value >Select {{ attribute.name }}</option>
                                 {% for option in attribute.options %}
                                 <option value="{{ option.id }}">{{ option.value }}</option>
                                 {% endfor %}
