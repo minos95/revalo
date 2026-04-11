@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - EcoWaste{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen py-8">
+    <div class="max-w-7xl mx-auto px-4">
+        
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+            <p class="text-gray-600 mt-1">Manage your platform, users, and listings</p>
+        </div>
+        
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Total Users</p>
+                        <p class="text-3xl font-bold">{{ total_users }}</p>
+                    </div>
+                    <i class="fas fa-users text-3xl text-blue-400"></i>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Companies</p>
+                        <p class="text-3xl font-bold">{{ total_companies }}</p>
+                    </div>
+                    <i class="fas fa-building text-3xl text-green-400"></i>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Active Listings</p>
+                        <p class="text-3xl font-bold">{{ active_listings }}</p>
+                    </div>
+                    <i class="fas fa-tag text-3xl text-yellow-400"></i>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Total Revenue</p>
+                        <p class="text-2xl font-bold text-green-600">${{ "%.2f"|format(total_revenue) }}</p>
+                    </div>
+                    <i class="fas fa-dollar-sign text-3xl text-green-400"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pending Alerts -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <a href="{{ url_for('admin.listings', moderation='pending_review') }}" class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 hover:bg-yellow-100">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-yellow-800 font-medium">Pending Listings</p>
+                        <p class="text-2xl font-bold text-yellow-600">{{ pending_listings }}</p>
+                    </div>
+                    <i class="fas fa-clock text-3xl text-yellow-400"></i>
+                </div>
+            </a>
+            
+            <a href="{{ url_for('admin.transactions', status='pending') }}" class="bg-blue-50 border border-blue-200 rounded-xl p-4 hover:bg-blue-100">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-blue-800 font-medium">Pending Transactions</p>
+                        <p class="text-2xl font-bold text-blue-600">{{ pending_offers }}</p>
+                    </div>
+                    <i class="fas fa-handshake text-3xl text-blue-400"></i>
+                </div>
+            </a>
+            
+            <a href="{{ url_for('admin.transactions', status='disputed') }}" class="bg-red-50 border border-red-200 rounded-xl p-4 hover:bg-red-100">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-red-800 font-medium">Active Disputes</p>
+                        <p class="text-2xl font-bold text-red-600">{{ pending_disputes }}</p>
+                    </div>
+                    <i class="fas fa-gavel text-3xl text-red-400"></i>
+                </div>
+            </a>
+        </div>
+        
+        <!-- Charts -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h3 class="font-semibold text-gray-900 mb-4">New Users (Last 7 days)</h3>
+                <canvas id="signupsChart" height="200"></canvas>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h3 class="font-semibold text-gray-900 mb-4">Revenue (Last 7 days)</h3>
+                <canvas id="revenueChart" height="200"></canvas>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="px-6 py-4 border-b bg-gray-50">
+                    <h3 class="font-semibold text-gray-900">Recent Users</h3>
+                </div>
+                <div class="divide-y">
+                    {% for user in recent_users %}
+                    <div class="px-6 py-3 flex justify-between items-center">
+                        <div>
+                            <p class="font-medium">{{ user.full_name }}</p>
+                            <p class="text-sm text-gray-500">{{ user.email }}</p>
+                        </div>
+                        <span class="text-xs text-gray-400">{{ user.created_at.strftime('%Y-%m-%d') }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="px-6 py-4 border-b bg-gray-50">
+                    <h3 class="font-semibold text-gray-900">Recent Listings</h3>
+                </div>
+                <div class="divide-y">
+                    {% for listing in recent_listings %}
+                    <div class="px-6 py-3 flex justify-between items-center">
+                        <div>
+                            <p class="font-medium">{{ listing.name[:40] }}</p>
+                            <p class="text-sm text-gray-500">{{ listing.owned_company.name }}</p>
+                        </div>
+                        <span class="text-xs text-gray-400">{{ listing.created_at.strftime('%Y-%m-%d') }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Signups Chart
+    const signupsCtx = document.getElementById('signupsChart').getContext('2d');
+    new Chart(signupsCtx, {
+        type: 'line',
+        data: {
+            labels: {{ signups_weekly|map(attribute='date')|list|tojson }},
+            datasets: [{
+                label: 'New Users',
+                data: {{ signups_weekly|map(attribute='count')|list|tojson }},
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                fill: true
+            }]
+        }
+    });
+    
+    // Revenue Chart
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revenueCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ revenue_weekly|map(attribute='date')|list|tojson }},
+            datasets: [{
+                label: 'Revenue ($)',
+                data: {{ revenue_weekly|map(attribute='revenue')|list|tojson }},
+                backgroundColor: '#10b981',
+                borderRadius: 8
+            }]
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}

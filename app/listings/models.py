@@ -24,7 +24,7 @@ class Item(db.Model):
 
     sell_type=db.Column(db.String(length=30))
     price=db.Column(db.Numeric(10,2),nullable=False) 
-    status=db.Column(db.String(length=30),default="pending") #active/closed/sold/published/pending
+    status=db.Column(db.String(length=30),default="draft") #active/closed/sold/published/pending
     expires_at= db.Column(db.DateTime())
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
     images=db.relationship('Image',backref='owned_item',lazy=True)

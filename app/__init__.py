@@ -33,7 +33,9 @@ from app.auth import bp as auth_bp
 from app.listings import bp as listings_bp
 from app.offers import bp as offers_bp
 from app.transactions import bp as transactions_bp
+from app.admin import bp as admin_bp
 
+app.register_blueprint(admin_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(listings_bp)
 app.register_blueprint(transactions_bp)

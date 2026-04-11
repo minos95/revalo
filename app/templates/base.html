@@ -123,8 +123,37 @@
                 </div>
             </div>
         </div>
+        
     </nav>
-    
+    {% if current_user.is_authenticated and current_user.role == 'admin' %}
+<div class="border-t mt-2 pt-2 w-48 float-left">
+    <div class="px-4 py-2 text-xs text-gray-400 uppercase">Admin</div>
+    <a href="{{ url_for('admin.dashboard') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+        <i class="fas fa-chart-line w-5 mr-2"></i>Dashboard
+    </a>
+    <a href="{{ url_for('admin.users') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+        <i class="fas fa-users w-5 mr-2"></i>Users
+    </a>
+    <a href="{{ url_for('admin.companies') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+        <i class="fas fa-building w-5 mr-2"></i>Companies
+    </a>
+    <a href="{{ url_for('admin.listings') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+        <i class="fas fa-tag w-5 mr-2"></i>Listings
+    </a>
+    <a href="{{ url_for('admin.transactions') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+        <i class="fas fa-exchange-alt w-5 mr-2"></i>Transactions
+    </a>
+    <a href="{{ url_for('admin.categories') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+        <i class="fas fa-folder w-5 mr-2"></i>Categories
+    </a>
+    <a href="{{ url_for('admin.reports') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+        <i class="fas fa-chart-bar w-5 mr-2"></i>Reports
+    </a>
+    <a href="{{ url_for('admin.settings') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+        <i class="fas fa-cog w-5 mr-2"></i>Settings
+    </a>
+</div>
+{% endif %}
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -210,3 +239,4 @@
     {% block extra_js %}{% endblock %}
 </body>
 </html>
+

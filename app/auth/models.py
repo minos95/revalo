@@ -29,7 +29,11 @@ class Company(db.Model):
     nif = db.Column(db.String(length=30))
     nis = db.Column(db.String(length=30))
     referal = db.Column(db.String(length=30))
-    verified=db.Column(db.String(),default="pending")
+    verified=db.Column(db.Boolean(),default=False)
+    verified_by= db.Column(db.Integer())
+    verified_at=db.Column(db.DateTime(timezone=True))
+
+
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
     
     items = db.relationship('Item', back_populates='owned_company',lazy=True)

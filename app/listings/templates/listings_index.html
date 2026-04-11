@@ -18,14 +18,15 @@
                class="py-2 px-1 border-b-2 {% if status == 'active' %}border-green-500 text-green-600{% else %}border-transparent text-gray-500 hover:text-gray-700{% endif %}">
                 Active ({{ active }})
             </a>
-             <a href="{{ url_for('listings.listings', status='published') }}" 
-               class="py-2 px-1 border-b-2 {% if status == 'published' %}border-green-500 text-green-600{% else %}border-transparent text-gray-500 hover:text-gray-700{% endif %}">
-                Published ({{ published }})
-            </a>
             <a href="{{ url_for('listings.listings', status='pending') }}"
                class="py-2 px-1 border-b-2 {% if status == 'pending' %}border-green-500 text-green-600{% else %}border-transparent text-gray-500 hover:text-gray-700{% endif %}">
                 Pending ({{ pending }})
             </a>
+             <a href="{{ url_for('listings.listings', status='draft') }}" 
+               class="py-2 px-1 border-b-2 {% if status == 'draft' %}border-green-500 text-green-600{% else %}border-transparent text-gray-500 hover:text-gray-700{% endif %}">
+                Draft ({{ draft }})
+            </a>
+            
             <a href="{{ url_for('listings.listings', status='sold') }}"
                class="py-2 px-1 border-b-2 {% if status == 'sold' %}border-green-500 text-green-600{% else %}border-transparent text-gray-500 hover:text-gray-700{% endif %}">
                 Sold ({{ sold }})

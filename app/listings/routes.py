@@ -34,6 +34,7 @@ def market(category_id):
     per_page = request.args.get('per_page', 20, type=int)
     form=FilterMarketForm()
     filters=[]
+    filters.append(Item.status=="active")
     attributes=Quality_attributes.query.filter_by(category_id=category_id).all()
     print (attributes)
     if category_id!='all':
@@ -74,8 +75,8 @@ def listings():
         
         if status == 'active':
             query = query.filter_by(status='active').filter(Item.expires_at > datetime.utcnow())
-        elif status == 'published':
-            query = query.filter_by(status='published').filter(Item.expires_at > datetime.utcnow())
+        elif status == 'draft':
+            query = query.filter_by(status='draft').filter(Item.expires_at > datetime.utcnow())
         elif status == 'pending':
             query = query.filter_by(status='pending')
         elif status == 'sold':
@@ -88,7 +89,7 @@ def listings():
 
         counts = {
         'active': Item.query.filter_by(company_id=current_user.company_id, status='active').count(),
-        'published': Item.query.filter_by(company_id=current_user.company_id, status='published').count(),
+        'draft': Item.query.filter_by(company_id=current_user.company_id, status='draft').count(),
         'pending': Item.query.filter_by(company_id=current_user.company_id, status='pending').count(),
         'sold': Item.query.filter_by(company_id=current_user.company_id, status='sold').count(),
         'expired': Item.query.filter(
@@ -194,7 +195,7 @@ def publish(listing_id):
         flash('Unauthorized.', 'danger')
         return redirect(url_for('main.index'))
     
-    listing.status = 'published'
+    listing.status = 'pending'
     listing.default_image_used = not listing.images  # Set to False if images exist
     
     # Update company stats
@@ -413,7 +414,7 @@ def edit(listing_id):
             
             # Update listing status if needed
             if listing.status == 'expired' and listing.expires_at > datetime.utcnow():
-                listing.status = 'published'
+                listing.status = 'pending'
             
             db.session.commit()
             

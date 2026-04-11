@@ -18,6 +18,7 @@ def signup():
                                   activity=form.company_activity.data,
                                   address=form.address.data,
                                   country=form.country.data,
+                                  phone=form.company_phone,
                                   city=form.city.data,
                                   rc=form.rc.data,
                                   nif=form.rc.data,
@@ -46,11 +47,14 @@ def login():
    form=LoginForm()
    if form.validate_on_submit():
        attempted_user=User.query.filter_by(email=form.email.data).first()
-       if attempted_user and attempted_user.check_password_correction(
+       if attempted_user  and attempted_user.check_password_correction(
            attempted_password=form.password.data):
-           login_user(attempted_user)
-           flash("success you are logged in",category='success')
-           return redirect(url_for('dashboard'))
+           if  attempted_user.owned_company.verified:
+            login_user(attempted_user)
+            flash("success you are logged in",category='success')
+            return redirect(url_for('dashboard'))
+           else:
+               flash(f'{attempted_user.owned_company.name} still in verification by EcoWaste admin',category='danger')
        else:
            flash('Username or password are incorrect! please try again',category='danger')
    return render_template('login.html',form=form)
