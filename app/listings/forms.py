@@ -13,7 +13,43 @@ class FilterMarketForm(FlaskForm):
        # self.category.choices += [(c.id, c.name) for c in Category.query.all()]
     name=StringField(label='TITLE',validators=[Length(min=0,max=30)]) 
     category=SelectField("CATEGORY",choices=[])
-    location=SelectField("LOCATION",choices=[("","Tous")])
+    location=SelectField("LOCATION",choices=["All","Adrar","adrar","Chlef", "Laghouat", "Oum El Bouaghi", "Batna","Béjaïa", "Biskra", "Béchar", "Blida", "Bouira", "Tamanrasset","Tébessa",
+ "Tlemcen",
+ "Tiaret",
+ "Tizi Ouzou",
+ "Alger",
+ "Djelfa",
+ "Jijel",
+ "Sétif",
+ "Saïda",
+ "Skikda",
+ "Sidi Bel Abbès",
+ "Annaba",
+ "Guelma",
+"Constantine",
+"Médéa",
+ "Mostaganem",
+ "M'Sila",
+ "Mascara",
+ "Ouargla",
+ "Oran",
+"El Bayadh",
+"Illizi",
+ "Bordj Bou Arreridj",
+ "Boumerdès",
+ "El Tarf",
+ "Tindouf",
+ "Tissemsilt",
+ "El Oued",
+ "Khenchela",
+ "Souk Ahras",
+ "Tipaza",
+ "Mila",
+ "Aïn Defla",
+ "Naâma",
+" Aïn Témouchent",
+ "Ghardaïa",
+ "Relizane",])
     min_quantity=IntegerField(label='Min Quantity (kg) ') 
     min_quantity=IntegerField(label='Min Pice') 
     max_quantity=IntegerField(label='Max Price') 

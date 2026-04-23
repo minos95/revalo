@@ -26,16 +26,20 @@
                         {{form.name(class="w-full border rounded-lg px-3 py-2")}}
                      
                     </div>
-                    
+                     <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">{{form.location.label()}}</label>
+                        {{form.location(class="w-full border rounded-lg px-3 py-2")}}
+                     
+                    </div>
                     <!-- Category -->
                     <div class="mb-4">
                         {% for attr in attributes%}
                         <label class="block text-sm font-medium mb-2">{{attr.name}}</label>
-                        <select name={{attr.name}} class="w-full border rounded-lg px-3 py-2">
+                        <select name="{{attr.name}}" class="w-full border rounded-lg px-3 py-2">
                             <option value="">All </option>
-                            {% for options in attr.options %}
-                            <option value="{{ options.id }}" {% if selected_category == options.id %}selected{% endif %}>
-                                {{ options.value }}
+                            {% for option in attr.options %}
+                            <option value="{{ option.id }}" {% if attr.name in quality_filter and quality_filter[attr.name]==option.id  %} selected {% endif %}>
+                                {{ option.value }}
                             </option>
                             {% endfor %}
                         </select>
@@ -78,7 +82,7 @@
                 {% for listing in listings %}
                 <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition">
                     <div class="h-48 bg-gray-200 relative">
-                        {% if listing.images[0].uri %}
+                        {% if listing.images %}
                         <img src="{{ url_for('static',filename=listing.images[0].uri) }}" class="w-full h-full object-cover">
                         {% else %}
                         <div class="w-full h-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center">
@@ -150,4 +154,6 @@
         </div>
     </div>
 </div>
+
+
 {% endblock %}

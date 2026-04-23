@@ -3,7 +3,7 @@ import os
 
 from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required
-from sqlalchemy import  desc
+from sqlalchemy import  desc,or_
 
 from app import db,app
 from app.listings import bp
@@ -36,29 +36,35 @@ def market(category_id):
     filters=[]
     filters.append(Item.status=="active")
     attributes=Quality_attributes.query.filter_by(category_id=category_id).all()
-    print (attributes)
+   
     if category_id!='all':
         filters.append(Item.category_id==category_id)
-    if request.args.get("name"):
-        filters.append(Item.name.ilike(f"%{request.args.get("name")}%"))
-    if request.args.get("category"):
-        filters.append(Item.category_id==request.args.get("category"))
-    if request.args.get("quantity"):
-        filters.append(request.args.get("quantity")<=Item.quantity)
-    if request.args.get("location"):
-        filters.append(Item.location==request.args.get("location"))
-    if   list(set(request.args) & set(attributes)):
-         print("-------------++++++++++++++++++++++")
-         print(request.args)
-
-    if filters:   
-            listings=Item.query.filter(*filters).paginate(page=page,per_page=per_page,error_out=False)
-    else:
-            listings=Item.query.paginate(page=page,per_page=per_page,error_out=False)
-
+    name=request.args.get("name")
+    if name:
+        form.name.data=name
+        filters.append(or_(Item.name.ilike(f"%{name}%"),Item.description.ilike(f"%{request.args.get("name")}%")))
+        
+    quantity=request.args.get("quantity")
+    if quantity:
+        filters.append(quantity<=Item.quantity)
+    location=request.args.get("location")
+    if location:
+        form.location.default=request.args.get("location")
+        form.process()
+        filters.append(Item.pickup_city==location)
+   
     
- 
-    return render_template('market.html',listings=listings,form=form,category_id=category_id,attributes=attributes)
+    quality_filter={}
+    listings=Item.query
+    for attribute in attributes:
+        if request.args.get(attribute.name):
+            quality_filter[attribute.name]=int(request.args.get(attribute.name))
+            
+    if filters:   
+            listings=listings.filter(*filters)
+    listings=listings.paginate(page=page,per_page=per_page,error_out=False)
+  
+    return render_template('market.html',listings=listings,form=form,category_id=category_id,attributes=attributes,quality_filter=quality_filter)
 
 
 
