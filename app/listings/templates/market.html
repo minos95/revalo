@@ -59,9 +59,8 @@
                     
                     <!-- Quantity -->
                     <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2">Min Quantity (kg)</label>
-                        <input type="number" name="min_quantity" value="{{ request.args.get('min_quantity', '') }}"
-                               class="w-full border rounded-lg px-3 py-2">
+                        <label class="block text-sm font-medium mb-2">{{form.min_quantity.label()}}</label>
+                               {{form.min_quantity(class="w-full border rounded-lg px-3 py-2")}}
                     </div>
                     
                    

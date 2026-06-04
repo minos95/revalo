@@ -3,7 +3,7 @@ from app import db
 from app.auth import bp
 from flask_login import current_user, login_required, login_user, logout_user
 from app.auth.forms import CompanyRegisterForm, LoginForm
-from app.auth.models import User
+from app.auth.models import Notification, User
 from app.auth.models import Company
 
 
@@ -18,11 +18,14 @@ def signup():
                                   activity=form.company_activity.data,
                                   address=form.address.data,
                                   country=form.country.data,
-                                  phone=form.company_phone,
+                                  email=form.company_email.data,
+                                  phone=form.company_phone.data,
                                   city=form.city.data,
+                                  Postal_code=form.postal_code.data,
                                   rc=form.rc.data,
-                                  nif=form.rc.data,
-                                  nis=form.nis.data)
+                                  nif=form.nif.data,
+                                  nis=form.nis.data,
+                                  referal=form.referal.data)
         db.session.add(company_to_create)
         
         company_created=Company.query.filter_by(name=form.company_name.data).first().id
@@ -32,12 +35,27 @@ def signup():
                             role=form.role.data,
                             password=form.password.data,
                             company_id=company_created)
+        notification1=Notification(user_id=1,
+                                type="new_company",
+                                title="New Company",
+                                message=f'New Company has been added {form.company_name.data}',
+                                related_type="company",
+                                )
+        notification2=Notification(user_id=1,
+                                type="new_user",
+                                title="New User",
+                                message=f'New User has been added {form.full_name.data}',
+                                related_type="User",
+                                
+                                )
+        db.session.add(notification1)
+        db.session.add(notification2)
         db.session.add(user_to_create)
         db.session.commit()
         return redirect(url_for('home'))
     if form.errors!={}:
-        for err_msg in form.errors.values():
-            flash(f'error {err_msg}',category='danger')
+        for field,err_msg in form.errors.items():
+            flash(f'error {getattr(form, field).label.text}: {err_msg}',category='danger')
     return render_template('register.html',form=form)
 
 @bp.route("/login",methods=['GET','POST'])

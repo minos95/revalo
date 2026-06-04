@@ -31,13 +31,13 @@ class makeOfferForm(FlaskForm):
         super().__init__(*args, **kwargs)
         self.listing = listing
     
-    def validate_price(self, field):
-        """Validate offer price against listing"""
-        if self.listing and self.listing.price and field.data > self.listing.price * 2:
-            raise ValidationError(f'Offer price seems too high. Maximum suggested: ${self.listing.price * 2:.2f}')
-        
-        if self.listing and self.listing.price and field.data < self.listing.price * 0.1:
-            raise ValidationError(f'Offer price seems too low. Minimum suggested: ${self.listing.price * 0.1:.2f}')
+   # def validate_price(self, field):
+    #    """Validate offer price against listing"""
+     #   if self.listing and self.listing.price and field.data > self.listing.price * 2:
+      #      raise ValidationError(f'Offer price seems too high. Maximum suggested: ${self.listing.price * 2:.2f}')
+       # 
+        #if self.listing and self.listing.price and field.data < self.listing.price * 0.1:
+         #   raise ValidationError(f'Offer price seems too low. Minimum suggested: ${self.listing.price * 0.1:.2f}')
     
     def validate_quantity(self, field):
         """Validate offer quantity against available quantity"""

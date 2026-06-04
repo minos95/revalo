@@ -73,7 +73,8 @@ class OfferService:
             type='offer_received',
             title='New Offer Received',
             message=f'{sender_company.name} has made an offer of ${price:.2f} on your listing "{listing.name}"',
-          
+            related_type='offer',
+            related_id=offer.id
         )
         
         db.session.add(notification)

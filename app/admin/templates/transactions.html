@@ -53,14 +53,14 @@
                     <tr class="hover:bg-gray-50">
                         <td class="px-6 py-4 text-sm font-mono">#{{ transaction.id }}</td>
                         <td class="px-6 py-4">
-                            <p class="font-medium">{{ transaction.listing.title[:40] if transaction.listing else 'N/A' }}</p>
+                            <p class="font-medium">{{ transaction.listing.name[:40] if transaction.listing else 'N/A' }}</p>
                             <p class="text-xs text-gray-500">{{ transaction.listing.category.name if transaction.listing and transaction.listing.category else '-' }}</p>
                         </td>
                         <td class="px-6 py-4 text-sm">
                             <div>S: {{ transaction.seller_company.name[:20] if transaction.seller_company else '-' }}</div>
                             <div>B: {{ transaction.buyer_company.name[:20] if transaction.buyer_company else '-' }}</div>
                         </td>
-                        <td class="px-6 py-4 text-sm font-semibold text-green-600">${{ "%.2f"|format(transaction.final_price) }}</td>
+                        <td class="px-6 py-4 text-sm font-semibold text-green-600">${{ "%.2f"|format(transaction.price) }}</td>
                         <td class="px-6 py-4">
                             <span class="px-2 py-1 text-xs rounded-full 
                                 {% if transaction.status == 'completed' %}bg-green-100 text-green-800

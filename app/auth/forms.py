@@ -19,6 +19,7 @@ class CompanyRegisterForm(FlaskForm):
             'SARL','EURL','SASU','SAS'      
         ], validators=[DataRequired()])
     company_activity=SelectField('Activity', choices=[
+            "Recycler",
             "Agriculture",
 "Fishing",
 "Forestry",
@@ -43,15 +44,52 @@ class CompanyRegisterForm(FlaskForm):
 "Education",
 "Research and Development   "   
         ], validators=[DataRequired()])
-    company_email=StringField(label="COMPANY EMAIL",validators=[Email(),DataRequired()])
+    company_email=StringField(label="COMPANY EMAIL",validators=[Email()])
     company_phone=StringField(label="COMPANY PHONE",validators=[DataRequired()])
     address=StringField(label="ADDRESS",validators=[Length(min=2,max=30),DataRequired()])
     country=SelectField('Role', choices=[
             'Algeria'     
         ], validators=[DataRequired()])
-    city=StringField(label="CITY",validators=[Length(min=2,max=30),DataRequired()])
-    state=StringField(label="STATE",validators=[Length(min=2,max=30)])
-    postal_code=IntegerField(label="POSTAL CODE")
+    city=SelectField(label="Wilaya",choices=
+    ["Adrar","adrar","Chlef", "Laghouat", "Oum El Bouaghi", "Batna","Béjaïa", "Biskra", "Béchar", "Blida", "Bouira", "Tamanrasset","Tébessa",
+            "Tlemcen",
+            "Tiaret",
+            "Tizi Ouzou",
+            "Alger",
+            "Djelfa",
+            "Jijel",
+            "Sétif",
+            "Saïda",
+            "Skikda",
+            "Sidi Bel Abbès",
+            "Annaba",
+            "Guelma",
+            "Constantine",
+            "Médéa",
+            "Mostaganem",
+            "M'Sila",
+            "Mascara",
+            "Ouargla",
+            "Oran",
+            "El Bayadh",
+            "Illizi",
+            "Bordj Bou Arreridj",
+            "Boumerdès",
+            "El Tarf",
+            "Tindouf",
+            "Tissemsilt",
+            "El Oued",
+            "Khenchela",
+            "Souk Ahras",
+            "Tipaza",
+            "Mila",
+            "Aïn Defla",
+            "Naâma",
+            " Aïn Témouchent",
+            "Ghardaïa",
+            "Relizane",])
+    state=StringField(label="STATE")
+    postal_code=StringField(label="POSTAL CODE")
     rc=StringField(label="RC")
     nif=StringField(label="NIF")
     nis=StringField(label="NIS")
@@ -63,7 +101,7 @@ class CompanyRegisterForm(FlaskForm):
         ], validators=[DataRequired()])
     password=PasswordField(label='PASSWORD',validators=[Length(min=6),DataRequired()])
     confirm_password=PasswordField(label='CONFIRM PASSWORD',validators=[EqualTo('password')])
-    referal=StringField(label="Referal",validators=[DataRequired()])
+    referal=StringField(label="Referal")
     submit=SubmitField(label="Create Account")
 
 class UserRegisterForm(FlaskForm):

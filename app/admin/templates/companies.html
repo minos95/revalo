@@ -30,24 +30,27 @@
         </div>
         
         <!-- Companies Table -->
-        <div class="bg-white rounded-xl shadow-md overflow-hidden">
-            <table class="min-w-full divide-y divide-gray-200">
+         
+        <div class="bg-white rounded-xl shadow-md w-full overflow-x-auto">
+            <table class="min-w-full divide-y  divide-gray-200   ">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500">Company</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500">Contact</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500">Listings</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500">Transactions</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500">Joined</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500">Status</th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500">Actions</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500">Company</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500">Contact</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500">Listings</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500">Tran</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 ">Joined</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500">Status</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500">Sub</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500">referal</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200">
+                <tbody class="divide-y divide-gray-200 ">
                     {% for company in companies %}
                     <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4">
-                            <div class="flex items-center space-x-3">
+                        <td class="px-6 py-4 whitespace-nowrap  ">
+                            <div class="flex items-center space-x-3 ">
                                 {% if company.logo_url %}
                                 <img src="{{ company.logo_url }}" class="w-8 h-8 rounded-full object-cover">
                                 {% else %}
@@ -65,10 +68,10 @@
                             <p class="text-sm">{{ company.email }}</p>
                             <p class="text-xs text-gray-500">{{ company.phone or 'No phone' }}</p>
                         </td>
-                        <td class="px-6 py-4 text-sm">{{ company.total_listings }}</td>
-                        <td class="px-6 py-4 text-sm">{{ company.total_transactions }}</td>
-                        <td class="px-6 py-4 text-sm">{{ company.created_at.strftime('%Y-%m-%d') }}</td>
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-4 text-sm">{{ company.items |length }}</td>
+                        <td class="px-6 py-4 text-sm">{{ company.total_transactions or 0}}</td>
+                        <td class="px-6 py-4 text-sm whitespace-nowrap">{{ company.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td class="px-6 py-4  ">
                             {% if company.verified %}
                             <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
                                 <i class="fas fa-check-circle mr-1"></i>Verified
@@ -78,8 +81,35 @@
                                 <i class="fas fa-clock mr-1"></i>Pending
                             </span>
                             {% endif %}
+                           
+
                         </td>
-                        <td class="px-6 py-4 text-right space-x-2">
+                         <td class="px-2 py-2 text-right space-x-2 " >
+                            {{company.subscription_plan.name}}    
+                            {% if  company.subscription_plan_id_temporary %}
+                             <form method="POST" action="{{ url_for('admin.change_subscription_status', company_id=company.id) }}" class="inline">
+                                    <input type="hidden" name="sub_plan" value={{company.subscription_plan_id}}>
+                                    <button type="submit" class="text-yellow-600 hover:text-yellow-800 text-sm">
+                                    <i class="fas fa-clock mr-1"></i>Pending
+                                    </button>
+                                </form>
+                            {% else %}
+                            {% if company.subscription_plan_id %}
+                                <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
+                                    <i class="fas fa-check-circle mr-1"></i>Active
+                                </span>
+                            
+                               
+                            {% else %}
+                                <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
+                                    <i class="fas fa-check-circle mr-1"></i>Free
+                                </span>
+                            {% endif %}
+                            {% endif %}
+                           
+                        </td>
+                        <td class="px-2 py-2 text-right space-x-2">{{company.referal or "X"}}</td>
+                        <td class="px-6 py-4 text-right space-x-5 whitespace-nowrap">
                             {% if not company.verified %}
                             <form method="POST" action="{{ url_for('admin.verify_company', company_id=company.id) }}" class="inline">
                                 <button type="submit" class="text-green-600 hover:text-green-800 text-sm">
@@ -93,6 +123,15 @@
                                 </button>
                             </form>
                             {% endif %}
+                          
+
+                            <form method="POST" action="{{ url_for('admin.change_subscription_status', company_id=company.id) }}" class="inline">
+                                <select name="sub_plan" onchange="this.form.submit()" class="text-sm border rounded px-2 py-1">
+                                    {% for sub in subscription_plan %}
+                                    <option value={{sub.id}} {% if company.subscription_plan_id == sub.id %}selected{% endif %}>{{sub.name}}</option>
+                                    {% endfor %}
+                                </select>
+                            </form>
                             <a href="#" class="text-blue-600 hover:text-blue-800 text-sm">
                                 <i class="fas fa-eye mr-1"></i>View
                             </a>

@@ -23,12 +23,19 @@ class Item(db.Model):
     pickup_country=db.Column(db.String(length=30))
 
     sell_type=db.Column(db.String(length=30))
-    price=db.Column(db.Numeric(10,2),nullable=False) 
+    price=db.Column(db.Numeric(10,2)) 
     status=db.Column(db.String(length=30),default="draft") #active/closed/sold/published/pending
     expires_at= db.Column(db.DateTime())
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
+    # Subscription tracking
+    is_featured = db.Column(db.Boolean, default=False)  # Featured listing (paid extra)
+    featured_expires_at = db.Column(db.DateTime)  # When featured expires
+    boost_score = db.Column(db.Integer, default=0)  # For search ranking
+    
+    
+
+
     images=db.relationship('Image',backref='owned_item',lazy=True)
-    offers=db.relationship('Offer',backref='owned_item',lazy=True)
     owned_user = db.relationship("User", back_populates="items")
     owned_company = db.relationship("Company", back_populates="items")
     owned_category=db.relationship("Category",back_populates="items")
@@ -37,6 +44,8 @@ class Item(db.Model):
     images = db.relationship('Image', back_populates='owned_image',lazy=True)
     qualities = db.relationship('Item_quality_values', back_populates='owned_item',lazy=True)
     reviews = db.relationship('Review', back_populates='item')
+    #conversation
+    #conversations= db.relationship('Conversation', backref='item')
     
     
     def __repr__(self):
@@ -50,6 +59,17 @@ class Item(db.Model):
     @property
     def is_expired(self):
         return self.expires_at and db.func.now() > self.expires_at
+    # Subscription tracking
+    def can_be_featured(self):
+        """Check if listing can be featured based on subscription"""
+        company = self.company
+        if company.has_active_subscription():
+            featured_count = Item.query.filter_by(
+                company_id=company.id,
+                is_featured=True
+            ).count()
+            return featured_count < company.max_featured_listings
+        return False
 
 class Image(db.Model):
     id=db.Column(db.Integer(),primary_key=True)

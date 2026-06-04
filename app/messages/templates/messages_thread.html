@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Conversation with {{ other_participant.full_name }} - EcoWaste{% endblock %}
+
+{% block extra_css %}
+<style>
+    .message-bubble {
+        max-width: 70%;
+        word-wrap: break-word;
+    }
+    .message-sent {
+        margin-left: auto;
+    }
+    .message-received {
+        margin-right: auto;
+    }
+    .chat-container {
+        height: 500px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+    }
+    .message-time {
+        font-size: 0.7rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen py-8">
+    <div class="max-w-4xl mx-auto px-4">
+        
+        <!-- Header -->
+        <div class="bg-white rounded-t-xl shadow-md p-4 border-b">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <a href="{{ url_for('messages.index') }}" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-arrow-left text-xl"></i>
+                    </a>
+                    <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                        {% if other_participant.avatar_url %}
+                        <img src="{{ other_participant.avatar_url }}" class="w-10 h-10 rounded-full object-cover">
+                        {% else %}
+                        <i class="fas fa-user text-gray-500"></i>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <h2 class="font-semibold text-gray-900">{{ other_participant.full_name }}</h2>
+                        <p class="text-xs text-gray-500">
+                            {% if listing %}
+                                Regarding: {{ listing.title }}
+                            {% elif transaction %}
+                                Transaction #{{ transaction.id }}
+                            {% else %}
+                                Direct Message
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Related Links -->
+                {% if listing %}
+                <a href="{{ url_for('listings.detail', listing_id=listing.id) }}" 
+                   class="text-sm text-green-600 hover:text-green-700">
+                    <i class="fas fa-eye mr-1"></i>View Listing
+                </a>
+                {% elif transaction %}
+                <a href="{{ url_for('transactions.detail', transaction_id=transaction.id) }}" 
+                   class="text-sm text-green-600 hover:text-green-700">
+                    <i class="fas fa-exchange-alt mr-1"></i>View Transaction
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Messages Container -->
+        <div class="bg-white shadow-md p-4 chat-container" id="chatContainer">
+            {% if messages %}
+                {% for message in messages %}
+                    {% if message.sender_id == current_user.id %}
+                        <!-- Sent Message -->
+                        <div class="flex justify-end mb-4 message-sent">
+                            <div class="message-bubble bg-green-500 text-white rounded-2xl rounded-tr-sm px-4 py-2 max-w-[70%]">
+                                <p class="text-sm">{{ message.content }}</p>
+                                <p class="message-time text-right text-green-100 mt-1">
+                                    {{ message.created_at.strftime('%H:%M') }}
+                                    {% if message.is_read %}
+                                    <i class="fas fa-check-double ml-1"></i>
+                                    {% else %}
+                                    <i class="fas fa-check ml-1"></i>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    {% else %}
+                        <!-- Received Message -->
+                        <div class="flex justify-start mb-4 message-received">
+                            <div class="message-bubble bg-gray-100 text-gray-800 rounded-2xl rounded-tl-sm px-4 py-2 max-w-[70%]">
+                                <p class="text-sm">{{ message.content }}</p>
+                                <p class="message-time text-gray-400 mt-1">
+                                    {{ message.created_at.strftime('%H:%M') }}
+                                </p>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                <div class="flex-1 flex items-center justify-center text-center">
+                    <div>
+                        <i class="fas fa-comment-dots text-4xl text-gray-300 mb-3"></i>
+                        <p class="text-gray-500">No messages yet</p>
+                        <p class="text-sm text-gray-400">Send a message to start the conversation</p>
+                    </div>
+                </div>
+            {% endif %}
+            <div id="messageEnd"></div>
+        </div>
+        
+        <!-- Message Input -->
+        <div class="bg-white rounded-b-xl shadow-md p-4 border-t">
+            <form method="POST" action="{{ url_for('messages.send_message', conversation_id=conversation.id) }}" id="messageForm">
+                {{ form.hidden_tag() }}
+                <div class="flex space-x-3">
+                    <div class="flex-1">
+                        {{ form.content(class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-green-500 focus:border-green-500", 
+                                       rows="2", placeholder="Type your message...") }}
+                        {% for error in form.content.errors %}
+                            <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+    </div>
+</div>
+
+<script>
+    // Auto-scroll to bottom of chat
+    const chatContainer = document.getElementById('chatContainer');
+    const messageEnd = document.getElementById('messageEnd');
+    
+    function scrollToBottom() {
+        messageEnd.scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    scrollToBottom();
+    
+    // Auto-refresh messages every 10 seconds
+    let lastMessageCount = {{ messages|length }};
+    
+    setInterval(function() {
+        fetch(window.location.href + '?ajax=1')
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newMessages = doc.querySelector('#chatContainer').innerHTML;
+                const newMessageCount = doc.querySelectorAll('.message-bubble').length;
+                
+                if (newMessageCount > lastMessageCount) {
+                    chatContainer.innerHTML = newMessages;
+                    scrollToBottom();
+                    lastMessageCount = newMessageCount;
+                }
+            });
+    }, 10000);
+    
+    // Auto-resize textarea
+    const textarea = document.querySelector('textarea[name="content"]');
+    if (textarea) {
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+        });
+    }
+</script>
+{% endblock %}

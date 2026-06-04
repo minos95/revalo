@@ -38,7 +38,7 @@ class Transaction(db.Model):
     delivery_notes = db.Column(db.Text)
 
     # Status tracking
-    status = db.Column(db.String(20), default='pending', index=True)  # pending, confirmed, in_transit, completed, cancelled, dispute
+    status = db.Column(db.String(20), default='pending', index=True)  # payment_pending,pending, confirmed, in_transit, completed, cancelled, dispute
 
     total_amount=db.Column(db.Integer(),nullable=False)
     commission_rate=db.Column(db.Integer(),nullable=False,default='0.07')
@@ -98,6 +98,7 @@ class Transaction(db.Model):
 
     review = db.relationship('Review', back_populates='transaction')
     
+    #conversations= db.relationship('Conversation', backref='transaction')
 
     def mark_in_transit(self):
         if self.status=="pending" and self.seller_company_id==current_user.company_id:

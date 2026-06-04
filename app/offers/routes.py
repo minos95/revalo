@@ -5,9 +5,9 @@ from flask_login import current_user, login_required
 from app.offers.services import OfferService
 from app.transactions.models import Transaction
 from app import db
-
+from app.services.notification_service import NotificationService
 from app.listings.models import Item
-from app.offers.forms import cancelOfferForm, makeOfferForm, rejectOfferForm, validateOfferForm
+from app.offers.forms import  makeOfferForm, rejectOfferForm, validateOfferForm
 from app.offers.models import Offer
 from app.auth.models import Notification
 from sqlalchemy import desc,or_
@@ -17,6 +17,8 @@ from app.offers import bp
 @bp.route('/')
 @login_required
 def index():
+    """mark as read notification"""
+    NotificationService.mark_as_read_by_type(current_user.id,"offer")
     """Main offers page with both received and sent offers"""
     company = current_user.owned_company
     status_filter = request.args.get('status', 'all')
@@ -150,7 +152,8 @@ def create_offer(listing_id):
     
     # Get the listing
     listing = Item.query.get_or_404(listing_id)
-    
+    print("------------------------------")
+    print(listing)
     # Check if listing is available for offers
     if listing.status != 'active':
         flash('This listing is no longer available for offers.', 'danger')
@@ -180,7 +183,7 @@ def create_offer(listing_id):
     form = makeOfferForm(listing=listing)
     
     if form.validate_on_submit():
-        print('---------------------------')
+
         try:
             # Create the offer
             offer = OfferService.create_offer(
@@ -305,7 +308,7 @@ def accept_offer(offer_id):
     """Accept an offer"""
     offer = Offer.query.get_or_404(offer_id)
     listing = offer.item
-    commission_rate=0.05
+    commission_rate=current_user.owned_company.commission_rate
     buyer_commission_rate=0
     
     # Check if user can accept this offer (must be seller of the listing)
@@ -322,7 +325,7 @@ def accept_offer(offer_id):
     offer.accepted_at=datetime.now()
     # Create transaction
     
-    total_amount=offer.offered_price*offer.quantity_requested
+    total_amount=float(offer.offered_price*offer.quantity_requested)
     commission_amount=total_amount*commission_rate
     seller_net_amount=total_amount-commission_amount
     transaction = Transaction(
@@ -330,6 +333,8 @@ def accept_offer(offer_id):
         offer_id=offer.id,
         seller_company_id=offer.seller_company_id,
         buyer_company_id=offer.buyer_company_id,
+        seller_manager_id=current_user.id,
+        buyer_manager_id=current_user,
         price=offer.offered_price,
         total_amount=total_amount,
         commission_rate=commission_rate,

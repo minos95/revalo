@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from app import db
 class Offer(db.Model):
     id = db.Column(db.Integer(),primary_key=True)
@@ -26,3 +28,4 @@ class Offer(db.Model):
     item = db.relationship("Item", back_populates="offers")
     sender_company = db.relationship("Company",foreign_keys=[sender_company_id],back_populates="offers")
     transaction = db.relationship("Transaction", back_populates="offer",uselist=False)
+

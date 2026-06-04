@@ -38,6 +38,21 @@
                         <label class="block text-sm font-medium text-gray-700">Company Phone</label>
                         {{ form.company_phone(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2") }}
                     </div>
+                    
+                    
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700">{{form.rc.label()}}</label>
+                        {{ form.rc(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2") }}
+                    </div>
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700">{{form.nif.label()}}</label>
+                        {{ form.nif(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2") }}
+                    </div>
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700">{{form.nis.label()}}</label>
+                        {{ form.nis(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2") }}
+                    </div>
+                    
                 </div>
             </div>
             
@@ -51,7 +66,7 @@
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">City</label>
+                            <label class="block text-sm font-medium text-gray-700">{{form.city.label()}}</label>
                             {{ form.city(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2") }}
                         </div>
                         <div>
@@ -99,6 +114,10 @@
                         {{ form.role(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2") }}
                     </div>
                 </div>
+            </div>
+            <div>
+                    <label class="block text-sm font-medium text-gray-700">{{form.referal.label()}}</label>
+                    {{ form.referal(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2") }}
             </div>
             
             <div>

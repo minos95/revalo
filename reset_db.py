@@ -18,7 +18,7 @@ user_admin=User(company_id=1,
                 email="rh@gmail.com",
                 email_verified=True,
                 password_hash=bcrypt.generate_password_hash("azerty123").decode('utf-8'),
-                role="admin",
+                role="super_admin",
                 authorized=True)
 
 with app.app_context():

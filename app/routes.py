@@ -15,7 +15,7 @@ from app.offers.models import Offer
 @app.route("/")
 def home():
 
-    recent_listings=Item.query.order_by(desc(Item.created_at)).limit(4).all()
+    recent_listings=Item.query.filter_by(is_featured=True).order_by(desc(Item.created_at)).limit(4).all()
     categories=Category.query.all()
     featured_companies=Company.query.order_by(desc(Company.rating_avg)).limit(5).all()
     total_listings=Item.query.count()
@@ -27,6 +27,12 @@ def home():
 def contact():
     return render_template('contact.html')
 
+@app.route("/teams")
+def teams():
+    
+    teams=User.query.filter_by(company_id=current_user.company_id).all()
+
+    return render_template('teams.html',teams=teams)
 
 @app.route('/dashboard')
 @login_required

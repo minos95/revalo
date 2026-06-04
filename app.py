@@ -2,10 +2,12 @@
 from app import app,db
 from app.transactions.models import Transaction
 from app.offers.models import Offer
-from app.auth.models import User,Company 
+from app.auth.models import Notification, User,Company 
 from flask_migrate import Migrate
 from app.listings.models import Category, Item,Image,View,Quality_attribute_options,Quality_attributes,Item_quality_values
 from app.auth.models import Review
+from flask_login import current_user
+
 migrate = Migrate(app, db)
 
 @app.shell_context_processor
@@ -26,5 +28,7 @@ def make_shell_context():
         'Item_quality_values':Item_quality_values
         
     }
+
+
 if __name__=='__main__':
     app.run(debug=True)

@@ -1,0 +1,431 @@
+{% extends "base.html" %}
+
+{% block title %}Upgrade Subscription - EcoWaste{% endblock %}
+
+{% block extra_css %}
+<style>
+    .plan-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+        border: 2px solid transparent;
+    }
+    .plan-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    .plan-card.selected {
+        border-color: #10b981;
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    }
+    .plan-badge {
+        position: absolute;
+        top: -12px;
+        right: 20px;
+    }
+    .feature-check {
+        color: #10b981;
+        width: 20px;
+        text-align: center;
+    }
+    .feature-missing {
+        color: #d1d5db;
+        width: 20px;
+        text-align: center;
+    }
+    .billing-toggle {
+        background: #f3f4f6;
+        border-radius: 9999px;
+        padding: 4px;
+        display: inline-flex;
+    }
+    .billing-option {
+        padding: 8px 24px;
+        border-radius: 9999px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .billing-option.active {
+        background: #10b981;
+        color: white;
+    }
+    .savings-badge {
+        background: #fef3c7;
+        color: #d97706;
+        font-size: 0.7rem;
+        padding: 2px 8px;
+        border-radius: 9999px;
+        margin-left: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Upgrade Your Plan</h1>
+            <p class="text-gray-600 mt-2">Choose the plan that best fits your business needs</p>
+        </div>
+        
+        <!-- Current Plan Info -->
+        <div class="max-w-2xl mx-auto mb-8">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+                <p class="text-blue-800">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    You are currently on the <strong>{{ current_plan.name if current_plan else 'Free' }}</strong> plan.
+                    {% if company.subscription_ends_at and company.subscription_status == 'active' %}
+                    Your plan renews on {{ company.subscription_ends_at.strftime('%B %d, %Y') }}.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        
+        <form method="POST" id="upgradeForm">
+            {{ form.hidden_tag() }}
+            
+            <!-- Plan Selection -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                {% for plan in plans %}
+                <div class="plan-card relative bg-white rounded-xl shadow-md p-6 {% if form.plan_id.data == plan.id %}selected{% endif %}"
+                     data-plan-id="{{ plan.id }}"
+                     data-plan-name="{{ plan.name }}"
+                     data-price-monthly="{{ plan.price_monthly }}"
+                     data-price-yearly="{{ plan.price_yearly }}"
+                     onclick="selectPlan({{ plan.id }})">
+                    
+                    {% if plan.is_popular %}
+                    <div class="plan-badge">
+                        <span class="bg-green-500 text-white text-xs px-3 py-1 rounded-full">Most Popular</span>
+                    </div>
+                    {% endif %}
+                    
+                    <h3 class="text-xl font-bold text-gray-900">{{ plan.name }}</h3>
+                    <p class="text-gray-500 text-sm mt-1">{{ plan.description }}</p>
+                    
+                    <div class="mt-4">
+                        <span class="text-3xl font-bold text-gray-900 price-display" data-plan="{{ plan.id }}" data-interval="monthly">
+                            {{ "%.0f"|format(plan.price_monthly) }}DA
+                        </span>
+                        <span class="text-gray-500">/month</span>
+                    </div>
+                    
+                    {% if plan.price_yearly and plan.price_yearly < plan.price_monthly * 12 %}
+                    
+                    <div class="mt-1">
+                      
+                        <span class="text-sm text-gray-500  " data-plan="{{ plan.id }}">
+                            {{ "%.0f"|format(plan.price_yearly) }}/year DA
+                        </span>
+                        <span class="savings-badge  " data-plan="{{ plan.id }}">
+                            Save {{ ((plan.price_monthly * 12 - plan.price_yearly) / (plan.price_monthly * 12) * 100)|round }}%
+                        </span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-6 space-y-3">
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle feature-check"></i>
+                            <span class="ml-2 text-sm">{{ plan.max_active_listings }} active listings</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle feature-check"></i>
+                            <span class="ml-2 text-sm">{{ plan.max_team_members }} team members</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle feature-check"></i>
+                            <span class="ml-2 text-sm">{{ plan.commission_rate }}% commission rate</span>
+                        </div>
+                        
+                        {% if plan.has_analytics %}
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle feature-check"></i>
+                            <span class="ml-2 text-sm">Advanced analytics</span>
+                        </div>
+                        {% else %}
+                        <div class="flex items-center opacity-50">
+                            <i class="fas fa-minus-circle feature-missing"></i>
+                            <span class="ml-2 text-sm text-gray-400">Advanced analytics</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if plan.has_api_access %}
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle feature-check"></i>
+                            <span class="ml-2 text-sm">API access</span>
+                        </div>
+                        {% else %}
+                        <div class="flex items-center opacity-50">
+                            <i class="fas fa-minus-circle feature-missing"></i>
+                            <span class="ml-2 text-sm text-gray-400">API access</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if plan.has_priority_support %}
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle feature-check"></i>
+                            <span class="ml-2 text-sm">Priority support</span>
+                        </div>
+                        {% else %}
+                        <div class="flex items-center opacity-50">
+                            <i class="fas fa-minus-circle feature-missing"></i>
+                            <span class="ml-2 text-sm text-gray-400">Standard support</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if plan.has_bulk_upload %}
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle feature-check"></i>
+                            <span class="ml-2 text-sm">Bulk upload</span>
+                        </div>
+                        {% else %}
+                        <div class="flex items-center opacity-50">
+                            <i class="fas fa-minus-circle feature-missing"></i>
+                            <span class="ml-2 text-sm text-gray-400">Bulk upload</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Hidden plan_id field -->
+             <div class="hidden">
+            {{ form.plan_id }}
+            </div>
+            <!-- Billing Interval Toggle -->
+            <div class="text-center mb-8">
+                <div class="billing-toggle inline-flex">
+                    <span class="billing-option {% if form.interval.data == 'monthly' %}active{% endif %}" data-interval="monthly">
+                        Monthly Billing
+                    </span>
+                    <span class="billing-option {% if form.interval.data == 'yearly' %}active{% endif %}" data-interval="yearly">
+                        Yearly Billing
+                        <span class="text-xs ml-1">(Save 15%)</span>
+                    </span>
+                </div>
+                {{ form.interval(id="interval-form", onchange="changeInterval()" ) }}
+            </div>
+            
+            <!-- Payment Method Section -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden mb-8">
+                <div class="px-6 py-4 border-b bg-gray-50">
+                    <h2 class="font-semibold text-gray-900">
+                        <i class="fas fa-credit-card text-green-600 mr-2"></i>Payment Method (featured)
+                    </h2>
+                </div>
+                
+                <div class="p-6" hidden>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <label class="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="payment_method" value="stripe" class="h-4 w-4 text-green-600" checked>
+                            <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/stripe/stripe-original.svg" class="h-8 ml-3" alt="Stripe">
+                            <span class="ml-2">Credit Card (Stripe)</span>
+                        </label>
+                        <label class="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="payment_method" value="paypal" class="h-4 w-4 text-green-600">
+                            <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/paypal/paypal-original.svg" class="h-8 ml-3" alt="PayPal">
+                            <span class="ml-2">PayPal</span>
+                        </label>
+                    </div>
+                    
+                    <!-- Credit Card Form (Stripe) -->
+                    <div id="stripe-form" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
+                            <div class="relative">
+                                <input type="text" id="card-number" placeholder="4242 4242 4242 4242" 
+                                       class="w-full border border-gray-300 rounded-lg px-4 py-2 pl-10">
+                                <i class="fas fa-credit-card absolute left-3 top-2.5 text-gray-400"></i>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+                                <input type="text" placeholder="MM/YY" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">CVC</label>
+                                <input type="text" placeholder="123" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- PayPal Form (Hidden by default) -->
+                    <div id="paypal-form" class="hidden text-center py-8">
+                        <img src="https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_37x23.jpg" class="mx-auto mb-4">
+                        <p class="text-gray-600">You will be redirected to PayPal to complete your payment.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Order Summary -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden mb-8">
+                <div class="px-6 py-4 border-b bg-gray-50">
+                    <h2 class="font-semibold text-gray-900">
+                        <i class="fas fa-receipt text-green-600 mr-2"></i>Order Summary
+                    </h2>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Plan:</span>
+                            <span class="font-medium" id="summary-plan">{{ plans[0].name if plans else 'Basic' }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Billing:</span>
+                            <span class="font-medium" id="summary-interval">yearly</span>
+                        </div>
+                        <div class="flex justify-between pt-3 border-t">
+                            <span class="text-lg font-semibold">Total:</span>
+                            <span class="text-2xl font-bold text-green-600" id="summary-price">0 DA</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Terms and Submit -->
+            <div class="flex flex-col items-center">
+                <div class="flex items-center mb-6">
+                    <input type="checkbox" id="terms" required class="h-4 w-4 text-green-600">
+                    <label for="terms" class="ml-2 text-sm text-gray-600">
+                        I agree to the <a href="#" class="text-green-600 hover:text-green-700">Terms of Service</a> and 
+                        <a href="#" class="text-green-600 hover:text-green-700">Privacy Policy</a>
+                    </label>
+                </div>
+                
+                <button type="submit" id="submitBtn" disabled
+                        class="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed text-lg font-semibold">
+                    <i class="fas fa-lock mr-2"></i>Upgrade Now
+                </button>
+                
+                <p class="text-xs text-gray-500 mt-4">
+                    <i class="fas fa-shield-alt mr-1"></i>
+                    Your payment information is secure. You can cancel anytime.
+                </p>
+            </div>
+            
+        </form>
+    </div>
+</div>
+
+<script>
+    // Plan selection
+    let selectedPlanId = {{ form.plan_id.data or plans[0].id if plans else 'null' }};
+    let selectedInterval = '{{ form.interval.data or "monthly" }}';
+    
+    function changeInterval(){
+        console.log("-------------------")
+        selectedInterval=document.getElementById('interval-form').value
+        updateSummary()
+    }
+   
+    const plans = {
+        {% for plan in plans %}
+        {{ plan.id }}: {
+            id: {{ plan.id }},
+            name: '{{ plan.name }}',
+            price_monthly: {{ plan.price_monthly }},
+            price_yearly: {{ plan.price_yearly }},
+            is_popular: {{ 'true' if plan.is_popular else 'false' }}
+        },
+        {% endfor %}
+    };
+    
+    function selectPlan(planId) {
+        selectedPlanId = planId;
+        document.getElementById('plan_id').value = planId;
+        
+        // Update UI
+        document.querySelectorAll('.plan-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        document.querySelector(`.plan-card[data-plan-id="${planId}"]`).classList.add('selected');
+        
+        updateSummary();
+    }
+    
+    function setInterval(interval) {
+        selectedInterval = interval;
+        document.getElementById('interval').value = interval;
+        
+        // Update active state
+        document.querySelectorAll('.billing-option').forEach(opt => {
+            opt.classList.remove('active');
+        });
+        document.querySelector(`.billing-option[data-interval="${interval}"]`).classList.add('active');
+        
+        // Show/hide yearly prices
+        if (interval === 'yearly') {
+            document.querySelectorAll('.yearly-price, .yearly-savings').forEach(el => {
+                el.classList.remove('hidden');
+            });
+            document.querySelectorAll('.price-display').forEach(el => {
+                el.classList.add('hidden');
+            });
+        } else {
+            document.querySelectorAll('.yearly-price, .yearly-savings').forEach(el => {
+                el.classList.add('hidden');
+            });
+            document.querySelectorAll('.price-display').forEach(el => {
+                el.classList.remove('hidden');
+            });
+        }
+        
+        updateSummary();
+    }
+    
+    function updateSummary() {
+        const plan = plans[selectedPlanId];
+        if (!plan) return;
+        
+        const price = selectedInterval === 'yearly' ? plan.price_yearly : plan.price_monthly;
+        const intervalText = selectedInterval === 'yearly' ? 'Yearly' : 'Monthly';
+        
+        document.getElementById('summary-plan').textContent = plan.name;
+        document.getElementById('summary-interval').textContent = intervalText;
+        document.getElementById('summary-price').textContent = `${price} DA/${selectedInterval === 'yearly' ? 'year' : 'month'}`;
+    }
+    
+    // Payment method toggle
+    const stripeForm = document.getElementById('stripe-form');
+    const paypalForm = document.getElementById('paypal-form');
+    
+    document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value === 'stripe') {
+                stripeForm.classList.remove('hidden');
+                paypalForm.classList.add('hidden');
+            } else {
+                stripeForm.classList.add('hidden');
+                paypalForm.classList.remove('hidden');
+            }
+        });
+    });
+    
+    // Terms checkbox
+    const termsCheckbox = document.getElementById('terms');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    termsCheckbox.addEventListener('change', function() {
+        submitBtn.disabled = !this.checked;
+    });
+    
+    // Initialize
+    if (selectedPlanId) {
+        selectPlan(selectedPlanId);
+    }
+    setInterval(selectedInterval);
+    
+    // Card number formatting
+    const cardNumberInput = document.getElementById('card-number');
+    if (cardNumberInput) {
+        cardNumberInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            value = value.replace(/(\d{4})/g, '$1 ').trim();
+            e.target.value = value;
+        });
+    }
+</script>
+{% endblock %}

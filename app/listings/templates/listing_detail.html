@@ -308,10 +308,11 @@
                     {% if current_user.is_authenticated %}
                         {% if listing.company_id != current_user.company_id %}
                             {% if listing.status == 'active' and listing.expires_at > now %}
-                                <a href="{{url_for('offers.create_offer',listing_id=listing.id)}}" class="w-full mt-6 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-medium">
+                                <button onclick="window.location.href='{{url_for('offers.create_offer',listing_id=listing.id)}}'" class=" w-full mt-6 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-medium">
                                     <i class="fas fa-handshake mr-2"></i>Make an Offer
-                                </a>
-                                <button onclick="contactSeller()" class="w-full mt-3 border border-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-50 transition">
+                                </button >
+                               
+                                <button onclick="window.location.href='{{url_for('messages.start_conversation',listing_id=listing.id)}}'" class="btn w-full mt-3 border border-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-50 transition">
                                     <i class="fas fa-envelope mr-2"></i>Contact Seller
                                 </button>
                             {% elif listing.status == 'sold' %}

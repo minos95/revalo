@@ -1,0 +1,543 @@
+{% extends "base.html" %}
+
+{% block title %}Start Conversation - EcoWaste{% endblock %}
+
+{% block extra_css %}
+<style>
+    .message-preview {
+        transition: all 0.3s ease;
+    }
+    .message-preview:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        outline: none;
+    }
+    .char-counter {
+        transition: color 0.2s ease;
+    }
+    .char-counter.warning {
+        color: #f59e0b;
+    }
+    .char-counter.danger {
+        color: #ef4444;
+    }
+    .recipient-card {
+        transition: all 0.2s ease;
+    }
+    .recipient-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    .suggestion-chip {
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    .suggestion-chip:hover {
+        background-color: #10b981;
+        color: white;
+    }
+    .attachment-preview {
+        position: relative;
+        display: inline-block;
+    }
+    .attachment-preview:hover .remove-attachment {
+        display: flex;
+    }
+    .remove-attachment {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: red;
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 10px;
+    }
+    .typing-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .typing-indicator span {
+        width: 6px;
+        height: 6px;
+        background-color: #9ca3af;
+        border-radius: 50%;
+        animation: typing 1.4s infinite;
+    }
+    .typing-indicator span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+    .typing-indicator span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+    @keyframes typing {
+        0%, 60%, 100% {
+            transform: translateY(0);
+            opacity: 0.5;
+        }
+        30% {
+            transform: translateY(-6px);
+            opacity: 1;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Header -->
+        <div class="mb-6">
+            <div class="flex items-center space-x-3">
+                <a href="{{ url_for('messages.index') }}" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-arrow-left text-xl"></i>
+                </a>
+                <h1 class="text-2xl font-bold text-gray-900">Start a Conversation</h1>
+            </div>
+            <p class="text-gray-600 mt-1">Connect with sellers or buyers directly</p>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- ============================================ -->
+            <!-- LEFT COLUMN: Recipient Info & Context        -->
+            <!-- ============================================ -->
+            <div class="lg:col-span-1">
+                
+                <!-- Recipient Card -->
+                <div class="recipient-card bg-white rounded-xl shadow-md overflow-hidden sticky top-20">
+                    <div class="bg-gradient-to-r from-green-500 to-green-600 px-4 py-3">
+                        <h3 class="text-white font-semibold text-sm">
+                            <i class="fas fa-user mr-2"></i>Recipient
+                        </h3>
+                    </div>
+                    
+                    <div class="p-4 text-center border-b">
+                        <!-- Avatar -->
+                        <div class="w-20 h-20 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-3">
+                            {% if recipient.avatar_url %}
+                            <img src="{{ recipient.avatar_url }}" class="w-20 h-20 rounded-full object-cover">
+                            {% else %}
+                            <i class="fas fa-user text-3xl text-green-600"></i>
+                            {% endif %}
+                        </div>
+                        
+                        <h2 class="text-lg font-semibold text-gray-900">{{ recipient.full_name }}</h2>
+                        <p class="text-sm text-gray-500">{{ recipient.company.name if recipient.company else 'Individual' }}</p>
+                        
+                        <!-- Rating -->
+                        <div class="flex items-center justify-center mt-2">
+                            {% set rating = recipient.company.rating_avg if recipient.company else 0 %}
+                            {% for i in range(5) %}
+                                {% if i < rating|int %}
+                                    <i class="fas fa-star text-yellow-400 text-sm"></i>
+                                {% elif i < rating|round %}
+                                    <i class="fas fa-star-half-alt text-yellow-400 text-sm"></i>
+                                {% else %}
+                                    <i class="far fa-star text-yellow-400 text-sm"></i>
+                                {% endif %}
+                            {% endfor %}
+                            <span class="text-xs text-gray-500 ml-1">({{ recipient.company.total_reviews if recipient.company else 0 }})</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Context Information -->
+                    <div class="p-4">
+                        <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                            <i class="fas fa-info-circle mr-1"></i>Context
+                        </h4>
+                        
+                        {% if listing %}
+                        <!-- Listing Context -->
+                        <div class="bg-gray-50 rounded-lg p-3 mb-3">
+                            <div class="flex items-start space-x-3">
+                                {% if listing.images and listing.images|length > 0 %}
+                                <img src="{{ url_for('static', filename=listing.images[0].uri) }}" 
+                                     class="w-12 h-12 rounded-lg object-cover">
+                                {% else %}
+                                <div class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-recycle text-gray-400"></i>
+                                </div>
+                                {% endif %}
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-gray-900">Regarding Listing</p>
+                                    <p class="text-xs text-gray-600 line-clamp-2">{{ listing.name }}</p>
+                                    <p class="text-xs text-green-600 mt-1">
+                                        {% if listing.price %}${% endif %}{{ listing.price or 'Make Offer' }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        {% elif transaction %}
+                        <!-- Transaction Context -->
+                        <div class="bg-gray-50 rounded-lg p-3 mb-3">
+                            <div class="flex items-start space-x-3">
+                                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-exchange-alt text-blue-600"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-gray-900">Regarding Transaction</p>
+                                    <p class="text-xs text-gray-600">Transaction #{{ transaction.id }}</p>
+                                    <p class="text-xs text-gray-500 mt-1">{{ transaction.listing.title[:50] }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <!-- Direct Message Context -->
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-comment-dots text-green-600 text-xl"></i>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900">Direct Message</p>
+                                    <p class="text-xs text-gray-500">No specific listing or transaction</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Quick Stats -->
+                        <div class="mt-4 pt-3 border-t">
+                            <div class="flex justify-between text-xs mb-2">
+                                <span class="text-gray-500">Response Rate:</span>
+                                <span class="font-medium text-green-600">{{ recipient.owned_company.response_rate|default('95') }}%</span>
+                            </div>
+                            <div class="flex justify-between text-xs">
+                                <span class="text-gray-500">Avg Response Time:</span>
+                                <span class="font-medium">{{ recipient.owned_company.avg_response_time|default('2-4') }} hours</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Verified Badge -->
+                        {% if recipient.company and recipient.company.verified %}
+                        <div class="mt-3 flex items-center justify-center text-green-600 text-xs">
+                            <i class="fas fa-check-circle mr-1"></i>
+                            <span>Verified Business</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ============================================ -->
+            <!-- RIGHT COLUMN: Message Form                    -->
+            <!-- ============================================ -->
+            <div class="lg:col-span-2">
+                
+                <form method="POST" id="messageForm" enctype="multipart/form-data" class="space-y-4">
+                    {{ form.hidden_tag() if form else '' }}
+                    
+                    <!-- Message Input Area -->
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                        <div class="border-b px-4 py-3 bg-gray-50">
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-semibold text-gray-900">
+                                    <i class="fas fa-pen-alt text-green-600 mr-2"></i>Your Message
+                                </h3>
+                                <div class="text-xs text-gray-400" id="charCounterDisplay">0/2000</div>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4">
+                            <textarea name="content" id="messageContent"
+                                      rows="6"
+                                      class="message-preview w-full border-0 focus:ring-0 resize-none text-gray-700 placeholder-gray-400"
+                                      placeholder="Write your message here... Be clear and professional.&#10;&#10;Example:&#10;Hello, I'm interested in your listing. I have a few questions about the material quality and pickup options. Could you please provide more details?"
+                                      required></textarea>
+                        </div>
+                        
+                        <!-- Character Counter Script -->
+                        <div class="px-4 pb-2">
+                            <div id="charCounter" class="char-counter text-xs text-right text-gray-400">
+                                0 characters
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Message Suggestions -->
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                        <div class="px-4 py-3 bg-gray-50 border-b">
+                            <h3 class="text-sm font-semibold text-gray-900">
+                                <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>Message Suggestions
+                            </h3>
+                        </div>
+                        <div class="p-3 flex flex-wrap gap-2">
+                            {% if listing %}
+                            <button type="button" class="suggestion-chip text-xs bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full hover:bg-green-500 hover:text-white transition" onclick="insertSuggestion('Hi, I\'m interested in your listing. Could you provide more details about the material quality and availability?')">
+                                <i class="fas fa-question-circle mr-1"></i>Ask about quality
+                            </button>
+                            <button type="button" class="suggestion-chip text-xs bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full hover:bg-green-500 hover:text-white transition" onclick="insertSuggestion('Hello, what\'s your best price for this quantity? Can we negotiate?')">
+                                <i class="fas fa-dollar-sign mr-1"></i>Negotiate price
+                            </button>
+                            <button type="button" class="suggestion-chip text-xs bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full hover:bg-green-500 hover:text-white transition" onclick="insertSuggestion('Hi, when is the earliest pickup available? What are your pickup hours?')">
+                                <i class="fas fa-truck mr-1"></i>Ask about pickup
+                            </button>
+                            {% elif transaction %}
+                            <button type="button" class="suggestion-chip text-xs bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full hover:bg-green-500 hover:text-white transition" onclick="insertSuggestion('Hi, I have a question about transaction #{{ transaction.id }}. Could you please clarify...')">
+                                <i class="fas fa-question-circle mr-1"></i>Ask about transaction
+                            </button>
+                            <button type="button" class="suggestion-chip text-xs bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full hover:bg-green-500 hover:text-white transition" onclick="insertSuggestion('Regarding the delivery, I have some questions about timing and documentation.')">
+                                <i class="fas fa-truck mr-1"></i>Delivery questions
+                            </button>
+                            {% else %}
+                            <button type="button" class="suggestion-chip text-xs bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full hover:bg-green-500 hover:text-white transition" onclick="insertSuggestion('Hi, I saw your profile and would like to discuss potential collaboration.')">
+                                <i class="fas fa-handshake mr-1"></i>Collaboration
+                            </button>
+                            <button type="button" class="suggestion-chip text-xs bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full hover:bg-green-500 hover:text-white transition" onclick="insertSuggestion('I\'m interested in your waste management services. Could you share more information?')">
+                                <i class="fas fa-info-circle mr-1"></i>General inquiry
+                            </button>
+                            {% endif %}
+                            <button type="button" class="suggestion-chip text-xs bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full hover:bg-green-500 hover:text-white transition" onclick="insertSuggestion('Thank you for your time. Looking forward to your response.')">
+                                <i class="fas fa-smile mr-1"></i>Polite closing
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Optional: Image Attachments -->
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                        <div class="px-4 py-3 bg-gray-50 border-b">
+                            <h3 class="text-sm font-semibold text-gray-900">
+                                <i class="fas fa-paperclip text-gray-500 mr-2"></i>Attachments (Optional)
+                            </h3>
+                        </div>
+                        <div class="p-4">
+                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-green-400 transition cursor-pointer"
+                                 onclick="document.getElementById('fileInput').click()">
+                                <i class="fas fa-cloud-upload-alt text-2xl text-gray-400 mb-2"></i>
+                                <p class="text-sm text-gray-600">Click to upload files or drag and drop</p>
+                                <p class="text-xs text-gray-400 mt-1">Images, PDF, Documents (Max 5MB)</p>
+                                <input type="file" name="attachments" id="fileInput" multiple class="hidden" accept="image/*,.pdf,.doc,.docx">
+                            </div>
+                            
+                            <div id="attachmentPreview" class="flex flex-wrap gap-3 mt-4"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Message Preview Card -->
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                        <div class="px-4 py-3 bg-gray-50 border-b">
+                            <h3 class="text-sm font-semibold text-gray-900">
+                                <i class="fas fa-eye text-green-600 mr-2"></i>Message Preview
+                            </h3>
+                        </div>
+                        <div class="p-4">
+                            <div id="messagePreview" class="bg-gray-50 rounded-lg p-4 min-h-[100px] text-gray-500 italic">
+                                Your message will appear here...
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex justify-end space-x-4 pt-4">
+                        <a href="{{ url_for('messages.index') }}" 
+                           class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium">
+                            Cancel
+                        </a>
+                        <button type="submit" id="submitBtn" 
+                                class="px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium disabled:bg-gray-400 disabled:cursor-not-allowed">
+                            <i class="fas fa-paper-plane mr-2"></i>Send Message
+                        </button>
+                    </div>
+                    
+                </form>
+                
+                <!-- Tips Box -->
+                <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="flex items-start space-x-3">
+                        <i class="fas fa-lightbulb text-blue-500 text-xl mt-0.5"></i>
+                        <div class="text-sm text-blue-800">
+                            <p class="font-semibold mb-1">Tips for effective communication:</p>
+                            <ul class="list-disc list-inside space-y-1 text-xs">
+                                <li>Be clear and specific about your inquiry</li>
+                                <li>Include relevant details like quantity, quality requirements</li>
+                                <li>Professional communication builds trust</li>
+                                <li>Response time: Expect reply within 24 hours</li>
+                                <li>Use attachments to share relevant documents</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Auto-resize textarea
+    const textarea = document.getElementById('messageContent');
+    const charCounter = document.getElementById('charCounter');
+    const charCounterDisplay = document.getElementById('charCounterDisplay');
+    const messagePreview = document.getElementById('messagePreview');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    // Character counter and preview
+    function updateCounterAndPreview() {
+        const content = textarea.value;
+        const length = content.length;
+        
+        // Update counter
+        charCounter.textContent = `${length} characters`;
+        charCounterDisplay.textContent = `${length}/2000`;
+        
+        // Change color based on length
+        if (length > 1800) {
+            charCounter.classList.add('danger');
+            charCounter.classList.remove('warning');
+        } else if (length > 1500) {
+            charCounter.classList.add('warning');
+            charCounter.classList.remove('danger');
+        } else {
+            charCounter.classList.remove('warning', 'danger');
+        }
+        
+        // Update preview
+        if (content.trim() === '') {
+            messagePreview.innerHTML = '<span class="text-gray-400 italic">Your message will appear here...</span>';
+            submitBtn.disabled = true;
+        } else {
+            // Escape HTML and convert newlines to <br>
+            let previewText = content
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/\n/g, '<br>');
+            messagePreview.innerHTML = `<div class="text-gray-700">${previewText}</div>`;
+            submitBtn.disabled = false;
+        }
+    }
+    
+    textarea.addEventListener('input', updateCounterAndPreview);
+    updateCounterAndPreview();
+    
+    // Insert suggestion into textarea
+    function insertSuggestion(text) {
+        const currentContent = textarea.value;
+        const newContent = currentContent ? currentContent + '\n\n' + text : text;
+        textarea.value = newContent;
+        updateCounterAndPreview();
+        textarea.focus();
+    }
+    
+    // File attachment preview
+    const fileInput = document.getElementById('fileInput');
+    const attachmentPreview = document.getElementById('attachmentPreview');
+    let attachments = [];
+    
+    fileInput.addEventListener('change', function(e) {
+        const files = Array.from(e.target.files);
+        
+        files.forEach(file => {
+            if (file.size > 5 * 1024 * 1024) {
+                alert(`File ${file.name} exceeds 5MB limit`);
+                return;
+            }
+            
+            attachments.push(file);
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const div = document.createElement('div');
+                div.className = 'attachment-preview relative';
+                
+                if (file.type.startsWith('image/')) {
+                    div.innerHTML = `
+                        <img src="${e.target.result}" class="w-16 h-16 rounded-lg object-cover border">
+                        <div class="remove-attachment" onclick="removeAttachment('${file.name}')">
+                            <i class="fas fa-times"></i>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1 truncate w-16">${file.name}</p>
+                    `;
+                } else {
+                    div.innerHTML = `
+                        <div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center border">
+                            <i class="fas fa-file-alt text-2xl text-gray-400"></i>
+                        </div>
+                        <div class="remove-attachment" onclick="removeAttachment('${file.name}')">
+                            <i class="fas fa-times"></i>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1 truncate w-16">${file.name}</p>
+                    `;
+                }
+                
+                attachmentPreview.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        });
+    });
+    
+    function removeAttachment(filename) {
+        attachments = attachments.filter(f => f.name !== filename);
+        
+        // Refresh preview
+        attachmentPreview.innerHTML = '';
+        attachments.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const div = document.createElement('div');
+                div.className = 'attachment-preview relative';
+                
+                if (file.type.startsWith('image/')) {
+                    div.innerHTML = `
+                        <img src="${e.target.result}" class="w-16 h-16 rounded-lg object-cover border">
+                        <div class="remove-attachment" onclick="removeAttachment('${file.name}')">
+                            <i class="fas fa-times"></i>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1 truncate w-16">${file.name}</p>
+                    `;
+                } else {
+                    div.innerHTML = `
+                        <div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center border">
+                            <i class="fas fa-file-alt text-2xl text-gray-400"></i>
+                        </div>
+                        <div class="remove-attachment" onclick="removeAttachment('${file.name}')">
+                            <i class="fas fa-times"></i>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1 truncate w-16">${file.name}</p>
+                    `;
+                }
+                attachmentPreview.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        });
+        
+        // Reset file input
+        fileInput.value = '';
+    }
+    
+    // Form submission with loading state
+    const messageForm = document.getElementById('messageForm');
+    messageForm.addEventListener('submit', function(e) {
+        const content = textarea.value.trim();
+        if (!content) {
+            e.preventDefault();
+            alert('Please enter a message before sending.');
+            return;
+        }
+        
+        const submitButton = document.querySelector('#submitBtn');
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Sending...';
+    });
+    
+    // Warn before leaving with unsaved message
+    let formChanged = false;
+    textarea.addEventListener('input', () => { formChanged = true; });
+    
+    window.addEventListener('beforeunload', (e) => {
+        if (formChanged && textarea.value.trim()) {
+            e.preventDefault();
+            e.returnValue = 'You have an unsaved message. Are you sure you want to leave?';
+            return 'You have an unsaved message. Are you sure you want to leave?';
+        }
+    });
+    
+    messageForm.addEventListener('submit', () => { formChanged = false; });
+</script>
+{% endblock %}

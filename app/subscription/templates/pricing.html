@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Pricing - EcoWaste{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen py-12">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="text-center bg-red-100 p-6 "><h2>Maximize Your Profits: Keep 100% of your earnings. 0% commission rate for all plans!</h2></div>
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">Simple, Transparent Pricing</h1>
+            <p class="text-xl text-gray-600">Choose the plan that works for your business</p>
+        </div>
+        
+        <!-- Pricing Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {% for plan in plans %}
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden {% if plan.is_popular %}ring-2 ring-green-500{% endif %}">
+                
+                {% if plan.is_popular %}
+                <div class="bg-green-500 text-white text-center py-1 text-sm font-medium">
+                    Most Popular
+                </div>
+                {% endif %}
+                
+                <div class="p-6">
+                    <h3 class="text-xl font-bold text-gray-900">{{ plan.name }}</h3>
+                    <p class="text-gray-500 text-sm mt-1">{{ plan.description }}</p>
+                    
+                    <div class="mt-4">
+                        {% if plan.price_monthly == 0 %}
+                        <span class="text-3xl font-bold text-gray-900">Free</span>
+                        {% else %}
+                        <span class="text-3xl font-bold text-gray-900">{{ plan.price_monthly }} DA</span>
+                        <span class="text-gray-500">/month</span>
+                        {% if plan.price_yearly %}
+                        <p class="text-sm text-green-600 mt-1">Save 15% with yearly billing</p>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mt-6 space-y-3">
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle text-green-500 w-5"></i>
+                            <span class="ml-2 text-sm">{{ plan.max_active_listings }} active listings</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle text-green-500 w-5"></i>
+                            <span class="ml-2 text-sm">{{ plan.max_team_members }} team members</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle text-green-500 w-5"></i>
+                            <span class="ml-2 text-sm">{{ plan.commission_rate }}% commission rate</span>
+                        </div>
+                        {% if plan.has_analytics %}
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle text-green-500 w-5"></i>
+                            <span class="ml-2 text-sm">Advanced analytics </span>
+                        </div>
+                        {% endif %}
+                        {% if plan.has_api_access %}
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle text-green-500 w-5"></i>
+                            <span class="ml-2 text-sm">API access (feature)</span>
+                        </div>
+                        {% endif %}
+                        {% if plan.has_priority_support %}
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle text-green-500 w-5"></i>
+                            <span class="ml-2 text-sm">Priority support</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mt-8">
+                        
+                        {% if current_user.owned_company.subscription_plan_id_temporary%}
+                            <button disabled class="w-full bg-gray-300 text-gray-500 py-2 rounded-lg cursor-not-allowed">
+                                Pending
+                            </button>
+                        {% else%}
+                            {% if plan.id >= current_plan %}
+                                {% if current_plan and current_plan == plan.id %}
+                                <button disabled class="w-full bg-gray-300 text-gray-500 py-2 rounded-lg cursor-not-allowed">
+                                    Current Plan
+                                </button>
+                                {% else %}
+                                <a href="{{ url_for('subscription.upgrade') }}" class="block w-full text-center border border-green-600 text-green-600 py-2 rounded-lg hover:bg-green-50">
+                                    Upgrade
+                                </a>
+                                {% endif %}
+                            {% else %}
+                                
+                                <button disabled class="w-full bg-gray-300 text-gray-500 py-2 rounded-lg cursor-not-allowed">
+                                    Downgrade
+                                </button>
+                            
+                            {% endif %}
+                        {%endif%}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- FAQ Section -->
+        <div class="mt-16 text-center">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Need a custom plan?</h3>
+            <p class="text-gray-600 mb-4">Contact us for enterprise pricing and custom solutions.</p>
+            <a href="#" class="text-green-600 hover:text-green-700">Contact Sales →</a>
+        </div>
+        
+    </div>
+</div>
+{% endblock %}

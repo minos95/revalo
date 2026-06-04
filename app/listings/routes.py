@@ -2,12 +2,13 @@ from datetime import datetime
 import os
 
 from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
+from app.services.notification_service import NotificationService
 from flask_login import current_user, login_required
 from sqlalchemy import  desc,or_
 
 from app import db,app
 from app.listings import bp
-from app.auth.models import Review
+from app.auth.models import Notification, Review
 from app.listings.forms import FilterMarketForm, postItemForm,EditListingForm
 from app.listings.models import Category, Image, Item, Item_quality_values, Quality_attributes
 from app.offers.models import Offer
@@ -39,31 +40,39 @@ def market(category_id):
    
     if category_id!='all':
         filters.append(Item.category_id==category_id)
-    name=request.args.get("name")
-    if name:
-        form.name.data=name
-        filters.append(or_(Item.name.ilike(f"%{name}%"),Item.description.ilike(f"%{request.args.get("name")}%")))
-        
-    quantity=request.args.get("quantity")
-    if quantity:
-        filters.append(quantity<=Item.quantity)
-    location=request.args.get("location")
-    if location:
-        form.location.default=request.args.get("location")
-        form.process()
-        filters.append(Item.pickup_city==location)
-   
+    if form.submit():
+        name=request.args.get("name")
+        if name:
+            form.name.data=request.args.get("name")
+            filters.append(or_(Item.name.ilike(f"%{name}%"),Item.description.ilike(f"%{request.args.get("name")}%")))
+            
+        min_quantity=request.args.get("min_quantity")
+        if min_quantity:
+            form.min_quantity.data=min_quantity
+            filters.append(min_quantity<=Item.quantity)
+        location=request.args.get("location")
+        if location:
+            form.location.default=request.args.get("location")
+            form.process()
+            filters.append(Item.pickup_city==location)
+    
     
     quality_filter={}
-    listings=Item.query
+    listings=Item.query.join(Item_quality_values, Item.id == Item_quality_values.item_id)
     for attribute in attributes:
         if request.args.get(attribute.name):
+            
+            filters.append(Item_quality_values.option_id==request.args.get(attribute.name))
+            
             quality_filter[attribute.name]=int(request.args.get(attribute.name))
             
-    if filters:   
+    if filters: 
+            
             listings=listings.filter(*filters)
+            
+    
     listings=listings.paginate(page=page,per_page=per_page,error_out=False)
-  
+    
     return render_template('market.html',listings=listings,form=form,category_id=category_id,attributes=attributes,quality_filter=quality_filter)
 
 
@@ -74,7 +83,9 @@ def market(category_id):
 
 
 @bp.route("/")
+@login_required
 def listings():
+        NotificationService.mark_as_read_by_type(current_user.id,"listing")
         status = request.args.get('status', 'active')
     
         query = Item.query.filter_by(company_id=current_user.company_id)
@@ -87,6 +98,8 @@ def listings():
             query = query.filter_by(status='pending')
         elif status == 'sold':
             query = query.filter_by(status='sold')
+        elif status == 'rejected':
+            query = query.filter_by(status='rejected')
         else:
             query = query.filter(Item.expires_at <= datetime.utcnow())
         
@@ -94,10 +107,11 @@ def listings():
         listings_count=query.count()
 
         counts = {
-        'active': Item.query.filter_by(company_id=current_user.company_id, status='active').count(),
+        'active': Item.query.filter(Item.company_id == current_user.company_id, Item.status=='active',Item.expires_at > datetime.utcnow()).count(),
         'draft': Item.query.filter_by(company_id=current_user.company_id, status='draft').count(),
         'pending': Item.query.filter_by(company_id=current_user.company_id, status='pending').count(),
         'sold': Item.query.filter_by(company_id=current_user.company_id, status='sold').count(),
+        'rejected': Item.query.filter_by(company_id=current_user.company_id, status='rejected').count(),
         'expired': Item.query.filter(
             Item.company_id == current_user.company_id,
             Item.expires_at <= datetime.utcnow()
@@ -108,6 +122,7 @@ def listings():
 
 
 @bp.route("/category")
+@login_required
 def listing_select_category():
    
     categories=Category.query.all()
@@ -123,48 +138,52 @@ def post(category_id):
 
    
     if form.validate_on_submit():
-        quality_item_to_create=[]
-        image_to_create=[]
-        item_to_create=Item(name=form.title.data,
-                            company_id=current_user.company_id,
-                            user_id=current_user.id,
-                            description=form.description.data,
-                            category_id=category_id,
-                            unit=form.unit.data,
-                            quantity=form.quantity.data,
-                            pickup_address=form.pickup_address.data,
-                            pickup_city=form.pickup_city.data,
-                            pickup_country=form.pickup_country.data,
-                            price_negotiable=form.price_negotiable.data,
-                            price=form.price.data,
-                            )
-        db.session.add(item_to_create)
-        db.session.flush()
-        for attribute in quality_attributes:
+        if current_user.owned_company.can_create_listing():
+            quality_item_to_create=[]
+            image_to_create=[]
+            item_to_create=Item(name=form.title.data,
+                                company_id=current_user.company_id,
+                                user_id=current_user.id,
+                                description=form.description.data,
+                                category_id=category_id,
+                                unit=form.unit.data,
+                                quantity=form.quantity.data,
+                                pickup_address=form.pickup_address.data,
+                                pickup_city=form.pickup_city.data,
+                                pickup_country=form.pickup_country.data,
+                                price_negotiable=form.price_negotiable.data,
+                                price=form.price.data,
+                                )
+            db.session.add(item_to_create)
+            db.session.flush()
+            for attribute in quality_attributes:
+                
+                if f"attr_{attribute.id}"  in request.form:
+                    quality_item_to_create.append(Item_quality_values(item_id=item_to_create.id,                                                        
+                                                        attribute_id=attribute.id,
+                                                            option_id=request.form[f"attr_{attribute.id}" ]
+                                                            ))
+            for image in form.images.data:
+                if image:
+                    filename = secure_filename(image.filename)
+                    file_path=app.config['UPLOAD_FOLDER']+'listings/'
+                    file_path = os.path.join(file_path, filename)
+                    print(file_path)
+                    image.save(file_path)
+                    image_to_create.append(Image(item_id=item_to_create.id, 
+                                                uri='uploads/listings/'+filename))
+            db.session.add_all(image_to_create)
+            db.session.add_all(quality_item_to_create)
+            db.session.commit()
             
-            if f"attr_{attribute.id}"  in request.form:
-                quality_item_to_create.append(Item_quality_values(item_id=item_to_create.id,                                                        
-                                                       attribute_id=attribute.id,
-                                                        option_id=request.form[f"attr_{attribute.id}" ]
-                                                        ))
-        for image in form.images.data:
-            if image:
-                filename = secure_filename(image.filename)
-                file_path=app.config['UPLOAD_FOLDER']+'listings/'
-                file_path = os.path.join(file_path, filename)
-                print(file_path)
-                image.save(file_path)
-                image_to_create.append(Image(item_id=item_to_create.id, 
-                                             uri='uploads/listings/'+filename))
-        db.session.add_all(image_to_create)
-        db.session.add_all(quality_item_to_create)
-        db.session.commit()
-        
-        # Store in session for review
-        session['pending_listing_id'] = item_to_create.id
-        
-        flash('Listing created! Please review before publishing.', 'success')
-        return redirect(url_for('listings.review', listing_id=item_to_create.id))
+            # Store in session for review
+            session['pending_listing_id'] = item_to_create.id
+            
+            flash('Listing created! Please review before publishing.', 'success')
+            return redirect(url_for('listings.review', listing_id=item_to_create.id))
+        else:
+            flash('You attend maximum listing! You should upgrade plan', 'Info')
+            return redirect(url_for('subscription.pricing'))
     if form.errors!={}:
         for err_msg in form.errors.values():
                 flash(f'error {err_msg}',category='danger')
@@ -207,7 +226,15 @@ def publish(listing_id):
     # Update company stats
     #listing.company.total_listings += 1
     #isting.company.active_listings += 1
-    
+
+    notification=Notification(user_id=1,
+                                type="new_listing",
+                                title="New Listing",
+                                message=f'New Lisitng has been added {listing.name} by {listing.owned_company.name}',
+                                related_type="listing",
+                                
+                                )
+    db.session.add(notification)
     db.session.commit()
     
     # Clear from session

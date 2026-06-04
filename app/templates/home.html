@@ -105,7 +105,7 @@
                     <p class="text-sm text-gray-500 mb-2">{{ listing.owned_company.name }}</p>
                     <div class="flex justify-between items-center">
                         {% if listing.price %}
-                        <span class="text-lg font-bold text-green-600">${{ "%.2f"|format(listing.price) }}</span>
+                        <span class="text-lg font-bold text-green-600">{{ "%.2f"|format(listing.price) }} DA</span>
                         {% else %}
                         <span class="text-sm text-gray-500">Make Offer</span>
                         {% endif %}

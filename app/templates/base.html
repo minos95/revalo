@@ -45,6 +45,8 @@
     
     {% block extra_css %}{% endblock %}
 </head>
+ 
+ 
 <body class="bg-gray-50">
     <!-- Navigation -->
     <nav class="bg-white shadow-md sticky top-0 z-50">
@@ -64,14 +66,30 @@
                             Market
                         </a>
                         {% if current_user.is_authenticated %}
+                         {%set notif=current_user.unread_notification_count%}
                         <a href="{{ url_for('listings.listings') }}" class="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium">
-                            My Listings
+                            My Listings {% if notif.listing %}
+                            <span class="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 inset-ring inset-ring-red-600/10">{{ notif.listing}}</span>{%endif%}
+                        
                         </a>
-                        <a href="{{ url_for('offers.index') }}" class="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium">
-                            Offers
-                        </a>
-                        <a href="{{ url_for('transactions.index') }}" class="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium">
-                            Transactions
+                        
+                            <a href="{{ url_for('offers.index') }}" class="relative inline-block text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium">
+                            Offers {% if notif.offer %}
+                            <!-- Notification Bubble -->
+                            <span class="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full">
+                                {{notif.offer}}
+                            </span>
+                            {%endif%}
+                            </a>
+                            
+                       
+                        
+                        <a href="{{ url_for('transactions.index') }}" class="relative inline-block text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium">
+                            Transactions {% if notif.transaction %}
+                            <span class="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full">
+                                {{notif.transaction}}
+                            </span>   
+                            {% endif %}                     
                         </a>
                         {% endif %}
                     </div>
@@ -79,9 +97,35 @@
                 
                 <div class="flex items-center space-x-4">
                     {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('listings.listing_select_category') }}" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition">
-                        <i class="fas fa-plus mr-2"></i>Post Listing
+                    {% if current_user.owned_company.subscription_status =="active" %}
+                    
+                    <a href="{{ url_for('subscription.pricing') }}" class="bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-fuchsia-700 transition">
+                        <i class="fa-solid fa-crown"></i> {{current_user.owned_company.subscription_plan.name}}
                     </a>
+                    {%elif current_user.owned_company.subscription_status =="pending_payment"%}
+                     <a href="{{ url_for('subscription.pricing') }}" class="bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-fuchsia-700 transition">
+                        <i class="fa-solid fa-crown"></i> Pending
+                    </a>
+                    {% else %}
+                     <a href="{{ url_for('subscription.pricing') }}" class="bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-fuchsia-700 transition">
+                        <i class="fa-solid fa-crown"></i> Upgrade
+                    </a>
+                    {% endif %}
+                   
+                   
+                    <div class="relative inline-block">
+                    <!-- Notification Icon (e.g., Bell) -->
+                        <a href="{{ url_for('messages.index') }}" class="text-gray-700 hover:text-green-600">
+                            <i class="fas fa-envelope text-xl"></i>
+                            <span id="messageBadge" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 hidden">0</span>
+                        </a>
+                        {% if notif.conversation %}
+                        <!-- Notification Bubble -->
+                        <span class="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full">
+                            {{notif.conversation}}
+                        </span>
+                        {% endif %}
+                    </div>
                     
                     <div class="relative group">
                         <button class="flex items-center space-x-2 focus:outline-none">
@@ -97,10 +141,13 @@
                         </button>
                         
                         <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                             <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-user mr-2"></i>{{ current_user.owned_company.name }}
+                            </a>
                             <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                 <i class="fas fa-user mr-2"></i>Profile
                             </a>
-                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <a href="{{url_for('teams')}}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                 <i class="fas fa-users mr-2"></i>Team
                             </a>
                             <a href="{{url_for('dashboard')}}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
@@ -125,29 +172,37 @@
         </div>
         
     </nav>
-    {% if current_user.is_authenticated and current_user.role == 'admin' %}
+    {% if current_user.is_authenticated and current_user.role == 'super_admin' %}
+   
+ 
 <div class="border-t mt-2 pt-2 w-48 float-left">
     <div class="px-4 py-2 text-xs text-gray-400 uppercase">Admin</div>
     <a href="{{ url_for('admin.dashboard') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-        <i class="fas fa-chart-line w-5 mr-2"></i>Dashboard
+        <i class="fas fa-chart-line w-5 mr-2"></i>Dashboard 
     </a>
     <a href="{{ url_for('admin.users') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-        <i class="fas fa-users w-5 mr-2"></i>Users
+        <i class="fas fa-users w-5 mr-2"></i>Users {% if notif.user %}<span class="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 inset-ring inset-ring-red-600/10">{{ notif.user}}</span>{%endif%}
     </a>
     <a href="{{ url_for('admin.companies') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-        <i class="fas fa-building w-5 mr-2"></i>Companies
+        <i class="fas fa-building w-5 mr-2"></i>Companies {% if notif.company  %}<span class="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 inset-ring inset-ring-red-600/10">{{ notif.company}}</span>{%endif%}
+
     </a>
     <a href="{{ url_for('admin.listings') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-        <i class="fas fa-tag w-5 mr-2"></i>Listings
+        <i class="fas fa-tag w-5 mr-2"></i>Listings {% if notif.listing %}
+                            <span class="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 inset-ring inset-ring-red-600/10">{{ notif.listing}}</span>{%endif%}
+                        
+
     </a>
     <a href="{{ url_for('admin.transactions') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-        <i class="fas fa-exchange-alt w-5 mr-2"></i>Transactions
+        <i class="fas fa-exchange-alt w-5 mr-2"></i>Transactions {% if notif.transaction  %}<span class="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 inset-ring inset-ring-red-600/10">{{ notif.transaction }}</span>{%endif%}
+
     </a>
     <a href="{{ url_for('admin.categories') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-        <i class="fas fa-folder w-5 mr-2"></i>Categories
+        <i class="fas fa-folder w-5 mr-2"></i>Categories 
     </a>
     <a href="{{ url_for('admin.reports') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-        <i class="fas fa-chart-bar w-5 mr-2"></i>Reports
+        <i class="fas fa-chart-bar w-5 mr-2"></i>Reports <span class="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 inset-ring inset-ring-red-600/10">Badge</span>
+
     </a>
     <a href="{{ url_for('admin.settings') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
         <i class="fas fa-cog w-5 mr-2"></i>Settings
@@ -216,7 +271,7 @@
                     <h3 class="font-semibold mb-4">Contact</h3>
                     <ul class="space-y-2 text-sm text-gray-400">
                         <li><i class="fas fa-envelope mr-2"></i> support@ecowaste.com</li>
-                        <li><i class="fas fa-phone mr-2"></i> +1 (555) 123-4567</li>
+                        <li><i class="fas fa-phone mr-2"></i> +213 665 32 61 40</li>
                     </ul>
                 </div>
             </div>
@@ -236,6 +291,26 @@
             });
         }, 5000);
     </script>
+    <!-- Add this JavaScript at the bottom -->
+<script>
+    function updateUnreadCount() {
+        fetch('{{ url_for("messages.unread_count") }}')
+            .then(response => response.json())
+            .then(data => {
+                const badge = document.getElementById('messageBadge');
+                if (data.unread_count > 0) {
+                    badge.textContent = data.unread_count > 99 ? '99+' : data.unread_count;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            });
+    }
+    
+    // Update every 30 seconds
+    updateUnreadCount();
+    setInterval(updateUnreadCount, 30000);
+</script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

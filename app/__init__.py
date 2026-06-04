@@ -1,10 +1,13 @@
 import os
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
+
 from flask_migrate import Migrate
+
 # ... your existing code (Flask app, db = SQLAlchemy(app), etc.)
 metadata = MetaData(naming_convention={
     "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
@@ -28,19 +31,26 @@ login_manager.login_view="home"
 login_manager.login_message_category='info'
 migrate = Migrate(app, db)
 
+    
+
 #Register blueprint
 from app.auth import bp as auth_bp
 from app.listings import bp as listings_bp
 from app.offers import bp as offers_bp
 from app.transactions import bp as transactions_bp
 from app.admin import bp as admin_bp
-
+from app.messages import bp as messages_bp
+from app.subscription import bp as subscription_bp
+app.register_blueprint(subscription_bp)
+app.register_blueprint(messages_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(listings_bp)
 app.register_blueprint(transactions_bp)
 app.register_blueprint(offers_bp)
-
-
+from app.context_processors import inject_notifications, inject_notification_service
+# Register context processors for notifications
+app.context_processor(inject_notifications)
+app.context_processor(inject_notification_service)
 from app import routes
 

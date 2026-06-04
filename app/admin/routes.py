@@ -9,7 +9,7 @@ from app.auth.models import User, Company
 from app.listings.models import Item,Category
 from app.transactions.models import Transaction
 from app.offers.models import Offer
-
+from app.subscription.models import SubscriptionPlan
 from app import db
 
 # ============================================
@@ -19,7 +19,7 @@ from app import db
 def admin_required(f):
     @login_required
     def decorated_function(*args, **kwargs):
-        if current_user.role != 'admin':
+        if current_user.role != 'super_admin':
             flash('Access denied. Admin privileges required.', 'danger')
             return redirect(url_for('home'))
         return f(*args, **kwargs)
@@ -186,6 +186,8 @@ def companies():
     search = request.args.get('search', '')
     verification = request.args.get('verification', '')
     
+    subscription_plan=SubscriptionPlan.query.all()
+    
     query = Company.query
     
     if search:
@@ -203,7 +205,7 @@ def companies():
     companies = pagination.items
     
     return render_template('companies.html', companies=companies, pagination=pagination, 
-                         search=search, verification=verification)
+                         search=search, verification=verification,subscription_plan=subscription_plan)
 
 
 @bp.route('/companies/<int:company_id>/verify', methods=['POST'])
@@ -229,6 +231,31 @@ def unverify_company(company_id):
     db.session.commit()
     
     flash(f'Company {company.name} has been unverified.', 'warning')
+    return redirect(url_for('admin.companies'))
+
+@bp.route('/companies/<int:company_id>/change-subscription-status', methods=['POST'])
+@admin_required
+def change_subscription_status(company_id):
+    """Change company plan"""
+    company = Company.query.get_or_404(company_id)
+    new_sub_status = request.form.get('sub_plan')
+    
+    sub_plan=SubscriptionPlan.query.filter_by(id=company.subscription_plan_id_temporary).first()
+    print(new_sub_status)
+    print(sub_plan)
+    company.subscription_plan_id = sub_plan.id
+    company.subscription_plan_id_temporary = None
+    company.subscription_status= "active"
+    company.subscription_started_at=datetime.utcnow()
+    company.subscription_ends_at=datetime.utcnow() +timedelta(days=90)
+    company.max_active_listings=sub_plan.max_active_listings
+    company.max_featured_listings=sub_plan.max_featured_listings
+    company.max_team_members=sub_plan.max_team_members
+    company.max_monthly_transactions=sub_plan.max_monthly_transactions
+    company.commission_rate=sub_plan.commission_rate
+    db.session.commit()
+    flash(f'Subscription plan  changed to {sub_plan.name}.', 'success')
+    
     return redirect(url_for('admin.companies'))
 
 

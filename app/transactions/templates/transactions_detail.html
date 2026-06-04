@@ -72,7 +72,7 @@
             <div class="flex flex-col md:flex-row md:items-center md:justify-between">
                 <div>
                     <div class="flex items-center space-x-3">
-                        <h1 class="text-2xl font-bold text-gray-900">Transaction #{{ transaction.id }}</h1>
+                        <h1 class="text-2xl font-bold text-gray-900">Transaction #{{ transaction.id }} {{transaction.seller_company_id }}{{ current_user.company_id}} </h1>
                         <span class="px-3 py-1 text-sm rounded-full 
                             {% if transaction.status == 'completed' %}bg-green-100 text-green-800
                             {% elif transaction.status == 'pending' %}bg-yellow-100 text-yellow-800
@@ -240,6 +240,10 @@
                                 <span class="text-gray-600">Item Price</span>
                                 <span class="font-medium">{{ "%.2f"|format(transaction.price) }} DA /{{transaction.unit}}</span>
                             </div>
+                             <div class="flex justify-between items-center pb-3 border-b">
+                                <span class="text-gray-600">Quantity requested</span>
+                                <span class="font-medium">{{ "%.2f"|format(transaction.quantity) }} {{transaction.unit}}</span>
+                            </div>
                             <div class="flex justify-between items-center pb-3 border-b">
                                 <span class="text-gray-600">Platform Fee (5%)</span>
                                 <span class="font-medium">{{ "%.2f"|format(transaction.commission_amount) }} DA</span>
@@ -391,12 +395,12 @@
             
             <!-- RIGHT COLUMN: Parties & Documents -->
             <div class="lg:col-span-1 space-y-6">
-                {%if current_user.comapny_id==transaction.buyer_company_id%}
+                {%if current_user.company_id==transaction.buyer_company_id%}
                 <!-- Seller Info Card -->
                 <div class="bg-white rounded-xl shadow-md overflow-hidden">
                     <div class="border-b px-6 py-4 bg-gray-50">
                         <h2 class="font-semibold text-gray-900">
-                            <i class="fas fa-store text-green-600 mr-2"></i>Seller
+                            <i class="fas fa-store text-green-600 mr-2"></i>Seller 
                         </h2>
                     </div>
                     <div class="p-6">
@@ -433,7 +437,7 @@
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-500">Location:</span>
-                                <span>{{ transaction.seller_company.city }}, {{ transaction.seller_company.country }}</span>
+                                <span>{{transaction.buyer_company.address }}, {{ transaction.seller_company.city }}, {{ transaction.seller_company.country }}</span>
                             </div>
                         </div>
                         <button onclick="contactSeller()" class="w-full mt-4 border border-green-600 text-green-600 py-2 rounded-lg hover:bg-green-50 transition">
@@ -446,7 +450,7 @@
                 <div class="bg-white rounded-xl shadow-md overflow-hidden">
                     <div class="border-b px-6 py-4 bg-gray-50">
                         <h2 class="font-semibold text-gray-900">
-                            <i class="fas fa-user text-green-600 mr-2"></i>Buyer
+                            <i class="fas fa-user text-green-600 mr-2"></i>Buyer 
                         </h2>
                     </div>
                     <div class="p-6">
@@ -483,7 +487,7 @@
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-500">Location:</span>
-                                <span>{{ transaction.buyer_company.city }}, {{ transaction.buyer_company.country }}</span>
+                                <span>{{transaction.buyer_company.address }}, {{ transaction.buyer_company.city }}, {{ transaction.buyer_company.country }}</span>
                             </div>
                         </div>
                         <button onclick="contactBuyer()" class="w-full mt-4 border border-blue-600 text-blue-600 py-2 rounded-lg hover:bg-blue-50 transition">
@@ -543,7 +547,7 @@
                         <p class="text-gray-500 text-center py-4">No documents available yet</p>
                         {% endif %}
                         
-                        {% if transaction.status == 'completed' and transaction.buyer_company_id == current_user.company_id and not transaction_review %}
+                        {% if transaction.status == 'completed' and transaction.buyer_company_id == current_user.owned_company_id and not transaction_review %}
                         <div class="mt-4 pt-4 border-t">
                             <button onclick="openReviewModal()" class="w-full bg-yellow-500 text-white py-2 rounded-lg hover:bg-yellow-600 action-button">
                                 <i class="fas fa-star mr-2"></i>Leave a Review

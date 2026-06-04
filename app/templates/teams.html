@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}EcoWaste - Teams{% endblock %}
+
+
+
+
+{% block content %}
+
+<div class="bg-gray-50 min-h-screen py-8">
+    <div class="max-w-7xl mx-auto px-4">
+        
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-900">Manage Users</h1>
+        </div>
+            <div class="bg-orange-100 border-l-4 border-orange-500 text-orange-700 p-4" role="alert">
+        <p class="font-bold">Your Maximum team members {{current_user.owned_company.max_team_members}}</p>
+        <p>For more upgrade your subscription plan.</p>
+    </div>
+        
+        <!-- Search -->
+        <div class="bg-white rounded-xl shadow-md p-4 mb-6">
+            <form method="GET" class="flex gap-4">
+                <input type="text" name="search" value="{{ search }}" 
+                       placeholder="Search by name or email..."
+                       class="flex-1 border rounded-lg px-4 py-2">
+                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                    <i class="fas fa-search mr-2"></i>Search
+                </button>
+            </form>
+        </div>
+        
+        <!-- Users Table -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500">User</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500">Role</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500">Joined</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500">Status</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for user in teams %}
+                    <tr>
+                        <td class="px-6 py-4">
+                            <div>
+                                <p class="font-medium">{{ user.full_name }}</p>
+                                <p class="text-sm text-gray-500">{{ user.email }}</p>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">{{ user.role }}</td>
+                        
+                        <td class="px-6 py-4 text-sm">{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                         <td class="px-6 py-4 text-sm">
+                            {% if user.authorized %}
+                            Active
+                            {%else %}
+                            Deactivate
+                            {%endif%}
+                            
+                        </td>
+                       <td class="px-6 py-4 text-right">
+                            <form method="POST" action="{{ url_for('admin.change_user_role', user_id=user.id) }}" class="inline">
+                                <select name="role" onchange="this.form.submit()" class="text-sm border rounded px-2 py-1">
+                                    <option value="member" {% if user.role == 'member' %}selected{% endif %}>Member</option>
+                                    <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+                                    <option value="owner" {% if user.role == 'owner' %}selected{% endif %}>Owner</option>
+                                </select>
+                            </form>
+                        </td>
+                       
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if pagination and pagination.pages > 1 %}
+        <div class="flex justify-center mt-6">
+            <div class="flex space-x-2">
+                {% if pagination.has_prev %}
+                <a href="{{ url_for('admin.users', page=pagination.prev_num, search=search) }}" class="px-3 py-2 bg-white border rounded-lg">Previous</a>
+                {% endif %}
+                {% for page in pagination.iter_pages() %}
+                    {% if page %}
+                        <a href="{{ url_for('admin.users', page=page, search=search) }}" class="px-3 py-2 {% if page == pagination.page %}bg-green-600 text-white{% else %}bg-white border{% endif %} rounded-lg">
+                            {{ page }}
+                        </a>
+                    {% endif %}
+                {% endfor %}
+                {% if pagination.has_next %}
+                <a href="{{ url_for('admin.users', page=pagination.next_num, search=search) }}" class="px-3 py-2 bg-white border rounded-lg">Next</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+    </div>
+</div>
+{% endblock %}

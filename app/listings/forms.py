@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import BooleanField, DecimalField, IntegerField, MultipleFileField, SelectField, StringField, SubmitField, TextAreaField
+from wtforms import BooleanField, DecimalField, FloatField, IntegerField, MultipleFileField, SelectField, StringField, SubmitField, TextAreaField
 from flask_wtf.file import FileField, FileAllowed, FileRequired
 from wtforms.validators import Length,EqualTo,Email,DataRequired, NumberRange, Optional,ValidationError
 from wtforms.widgets import HiddenInput
@@ -13,46 +13,46 @@ class FilterMarketForm(FlaskForm):
        # self.category.choices += [(c.id, c.name) for c in Category.query.all()]
     name=StringField(label='TITLE',validators=[Length(min=0,max=30)]) 
     category=SelectField("CATEGORY",choices=[])
-    location=SelectField("LOCATION",choices=["All","Adrar","adrar","Chlef", "Laghouat", "Oum El Bouaghi", "Batna","Béjaïa", "Biskra", "Béchar", "Blida", "Bouira", "Tamanrasset","Tébessa",
- "Tlemcen",
- "Tiaret",
- "Tizi Ouzou",
- "Alger",
- "Djelfa",
- "Jijel",
- "Sétif",
- "Saïda",
- "Skikda",
- "Sidi Bel Abbès",
- "Annaba",
- "Guelma",
-"Constantine",
-"Médéa",
- "Mostaganem",
- "M'Sila",
- "Mascara",
- "Ouargla",
- "Oran",
-"El Bayadh",
-"Illizi",
- "Bordj Bou Arreridj",
- "Boumerdès",
- "El Tarf",
- "Tindouf",
- "Tissemsilt",
- "El Oued",
- "Khenchela",
- "Souk Ahras",
- "Tipaza",
- "Mila",
- "Aïn Defla",
- "Naâma",
-" Aïn Témouchent",
- "Ghardaïa",
- "Relizane",])
+    location=SelectField("LOCATION",choices=["","Adrar","adrar","Chlef", "Laghouat", "Oum El Bouaghi", "Batna","Béjaïa", "Biskra", "Béchar", "Blida", "Bouira", "Tamanrasset","Tébessa",
+            "Tlemcen",
+            "Tiaret",
+            "Tizi Ouzou",
+            "Alger",
+            "Djelfa",
+            "Jijel",
+            "Sétif",
+            "Saïda",
+            "Skikda",
+            "Sidi Bel Abbès",
+            "Annaba",
+            "Guelma",
+            "Constantine",
+            "Médéa",
+            "Mostaganem",
+            "M'Sila",
+            "Mascara",
+            "Ouargla",
+            "Oran",
+            "El Bayadh",
+            "Illizi",
+            "Bordj Bou Arreridj",
+            "Boumerdès",
+            "El Tarf",
+            "Tindouf",
+            "Tissemsilt",
+            "El Oued",
+            "Khenchela",
+            "Souk Ahras",
+            "Tipaza",
+            "Mila",
+            "Aïn Defla",
+            "Naâma",
+            " Aïn Témouchent",
+            "Ghardaïa",
+            "Relizane",])
     min_quantity=IntegerField(label='Min Quantity (kg) ') 
-    min_quantity=IntegerField(label='Min Pice') 
-    max_quantity=IntegerField(label='Max Price') 
+    min_price=IntegerField(label='Min Pice') 
+    max_price=IntegerField(label='Max Price') 
     quality=SelectField("QUALITY",choices=[("","Tous")])
     sorting=SelectField("CATEGORY",choices=["","récemment posté","grande quantité "])
     submit=SubmitField(label="Filtrer")
@@ -73,7 +73,7 @@ class postItemForm(FlaskForm):
         ])
     description = TextAreaField('Description', validators=[
             DataRequired(message='Description is required'),
-            Length(min=50, max=5000, message='Description must be between 50 and 5000 characters')
+            Length(min=30, max=5000, message='Description must be between 50 and 5000 characters')
         ])
     #category=SelectField(label="Category",choices=[])
     unit = SelectField('Unit', choices=[
@@ -88,7 +88,7 @@ class postItemForm(FlaskForm):
             DataRequired(message='Quantity is required'),
             NumberRange(min=0.01, message='Quantity must be greater than 0')
         ])
-    price = DecimalField('Price (DA)', validators=[
+    price = FloatField('Price (DA)', validators=[
             Optional(),
             NumberRange(min=0, message='Price cannot be negative')
         ])
