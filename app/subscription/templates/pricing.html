@@ -74,11 +74,15 @@
                     
                     <div class="mt-8">
                         
-                        {% if current_user.owned_company.subscription_plan_id_temporary%}
+                        {% if current_user.owned_company.subscription_status=="pending"%}
                             <button disabled class="w-full bg-gray-300 text-gray-500 py-2 rounded-lg cursor-not-allowed">
                                 Pending
                             </button>
-                        {% else%}
+                        {% elif current_user.owned_company.subscription_status=="grace_period"  %}
+                        <a href="{{ url_for('subscription.upgrade') }}" class="block w-full text-center border border-green-600 text-green-600 py-2 rounded-lg hover:bg-green-50">
+                                    Upgrade
+                                </a>
+                        {% else %}
                             {% if plan.id >= current_plan %}
                                 {% if current_plan and current_plan == plan.id %}
                                 <button disabled class="w-full bg-gray-300 text-gray-500 py-2 rounded-lg cursor-not-allowed">

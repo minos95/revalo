@@ -13,7 +13,7 @@ class Conversation(db.Model):
     # Link to BOTH (optional)
     offer_id = db.Column(db.Integer, db.ForeignKey('offer.id'), nullable=True)
     transaction_id = db.Column(db.Integer, db.ForeignKey('transaction.id'), nullable=True)
-    item_id = db.Column(db.Integer, db.ForeignKey('item.id'), nullable=False)
+    item_id = db.Column(db.Integer, db.ForeignKey('item.id'), nullable=True)
     
     # Status
     stage = db.Column(db.String(20), default='offer')  # offer, transaction, completed
@@ -23,15 +23,15 @@ class Conversation(db.Model):
     
     # Last message info
     last_message = db.Column(db.Text)
-    last_message_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_message_at = db.Column(db.DateTime, default=datetime.now())
     last_message_sender_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     
     # Unread counts
     seller_unread_count = db.Column(db.Integer, default=0)
     buyer_unread_count = db.Column(db.Integer, default=0)
     
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now())
+    updated_at = db.Column(db.DateTime, default=datetime.now(), onupdate=datetime.now())
     
     # Relationships
     seller = db.relationship('User', foreign_keys=[seller_id], backref='seller_conversations')
@@ -86,7 +86,7 @@ class Message(db.Model):
     attachment_url = db.Column(db.String(500))
     attachment_type = db.Column(db.String(50))  # image, document, etc.
     
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now())
     
     # Relationships
     conversation = db.relationship('Conversation', back_populates='messages')
@@ -96,5 +96,5 @@ class Message(db.Model):
         """Mark individual message as read"""
         if not self.is_read:
             self.is_read = True
-            self.read_at = datetime.utcnow()
+            self.read_at = datetime.now()
             db.session.commit()

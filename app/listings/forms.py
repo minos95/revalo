@@ -47,9 +47,30 @@ class FilterMarketForm(FlaskForm):
             "Mila",
             "Aïn Defla",
             "Naâma",
-            " Aïn Témouchent",
+            "Aïn Témouchent",
             "Ghardaïa",
-            "Relizane",])
+            "Relizane",
+            "Timimoun",
+            "Bordj Badji Mokhtar",
+            "Ouled Djellal",
+            "Béni Abbès",
+            "In Salah",
+            "In Guezzam",
+            "Touggourt",
+            "Djanet",
+            "El M'Ghair",
+            "El Meniaa",
+            "Aflou",
+            "Barika",
+            "El Kantara",
+            "Bir El Ater",
+            "El Aricha",
+            "Ksar Chellala",
+            "Aïn Ouessara",
+            "Messaad",
+            "Ksar El Boukhari",
+            "Bou Saâda",
+            "El Abiodh Sidi Cheikh"])
     min_quantity=IntegerField(label='Min Quantity (kg) ') 
     min_price=IntegerField(label='Min Pice') 
     max_price=IntegerField(label='Max Price') 

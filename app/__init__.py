@@ -5,7 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
-
+from extensions import mail  # Import the global mail object
 from flask_migrate import Migrate
 
 # ... your existing code (Flask app, db = SQLAlchemy(app), etc.)
@@ -32,6 +32,17 @@ login_manager.login_message_category='info'
 migrate = Migrate(app, db)
 
     
+# Email Server Configuration
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USE_SSL'] = False
+app.config['MAIL_USERNAME'] = 'rahal.aminos@gmail.com'
+app.config['MAIL_PASSWORD'] = 'dwad wryg hysx mizb'
+app.config['MAIL_DEFAULT_SENDER'] =  ('Ecowaste', 'rahal.aminos@gmail.com')
+
+mail.init_app(app)
+
 
 #Register blueprint
 from app.auth import bp as auth_bp

@@ -159,9 +159,9 @@
                                 <div class="text-sm text-gray-600 mb-2">
                                     {% if offer.sender_company_id == current_user.company_id %}
                                         <span class="font-medium text-blue-600">You made an offer</span> to 
-                                        <a href="#" class="hover:text-green-600">{# offer.item.company.name #}</a>
+                                        <a href="#" class="hover:text-green-600">{{ offer.item.owned_company.name }}</a>
                                     {% else %}
-                                        <span class="font-medium text-green-600">{# offer.company.name #}</span> made an offer to you
+                                        <span class="font-medium text-green-600">{{ offer.sender_company.name }}</span> made an offer to you
                                     {% endif %}
                                 </div>
                                 
@@ -209,7 +209,15 @@
                     
                     <!-- Actions -->
                     <div class="flex flex-col sm:flex-row gap-2">
-                        {% if offer.sender_company_id != current_user.company_id and offer.status == 'pending' %}
+                        {% if offer.status== 'accepted'%}
+                           <!-- Accepted offer -->
+                            <a href="{{ url_for('transactions.detail', transaction_id=offer.transaction.id) }}" 
+                               class="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-center">
+                                <i class="fas fa-exchange-alt mr-1"></i>View Transaction
+                            </a>
+                            
+                        {%elif offer.status== 'pending' %}
+                        {% if offer.sender_company_id != current_user.company_id%}
                             <!-- Received offer - Actions for seller -->
                             <form method="POST" action="{{ url_for('offers.accept_offer', offer_id=offer.id) }}" class="inline">
                                 <button type="submit" class="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
@@ -225,30 +233,18 @@
                                     <i class="fas fa-times mr-1"></i>Decline
                                 </button>
                             </form>
-                            
-                        {% elif offer.company_id == current_user.company_id and offer.status == 'pending' %}
-                            <!-- Sent offer - Actions for buyer -->
-                            <form method="POST" action="{{ url_for('offers.withdraw_offer', offer_id=offer.id) }}" class="inline">
+                        {%else %}
+                        <form method="POST" action="{{ url_for('offers.cancel_offer', offer_id=offer.id) }}" class="inline">
                                 <button type="submit" class="w-full sm:w-auto px-4 py-2 border border-red-500 text-red-600 rounded-lg hover:bg-red-50 transition">
-                                    <i class="fas fa-undo-alt mr-1"></i>Withdraw
+                                    <i class="fas fa-times mr-1"></i>Cancel
                                 </button>
                             </form>
-                            
-                        {% elif offer.status == 'accepted' %}
-                            <!-- Accepted offer -->
-                            <a href="{{ url_for('transactions.detail', transaction_id=offer.transaction.id) }}" 
-                               class="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-center">
-                                <i class="fas fa-exchange-alt mr-1"></i>View Transaction
-                            </a>
-                            
-                        {% elif offer.status == 'countered' and offer.company_id != current_user.company_id %}
-                            <!-- Countered offer - Original buyer can respond -->
-                            <a href="{{ url_for('offers.respond_counter', offer_id=offer.id) }}" 
-                               class="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-center">
-                                <i class="fas fa-reply mr-1"></i>Respond to Counter
-                            </a>
-                        {% endif %}
+                        {%endif%}
+                        {%elif offer.status == 'countered' %}
+                        <span>Countred</span>
+                        {%endif%}
                         
+                      
                         <a href="{{ url_for('listings.detail', listing_id=offer.item.id) }}" 
                            class="w-full sm:w-auto px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-center">
                             <i class="fas fa-eye mr-1"></i>View Listing

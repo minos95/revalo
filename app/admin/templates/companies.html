@@ -84,28 +84,26 @@
                            
 
                         </td>
-                         <td class="px-2 py-2 text-right space-x-2 " >
-                            {{company.subscription_plan.name}}    
-                            {% if  company.subscription_plan_id_temporary %}
+                         <td class="px-2 py-2 text-right space-x-2 whitespace-nowrap " >
+                           
+                            {% if  company.subscription_status=="pending" %}
                              <form method="POST" action="{{ url_for('admin.change_subscription_status', company_id=company.id) }}" class="inline">
                                     <input type="hidden" name="sub_plan" value={{company.subscription_plan_id}}>
                                     <button type="submit" class="text-yellow-600 hover:text-yellow-800 text-sm">
                                     <i class="fas fa-clock mr-1"></i>Pending
                                     </button>
+                                    {% set payment=company.subscription_payments.all() | last %}
+                                    {{payment.interval}}
                                 </form>
                             {% else %}
-                            {% if company.subscription_plan_id %}
+                            
                                 <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
-                                    <i class="fas fa-check-circle mr-1"></i>Active
+                                    <i class="fas fa-check-circle mr-1"></i>{{company.subscription_status}}
                                 </span>
                             
-                               
-                            {% else %}
-                                <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
-                                    <i class="fas fa-check-circle mr-1"></i>Free
-                                </span>
+                         
                             {% endif %}
-                            {% endif %}
+                              {{company.subscription_plan.name}}   
                            
                         </td>
                         <td class="px-2 py-2 text-right space-x-2">{{company.referal or "X"}}</td>

@@ -9,12 +9,12 @@ from app.listings.models import Item
 class makeOfferForm(FlaskForm):
     """Form for making an offer on a listing"""
     
-    price = IntegerField('Price', validators=[
+    price = DecimalField('Price', validators=[
         DataRequired(message='Please enter an offer price'),
         NumberRange(min=1, message='Price must be greater than 0')
     ])
     
-    quantity = IntegerField('Quantity', validators=[
+    quantity = DecimalField('Quantity', validators=[
         Optional(),
         NumberRange(min=1, message='Quantity must be greater than 0')
     ])

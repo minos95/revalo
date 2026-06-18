@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 
 from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
@@ -152,8 +153,7 @@ def create_offer(listing_id):
     
     # Get the listing
     listing = Item.query.get_or_404(listing_id)
-    print("------------------------------")
-    print(listing)
+    
     # Check if listing is available for offers
     if listing.status != 'active':
         flash('This listing is no longer available for offers.', 'danger')
@@ -180,10 +180,11 @@ def create_offer(listing_id):
         return redirect(url_for('offers.index'))
     
     # Initialize form
-    form = makeOfferForm(listing=listing)
+    form = makeOfferForm()
     
     if form.validate_on_submit():
-
+        
+        print("----------------offer")
         try:
             # Create the offer
             offer = OfferService.create_offer(
@@ -309,7 +310,7 @@ def accept_offer(offer_id):
     offer = Offer.query.get_or_404(offer_id)
     listing = offer.item
     commission_rate=current_user.owned_company.commission_rate
-    buyer_commission_rate=0
+    
     
     # Check if user can accept this offer (must be seller of the listing)
     if listing.company_id != current_user.company_id:
@@ -326,15 +327,18 @@ def accept_offer(offer_id):
     # Create transaction
     
     total_amount=float(offer.offered_price*offer.quantity_requested)
-    commission_amount=total_amount*commission_rate
-    seller_net_amount=total_amount-commission_amount
+    print(total_amount)
+    print(commission_rate)
+    commission_amount=Decimal(total_amount)*commission_rate
+    seller_net_amount=Decimal(total_amount)-commission_amount
+   
     transaction = Transaction(
         item_id=listing.id,
         offer_id=offer.id,
         seller_company_id=offer.seller_company_id,
         buyer_company_id=offer.buyer_company_id,
-        seller_manager_id=current_user.id,
-        buyer_manager_id=current_user,
+        seller_manager_id=offer.seller_id,
+        buyer_manager_id=offer.buyer_id,
         price=offer.offered_price,
         total_amount=total_amount,
         commission_rate=commission_rate,
@@ -461,13 +465,13 @@ def counter_offer(offer_id):
                          original_offer=original_offer,
                          listing=listing)
 
-@bp.route('/<int:offer_id>/withdraw', methods=['POST'])
+@bp.route('/<int:offer_id>/cancel', methods=['POST'])
 @login_required
-def withdraw_offer(offer_id):
+def cancel_offer(offer_id):
     """Withdraw an offer (only by sender)"""
     offer = Offer.query.get_or_404(offer_id)
     
-    if offer.company_id != current_user.company_id:
+    if offer.sender_company_id != current_user.company_id:
         flash('You can only withdraw your own offers.', 'danger')
         return redirect(url_for('offers.index'))
     
@@ -475,7 +479,7 @@ def withdraw_offer(offer_id):
         flash('This offer cannot be withdrawn.', 'warning')
         return redirect(url_for('offers.index'))
     
-    offer.withdraw()
+    offer.cancel()
     
     flash('Offer withdrawn successfully.', 'info')
     return redirect(url_for('offers.index'))

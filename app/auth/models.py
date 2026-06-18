@@ -1,5 +1,5 @@
 from collections import namedtuple
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from wtforms import ValidationError
 
@@ -37,7 +37,9 @@ class Company(db.Model):
     verified=db.Column(db.Boolean(),default=False)
     verified_by= db.Column(db.Integer())
     verified_at=db.Column(db.DateTime(timezone=True))
-
+      # Grace period tracking
+    subscription_grace_period_ends = db.Column(db.DateTime)
+    subscription_grace_period_used = db.Column(db.Boolean, default=False)
 
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
 
@@ -71,9 +73,10 @@ class Company(db.Model):
     default_payment_method_id = db.Column(db.String(100))
     
     # Usage tracking (for billing)
+    current_listings_created = db.Column(db.Integer, default=0)
     current_month_listings_created = db.Column(db.Integer, default=0)
     current_month_transactions = db.Column(db.Integer, default=0)
-    last_reset_date = db.Column(db.DateTime, default=datetime.utcnow)
+    last_reset_date = db.Column(db.DateTime, default=datetime.now)
     
     # Subscription history tracking
     last_invoice_url = db.Column(db.String(500))
@@ -108,7 +111,7 @@ class Company(db.Model):
         """Check if company has active subscription"""
         return (self.subscription_status == 'active' and 
                 self.subscription_ends_at and 
-                self.subscription_ends_at > datetime.utcnow())
+                self.subscription_ends_at > datetime.now())
     
     def can_create_listing(self):
         """Check if company can create new listing based on limits"""
@@ -148,7 +151,7 @@ class Company(db.Model):
         """Reset monthly counters (call via cron job)"""
         self.current_month_listings_created = 0
         self.current_month_transactions = 0
-        self.last_reset_date = datetime.utcnow()
+        self.last_reset_date = datetime.now()
         db.session.commit()
     
     def increment_listings_created(self):
@@ -170,21 +173,73 @@ class Company(db.Model):
     def cancel_subscription(self):
         """Cancel subscription at end of period"""
         self.subscription_status = 'cancelled'
-        self.subscription_cancelled_at = datetime.utcnow()
+        self.subscription_cancelled_at = datetime.now()
         self.auto_renew = False
         db.session.commit()
     
-    def downgrade_to_free(self):
-        """Downgrade to free tier immediately"""
-        self.subscription_plan_id = None
-        self.subscription_status = 'free'
-        self.max_active_listings = 3
-        self.max_featured_listings = 0
-        self.max_team_members = 1
-        self.max_monthly_transactions = 10
-        self.commission_rate = 0.0
-        self.subscription_ends_at = None
+    @property
+    def is_in_grace_period(self):
+        """Check if company is in grace period"""
+        if not self.subscription_grace_period_ends:
+            return False
+        return datetime.now() < self.subscription_grace_period_ends
+    
+    @property
+    def days_left_in_grace(self):
+        """Days left in grace period"""
+        if not self.subscription_grace_period_ends:
+            return 0
+        if datetime.now() > self.subscription_grace_period_ends:
+            return 0
+        return (self.subscription_grace_period_ends - datetime.now()).days
+    
+    def start_grace_period(self, days=14):
+        """Start grace period after payment failure"""
+        self.subscription_grace_period_ends = datetime.now() + timedelta(days=days)
+        self.subscription_grace_period_used = True
+        self.subscription_status = 'grace_period'
         db.session.commit()
+    
+    def downgrade_to_free(self):
+        """Downgrade to free plan"""
+        free_plan = db.SubscriptionPlan.query.filter_by(slug='free').first()
+        
+        if free_plan:
+            self.subscription_plan_id = free_plan.id
+            self.max_active_listings = free_plan.max_active_listings
+            self.max_featured_listings = free_plan.max_featured_listings
+            self.max_team_members = free_plan.max_team_members
+            self.max_monthly_transactions = free_plan.max_monthly_transactions
+            self.commission_rate = free_plan.commission_rate
+        
+        self.subscription_status = 'expired'
+        self.subscription_grace_period_ends = None
+        db.session.commit()
+        
+        # Archive excess listings
+        self.archive_excess_listings()
+    
+    def archive_excess_listings(self):
+        """Archive listings exceeding free plan limit"""
+        active_listings = db.Item.query.filter_by(
+            company_id=self.id,
+            status='active'
+        ).count()
+        
+        if active_listings > self.max_active_listings:
+            # Archive oldest listings first
+            excess = active_listings - self.max_active_listings
+            listings_to_archive = db.Item.query.filter_by(
+                company_id=self.id,
+                status='active'
+            ).order_by(db.Item.created_at).limit(excess).all()
+            
+            for listing in listings_to_archive:
+                listing.status = 'archived'
+                listing.archived_reason = 'subscription_expired'
+        
+        db.session.commit()
+
     
     def __repr__(self):
         return f'<Company {self.name} - Plan: {self.subscription_plan.name if self.subscription_plan else "Free"}>'
@@ -200,6 +255,16 @@ class User(db.Model,UserMixin):
     email_verified=db.Column(db.Boolean(),default=False)
     password_hash=db.Column(db.String(length=50),nullable=False)
     role = db.Column(db.String(length=30),nullable=False)  # owner, manager, employee
+
+     # Password reset fields
+    reset_password_token = db.Column(db.String(100), unique=True, index=True)
+    reset_password_expires = db.Column(db.DateTime)
+    
+    # Email verification fields
+    email_verification_token = db.Column(db.String(100), unique=True)
+    email_verified = db.Column(db.Boolean, default=False)
+
+
     authorized=db.Column(db.Boolean(),default=True)
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
 
@@ -242,6 +307,33 @@ class User(db.Model,UserMixin):
         return bcrypt.check_password_hash(self.password_hash,attempted_password)
     
 
+    # reset password
+
+    def set_password(self,password):
+        self.password=password
+        db.session.commit()
+    def generate_reset_token(self):
+        """Generate a password reset token"""
+        import secrets
+        token = secrets.token_urlsafe(32)
+        self.reset_password_token = token
+        self.reset_password_expires = datetime.now() + timedelta(hours=24)
+        db.session.commit()
+        return token
+    
+    def verify_reset_token(self, token):
+        """Verify reset token is valid"""
+        return (self.reset_password_token == token and 
+                self.reset_password_expires and 
+                self.reset_password_expires > datetime.now())
+    
+    def clear_reset_token(self):
+        """Clear reset token after use"""
+        self.reset_password_token = None
+        self.reset_password_expires = None
+        db.session.commit()
+    
+
 class Notification(db.Model):
     __tablename__ = 'notification'
     
@@ -276,7 +368,7 @@ class Notification(db.Model):
     expires_at = db.Column(db.DateTime)
     
     # Timestamps
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     
     # Relationships
     user = db.relationship('User', back_populates='notifications')
@@ -285,12 +377,12 @@ class Notification(db.Model):
         """Mark notification as read"""
         if not self.is_read:
             self.is_read = True
-            self.read_at = datetime.utcnow()
+            self.read_at = datetime.now()
             db.session.commit()
     
     def is_expired(self):
         """Check if notification has expired"""
-        return self.expires_at and datetime.utcnow() > self.expires_at
+        return self.expires_at and datetime.now() > self.expires_at
     
     def get_icon(self):
         """Get icon based on notification type"""
@@ -369,8 +461,8 @@ class Review(db.Model):
     is_public = db.Column(db.Boolean, default=True)
     
     # Timestamps
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
     
      # Relationships
     company = db.relationship('Company', back_populates='reviews')
@@ -382,7 +474,7 @@ class Review(db.Model):
     def respond(self, response_text, user_id):
         """Add company response to review"""
         self.response_text = response_text
-        self.responded_at = datetime.utcnow()
+        self.responded_at = datetime.now()
         self.responded_by = user_id
         db.session.commit()
     

@@ -9,7 +9,7 @@ from app.auth.models import User, Company
 from app.listings.models import Item,Category
 from app.transactions.models import Transaction
 from app.offers.models import Offer
-from app.subscription.models import SubscriptionPlan
+from app.subscription.models import SubscriptionPlan,SubscriptionPayment
 from app import db
 
 # ============================================
@@ -240,19 +240,22 @@ def change_subscription_status(company_id):
     company = Company.query.get_or_404(company_id)
     new_sub_status = request.form.get('sub_plan')
     
-    sub_plan=SubscriptionPlan.query.filter_by(id=company.subscription_plan_id_temporary).first()
+    sub_plan=SubscriptionPlan.query.filter_by(id=company.subscription_plan_id).first()
+    sub_pay=SubscriptionPayment.query.filter_by(company_id=company_id).order_by(desc(SubscriptionPayment.id)).first()
     print(new_sub_status)
     print(sub_plan)
-    company.subscription_plan_id = sub_plan.id
-    company.subscription_plan_id_temporary = None
+    
     company.subscription_status= "active"
     company.subscription_started_at=datetime.utcnow()
-    company.subscription_ends_at=datetime.utcnow() +timedelta(days=90)
+    company.subscription_ends_at=datetime.utcnow() + timedelta(days=365 if sub_pay.interval == 'yearly' else 30)
     company.max_active_listings=sub_plan.max_active_listings
     company.max_featured_listings=sub_plan.max_featured_listings
     company.max_team_members=sub_plan.max_team_members
     company.max_monthly_transactions=sub_plan.max_monthly_transactions
     company.commission_rate=sub_plan.commission_rate
+    company.grace_period=False
+    company.subscription_grace_period_ends=None
+    sub_pay.status="active"
     db.session.commit()
     flash(f'Subscription plan  changed to {sub_plan.name}.', 'success')
     

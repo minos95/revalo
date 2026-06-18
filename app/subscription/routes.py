@@ -101,8 +101,8 @@ def upgrade():
             db.session.add(payment)
             
             # Update company subscription (pending until payment confirmed)
-            company.subscription_plan_id_temporary = plan.id
-            
+            company.subscription_plan_id = plan.id
+            company.subscription_status="pending"
             
             db.session.commit()
             

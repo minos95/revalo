@@ -234,16 +234,16 @@
     // Set price from suggestion
     function setPrice(price) {
         document.getElementById('offerPrice').value = price.toFixed(2);
-        validatePrice();
+       // validatePrice();
     }
-    
-    // Real-time price validation
-    const priceInput = document.getElementById('offerPrice');
-    const quantityInput = document.getElementById('offerQuantity');
-    const messageInput = document.getElementById('offerMessage');
+  /*  const messageInput = document.getElementById('offerMessage');
     const requiresDelivery = document.getElementById('requiresDelivery');
     const deliveryContainer = document.getElementById('deliveryAddressContainer');
     const deliveryAddress = document.querySelector('[name="delivery_address"]');
+    // Real-time price validation
+    const priceInput = document.getElementById('offerPrice');
+    const quantityInput = document.getElementById('offerQuantity');
+    
     
     function validatePrice() {
         const price = parseFloat(priceInput.value);
@@ -290,8 +290,7 @@
         
         errorDiv.classList.add('hidden');
         return true;
-    }
-    
+    } 
     function validateDelivery() {
         if (requiresDelivery.checked && !deliveryAddress.value.trim()) {
             document.getElementById('deliveryError').textContent = 'Please provide a delivery address';
@@ -316,10 +315,10 @@
             deliveryContainer.classList.add('hidden');
             deliveryAddress.value = '';
         }
-    });
+    }); */
     
     // Real-time validation
-    priceInput.addEventListener('input', validatePrice);
+    /*priceInput.addEventListener('input', validatePrice);
     quantityInput.addEventListener('input', validateQuantity);
     deliveryAddress.addEventListener('input', validateDelivery);
     
@@ -333,7 +332,7 @@
             e.preventDefault();
             alert('Please fix the validation errors before submitting.');
         }
-    });
+    });*/
     
     // Check for existing offer on page load
   {# fetch('{{ url_for("offers.check_offer_status", listing_id=listing.id) }}')

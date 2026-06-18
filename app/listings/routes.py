@@ -58,7 +58,9 @@ def market(category_id):
     
     
     quality_filter={}
-    listings=Item.query.join(Item_quality_values, Item.id == Item_quality_values.item_id)
+    listings=Item.query
+    print('++++++++++++++++++++++++++++++++++++++++++++++++')
+    print(listings)
     for attribute in attributes:
         if request.args.get(attribute.name):
             
@@ -70,9 +72,9 @@ def market(category_id):
             
             listings=listings.filter(*filters)
             
-    
+    print(str(listings))
     listings=listings.paginate(page=page,per_page=per_page,error_out=False)
-    
+   
     return render_template('market.html',listings=listings,form=form,category_id=category_id,attributes=attributes,quality_filter=quality_filter)
 
 

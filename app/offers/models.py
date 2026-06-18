@@ -29,3 +29,6 @@ class Offer(db.Model):
     sender_company = db.relationship("Company",foreign_keys=[sender_company_id],back_populates="offers")
     transaction = db.relationship("Transaction", back_populates="offer",uselist=False)
 
+    def cancel(self):
+        self.status='canceled'
+        db.session.commit()

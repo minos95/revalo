@@ -154,7 +154,7 @@
                 {% endif %}
 
                 <!-- Payment Confirmation (Seller) -->
-                {% if transaction.status == 'payment_pending' and transaction.seller_company_id == current_user.company_id and not transaction.payment_confirmed %}
+                {% if transaction.status == '<!-- payment_pending -->' and transaction.seller_company_id == current_user.company_id and not transaction.payment_confirmed %}
                 <div class="bg-white rounded-xl shadow-md p-6 mb-6">
                     <h3 class="font-semibold text-gray-900 mb-4">Confirm Payment Received</h3>
                     <p class="text-gray-600 mb-4">Have you received the payment? Confirm to complete the transaction.</p>
@@ -245,7 +245,7 @@
                                 <span class="font-medium">{{ "%.2f"|format(transaction.quantity) }} {{transaction.unit}}</span>
                             </div>
                             <div class="flex justify-between items-center pb-3 border-b">
-                                <span class="text-gray-600">Platform Fee (5%)</span>
+                                <span class="text-gray-600">Platform Fee ({{transaction.commission_rate*100}}%)</span>
                                 <span class="font-medium">{{ "%.2f"|format(transaction.commission_amount) }} DA</span>
                             </div>
                             <div class="flex justify-between items-center pt-2">
@@ -490,7 +490,7 @@
                                 <span>{{transaction.buyer_company.address }}, {{ transaction.buyer_company.city }}, {{ transaction.buyer_company.country }}</span>
                             </div>
                         </div>
-                        <button onclick="contactBuyer()" class="w-full mt-4 border border-blue-600 text-blue-600 py-2 rounded-lg hover:bg-blue-50 transition">
+                        <button onclick="window.location.href='{{url_for('messages.start_conversation',transaction_id=transaction.id)}}'" class="w-full mt-4 border border-blue-600 text-blue-600 py-2 rounded-lg hover:bg-blue-50 transition">
                             <i class="fas fa-envelope mr-2"></i>Contact Buyer
                         </button>
                     </div>

@@ -1,0 +1,51 @@
+<!-- templates/includes/subscription_banner.html -->
+
+{% if current_user.is_authenticated and current_user.owned_company.is_in_grace_period %}
+<div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <i class="fas fa-exclamation-triangle text-yellow-400 text-xl"></i>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm text-yellow-700">
+                    <strong>Grace Period Active:</strong> 
+                    Your subscription expired. You have 
+                    <strong>{{ current_user.owned_company.days_left_in_grace }} days</strong> 
+                    left to renew and keep premium features.
+                </p>
+            </div>
+        </div>
+        <div>
+            <a href="{{ url_for('subscription.pricing') }}" 
+               class="bg-yellow-500 text-white px-4 py-1 rounded-lg text-sm hover:bg-yellow-600">
+                Renew Now
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if current_user.is_authenticated and current_user.owned_company.subscription_status == 'expired' %}
+<div class="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <i class="fas fa-times-circle text-red-400 text-xl"></i>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm text-red-700">
+                    <strong>Downgraded to Free Plan:</strong> 
+                    Your premium features have been disabled. Upgrade to restore access.
+                </p>
+            </div>
+        </div>
+        <div>
+            <a href="{{ url_for('subscription.pricing') }}" 
+               class="bg-red-500 text-white px-4 py-1 rounded-lg text-sm hover:bg-red-600">
+                Upgrade Now
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}

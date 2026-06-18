@@ -40,10 +40,10 @@ class Transaction(db.Model):
     # Status tracking
     status = db.Column(db.String(20), default='pending', index=True)  # payment_pending,pending, confirmed, in_transit, completed, cancelled, dispute
 
-    total_amount=db.Column(db.Integer(),nullable=False)
-    commission_rate=db.Column(db.Integer(),nullable=False,default='0.07')
-    commission_amount=db.Column(db.Integer(),nullable=False)
-    seller_net_amount=db.Column(db.Integer(),nullable=False)
+    total_amount=db.Column(db.Numeric(10, 2),nullable=False)
+    commission_rate=db.Column(db.Numeric(10, 2),nullable=False,default='0.07')
+    commission_amount=db.Column(db.Numeric(10, 2),nullable=False)
+    seller_net_amount=db.Column(db.Numeric(10, 2),nullable=False)
 
      # Waste tracking (important for compliance)
     waste_manifest_number = db.Column(db.String(100))

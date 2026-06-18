@@ -80,7 +80,7 @@
                     {% if message.sender_id == current_user.id %}
                         <!-- Sent Message -->
                         <div class="flex justify-end mb-4 message-sent">
-                            <div class="message-bubble bg-green-500 text-white rounded-2xl rounded-tr-sm px-4 py-2 max-w-[70%]">
+                            <div class="message-bubble bg-green-500 text-white rounded-2xl rounded-tr-sm px-4 py-2 max-w-[100%]">
                                 <p class="text-sm">{{ message.content }}</p>
                                 <p class="message-time text-right text-green-100 mt-1">
                                     {{ message.created_at.strftime('%H:%M') }}
@@ -95,7 +95,7 @@
                     {% else %}
                         <!-- Received Message -->
                         <div class="flex justify-start mb-4 message-received">
-                            <div class="message-bubble bg-gray-100 text-gray-800 rounded-2xl rounded-tl-sm px-4 py-2 max-w-[70%]">
+                            <div class="message-bubble bg-gray-100 text-gray-800 rounded-2xl rounded-tl-sm px-4 py-2 max-w-[100%]">
                                 <p class="text-sm">{{ message.content }}</p>
                                 <p class="message-time text-gray-400 mt-1">
                                     {{ message.created_at.strftime('%H:%M') }}
