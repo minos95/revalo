@@ -327,8 +327,6 @@ def accept_offer(offer_id):
     # Create transaction
     
     total_amount=float(offer.offered_price*offer.quantity_requested)
-    print(total_amount)
-    print(commission_rate)
     commission_amount=Decimal(total_amount)*commission_rate
     seller_net_amount=Decimal(total_amount)-commission_amount
    
@@ -350,6 +348,12 @@ def accept_offer(offer_id):
     )
     
     db.session.add(transaction)
+
+    #update quantity
+    offer.item.available_quantity-=offer.quantity_requested
+    offer.item.solde_quantity+=offer.quantity_requested
+    if offer.item.solde_quantity==offer.item.quantity:
+         offer.item.status="solde" 
     db.session.commit()
     
     # Create notification for buyer

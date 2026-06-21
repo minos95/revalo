@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Profile - EcoWaste{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen py-8">
+    <div class="max-w-3xl mx-auto px-4">
+        
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4">
+                <div class="flex items-center space-x-4">
+                    <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center">
+                        <i class="fas fa-user-edit text-2xl text-green-600"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-white">Edit Profile</h1>
+                        <p class="text-green-100 text-sm">Update your personal information</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-6">
+                <form method="POST" enctype="multipart/form-data" class="space-y-6">
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- Avatar Upload -->
+                    <div class="flex items-center space-x-6">
+                        <div class="flex-shrink-0">
+                            {% if user.avatar_url %}
+                            <img src="{{ url_for('static', filename='uploads/avatars/' + user.avatar_url) }}" 
+                                 class="w-24 h-24 rounded-full object-cover border-4 border-gray-200">
+                            {% else %}
+                            <div class="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user text-4xl text-gray-400"></i>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Profile Picture
+                            </label>
+                            {{ form.avatar(class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100") }}
+                            <p class="text-xs text-gray-500 mt-1">PNG, JPG, GIF, WEBP (Max 5MB)</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Personal Information -->
+                    <div class="border-t pt-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Personal Information</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    full Name <span class="text-red-500">*</span>
+                                </label>
+                                {{ form.full_name(class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-green-500 focus:border-green-500") }}
+                                {% for error in form.full_name.errors %}
+                                    <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                            
+                            
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    Email <span class="text-red-500">*</span>
+                                </label>
+                                {{ form.email(disabled=True,class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-green-500 focus:border-green-500", type="email") }}
+                                {% for error in form.email.errors %}
+                                    <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    Phone Number
+                                </label>
+                                {{ form.phone(class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-green-500 focus:border-green-500") }}
+                                {% for error in form.phone.errors %}
+                                    <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    Job Title
+                                </label>
+                                {{ form.job_title(class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-green-500 focus:border-green-500") }}
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    Department
+                                </label>
+                                {{ form.department(class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-green-500 focus:border-green-500") }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Preferences -->
+                    <div class="border-t pt-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Preferences</h3>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Notification Preferences
+                            </label>
+                            {{ form.notification_preferences(class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-green-500 focus:border-green-500") }}
+                        </div>
+                    </div>
+                    
+                    <!-- Actions -->
+                    <div class="flex justify-end space-x-4 pt-6 border-t">
+                        <button type="submit" 
+                                class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                            <i class="fas fa-save mr-2"></i>Save Changes
+                        </button>
+                    </div>
+                    
+                </form>
+            </div>
+        </div>
+        
+    </div>
+</div>
+{% endblock %}

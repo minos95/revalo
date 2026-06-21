@@ -74,7 +74,8 @@
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
                 <p class="text-blue-800">
                     <i class="fas fa-info-circle mr-2"></i>
-                    You are currently on the <strong>{{ current_plan.name if current_plan else 'Free' }}</strong> plan.
+                    
+                    You are currently on the <strong>{{ company.subscription_plan.name if company.subscription_plan else 'Free' }}</strong> plan.
                     {% if company.subscription_ends_at and company.subscription_status == 'active' %}
                     Your plan renews on {{ company.subscription_ends_at.strftime('%B %d, %Y') }}.
                     {% endif %}
@@ -88,7 +89,7 @@
             <!-- Plan Selection -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 {% for plan in plans %}
-                <div class="plan-card relative bg-white rounded-xl shadow-md p-6 {% if form.plan_id.data == plan.id %}selected{% endif %}"
+                <div class=" plan-card relative bg-white rounded-xl shadow-md p-6 {% if form.plan_id.data == plan.id %}selected{% endif %}"
                      data-plan-id="{{ plan.id }}"
                      data-plan-name="{{ plan.name }}"
                      data-price-monthly="{{ plan.price_monthly }}"

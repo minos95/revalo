@@ -1,14 +1,17 @@
+from datetime import datetime
+import os
+
 import app
-from flask import Blueprint, flash,redirect,render_template, request,url_for
+from flask import Blueprint, flash,redirect,render_template, request,url_for,current_app
 from app import db
 from app.auth import bp
 from flask_login import current_user, login_required, login_user, logout_user
-from app.auth.forms import CompanyRegisterForm, ForgotPasswordForm, LoginForm, ResetPasswordForm
+from app.auth.forms import CompanyRegisterForm, EditUserForm, ForgotPasswordForm, LoginForm, ResetPasswordForm,UserRegisterForm
 from app.auth.models import Notification, User
 from app.auth.models import Company
 from flask_mail import  Message
 from extensions import mail  # <-- CRITICAL: Import the same mail object here
-
+from werkzeug.utils import secure_filename
 
 @bp.route("/signup",methods=['GET','POST'])
 def signup():
@@ -89,31 +92,56 @@ def setting():
     company=Company.query.filter(User.company_id==current_user.company_id).first()
 
     return render_template('setting.html',user=current_user,company=company)
-@bp.route("/settings/company", methods=["POST"])
+@bp.route("/settings/company", methods=["POST","GET"])
 @login_required
 def update_company():
 
-    company = Company.query.get(current_user.company_id)
+    form=CompanyRegisterForm()
+    if form.validate_on_submit():
+        company = Company.query.get(current_user.company_id)
 
-    company.name = request.form["company_name"]
-    company.description = request.form["description"]
+        company.name = request.form["company_name"]
+        company.description = request.form["description"]
 
-    db.session.commit()
+        db.session.commit()
 
-    return redirect(url_for("setting"))
+        return redirect(url_for("auth.update_company"))
+    return render_template('edit_user.html',form=form)
 
-@bp.route("/settings/profile", methods=["POST"])
+@bp.route("/settings/profile", methods=["POST","GET"])
 @login_required
 def update_profile():
 
-    user = User.query.get(current_user.id) 
-    print(user)
-    user.full_name = request.form["name"]
-    user.email = request.form["email"]
-    user.email_verified=False
-    db.session.commit()
+    user = User.query.get(current_user.id)
+    form=EditUserForm(obj=user)
+    if form.validate_on_submit():
+        user.full_name = request.form["full_name"]
+        user.phone = request.form["phone"]
+        user.job_title = request.form["job_title"]
+        user.department = request.form["department"]
 
-    return redirect(url_for("setting"))
+         # Handle avatar upload
+        if form.avatar.data:
+            avatar_file = form.avatar.data
+            if avatar_file :
+                # Delete old avatar if exists
+                if current_user.avatar_url:
+                    old_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'avatars', current_user.avatar_url)
+                    if os.path.exists(old_path):
+                        os.remove(old_path)
+                
+                # Save new avatar
+                filename = secure_filename(f"user_{current_user.id}_{datetime.utcnow().timestamp()}_{avatar_file.filename}")
+                avatar_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'avatars', filename)
+                os.makedirs(os.path.dirname(avatar_path), exist_ok=True)
+                avatar_file.save(avatar_path)
+                current_user.avatar_url = filename
+        
+        db.session.commit()
+
+        return redirect(url_for("auth.update_profile"))
+    
+    return render_template('edit_user.html',form=form,user=current_user)
 
 
 

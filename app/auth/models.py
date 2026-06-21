@@ -250,12 +250,15 @@ class User(db.Model,UserMixin):
     id = db.Column(db.Integer(),primary_key=True)
     company_id = db.Column(db.Integer(),db.ForeignKey('company.id'))
     full_name = db.Column(db.String(length=30),nullable=False)
+    avatar_url= db.Column(db.String(length=30))
     phone = db.Column(db.String(length=30))
     email = db.Column(db.String(length=50),nullable=False,index=True)
     email_verified=db.Column(db.Boolean(),default=False)
     password_hash=db.Column(db.String(length=50),nullable=False)
     role = db.Column(db.String(length=30),nullable=False)  # owner, manager, employee
-
+    job_title =db.Column(db.String(length=30))
+    department =db.Column(db.String(length=30))
+    notification_preferences =db.Column(db.String(length=30))
      # Password reset fields
     reset_password_token = db.Column(db.String(100), unique=True, index=True)
     reset_password_expires = db.Column(db.DateTime)

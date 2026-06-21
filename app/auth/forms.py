@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
-from wtforms import BooleanField, IntegerField, PasswordField, SelectField, StringField, SubmitField, ValidationError
-from wtforms.validators import Length,EqualTo,Email,DataRequired,ValidationError
-
+from wtforms import BooleanField, FileField, IntegerField, PasswordField, SelectField, StringField, SubmitField, ValidationError
+from wtforms.validators import Length,EqualTo,Email,DataRequired, Optional,ValidationError
+from flask_wtf.file import FileField, FileAllowed
 from app.auth.models import Company, User
 
 
@@ -133,6 +133,33 @@ class UserRegisterForm(FlaskForm):
     password=PasswordField(label='PASSWORD',validators=[Length(min=6),DataRequired()])
     confirm_password=PasswordField(label='CONFIRM PASSWORD',validators=[EqualTo('password1')])
     submit=SubmitField(label="Create Account")
+
+class EditUserForm(FlaskForm):
+    full_name=StringField(label="FULL_NAME",validators=[Length(min=2,max=30),DataRequired()])
+    email=StringField(label="EMAIL",validators=[Email(),DataRequired()])
+    phone=StringField(label="PHONE",validators=[DataRequired()])
+    role=StringField(label="ROLE")
+    job_title = StringField('Job Title', validators=[
+        Optional(),
+        Length(max=100, message='Job title cannot exceed 100 characters')
+    ])
+    
+    department = StringField('Department', validators=[
+        Optional(),
+        Length(max=100, message='Department cannot exceed 100 characters')
+    ])
+    
+    avatar = FileField('Profile Picture', validators=[
+        FileAllowed(['jpg', 'jpeg', 'png', 'gif', 'webp'], 'Only images are allowed!')
+    ])
+    
+    notification_preferences = SelectField('Notification Preferences', choices=[
+        ('all', 'All Notifications'),
+        ('important', 'Important Only'),
+        ('none', 'No Notifications')
+    ], validators=[Optional()])
+    
+    submit=SubmitField(label="Edit")
 class LoginForm(FlaskForm):
     email=StringField(label="EMAIL",validators=[Email(),DataRequired()])
     password=PasswordField(label="PASSWORD",validators=[DataRequired()])

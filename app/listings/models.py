@@ -13,8 +13,17 @@ class Item(db.Model):
     name=db.Column(db.String(length=30),nullable=False)
     description=db.Column(db.String(length=1024))
     unit= db.Column(db.String(length=30),nullable=False)
+
+    #quantity
     quantity= db.Column(db.Numeric(10,2),nullable=False) 
+    available_quantity=db.Column(db.Numeric(10,2),default=0)  # Will be overridden by __init__
+    sold_quantity = db.Column(db.Numeric(10, 2), default=0)     # From accepted offers
+
+    #Price
+    price=db.Column(db.Numeric(10,2)) 
     price_negotiable = db.Column(db.Boolean, default=True)
+
+
     minimum_order = db.Column(db.Numeric(10, 2), default=0)
     views=db.Column(db.Integer(),default=0)
     #pickup field
@@ -23,7 +32,7 @@ class Item(db.Model):
     pickup_country=db.Column(db.String(length=30))
 
     sell_type=db.Column(db.String(length=30))
-    price=db.Column(db.Numeric(10,2)) 
+    
     status=db.Column(db.String(length=30),default="draft") #active/closed/sold/published/pending
     expires_at= db.Column(db.DateTime())
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
@@ -52,6 +61,13 @@ class Item(db.Model):
         return f'Item {self.name}'
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        # Extract total_quantity if provided
+        total = kwargs.get('quantity', 0)
+        
+        # Set available_quantity to match total_quantity
+        if 'available_quantity' not in kwargs:
+            kwargs['available_quantity'] = total
+        
         if not self.expires_at:
             days = current_app.config.get('LISTING_EXPIRY_DAYS', 30)
             self.expires_at = datetime.utcnow() + timedelta(days=days)
@@ -70,6 +86,9 @@ class Item(db.Model):
             ).count()
             return featured_count < company.max_featured_listings
         return False
+    #available quantity
+  
+    
 
 class Image(db.Model):
     id=db.Column(db.Integer(),primary_key=True)
