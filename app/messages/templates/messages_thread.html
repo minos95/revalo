@@ -39,7 +39,8 @@
                     </a>
                     <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
                         {% if other_participant.avatar_url %}
-                        <img src="{{ other_participant.avatar_url }}" class="w-10 h-10 rounded-full object-cover">
+                        <img  src="{{ url_for('static', filename='uploads/avatars/' + other_participant.avatar_url) }}"  class="w-10 h-10 rounded-full object-cover"> 
+                        
                         {% else %}
                         <i class="fas fa-user text-gray-500"></i>
                         {% endif %}

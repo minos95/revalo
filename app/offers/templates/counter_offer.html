@@ -1,0 +1,432 @@
+{% extends "base.html" %}
+
+{% block title %}Counter Offer - EcoWaste{% endblock %}
+
+{% block extra_css %}
+<style>
+    .price-comparison {
+        transition: all 0.2s ease;
+    }
+    .price-comparison:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    .counter-suggestion {
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .counter-suggestion:hover {
+        background: #f0fdf4;
+        border-color: #10b981;
+    }
+    .original-offer-card {
+        background: #f8fafc;
+        border-left: 4px solid #94a3b8;
+    }
+    .counter-offer-card {
+        background: #f0fdf4;
+        border-left: 4px solid #10b981;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Breadcrumb -->
+        <div class="mb-6">
+            <div class="flex items-center space-x-2 text-sm text-gray-500">
+                <a href="{{ url_for('offers.index') }}" class="hover:text-green-600">Offers</a>
+                <i class="fas fa-chevron-right text-xs"></i>
+                <a href="{{ url_for('offers.offer_detail', offer_id=original_offer.id) }}" class="hover:text-green-600">Offer #{{ original_offer.id }}</a>
+                <i class="fas fa-chevron-right text-xs"></i>
+                <span class="text-gray-900 font-medium">Counter Offer</span>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- ========================================== -->
+            <!-- LEFT COLUMN: Counter Offer Form (2/3) -->
+            <!-- ========================================== -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- Header -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center">
+                                <i class="fas fa-exchange-alt text-2xl text-blue-600"></i>
+                            </div>
+                            <div>
+                                <h1 class="text-2xl font-bold text-white">Counter Offer</h1>
+                                <p class="text-blue-100 text-sm">Respond to buyer's offer with your terms</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Original Offer Card -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden original-offer-card">
+                    <div class="px-6 py-4 border-b bg-gray-50">
+                        <h2 class="font-semibold text-gray-900">
+                            <i class="fas fa-file-invoice text-gray-600 mr-2"></i>Original Offer
+                        </h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <p class="font-semibold text-gray-900">{{ original_offer.sender_company.name }}</p>
+                                <p class="text-sm text-gray-500">Made on {{ original_offer.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                                {% if original_offer.message %}
+                                <div class="mt-3 p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
+                                    <i class="fas fa-quote-left text-gray-400 mr-1"></i>
+                                    {{ original_offer.message }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm text-gray-500">Offered Price</p>
+                                <p class="text-2xl font-bold text-gray-900">${{ "%.2f"|format(original_offer.offered_price) }}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 pt-4 border-t grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span class="text-gray-500">Quantity:</span>
+                                <span class="font-medium">{{ original_offer.offered_price }} {{ original_offer.item.unit }}</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Status:</span>
+                                <span class="px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-800">Pending Response</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Expires:</span>
+                                <span class="font-medium">{{ original_offer.expires_at.strftime('%b %d, %Y') if original_offer.expires_at else 'N/A' }}</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Listing:</span>
+                                <a href="{{ url_for('listings.detail', listing_id=original_offer.item.id) }}" 
+                                   class="text-blue-600 hover:underline">
+                                    {{ original_offer.item.name[:30] }}...
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Counter Offer Form -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden counter-offer-card">
+                    <div class="px-6 py-4 border-b bg-green-50">
+                        <h2 class="font-semibold text-gray-900">
+                            <i class="fas fa-edit text-green-600 mr-2"></i>Your Counter Offer
+                        </h2>
+                    </div>
+                    
+                    <div class="p-6">
+                        <form method="POST" action="{{ url_for('offers.counter_offer', offer_id=original_offer.id) }}" id="counterForm">
+                            {{ form.hidden_tag() }}
+                            
+                            <!-- Price Field -->
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    Your Offer Price <span class="text-red-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-2.5 text-gray-500">$</span>
+                                    {{ form.price(class="w-full pl-8 border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-blue-500 focus:border-blue-500", 
+                                                 type="number", step="0.01", id="counterPrice", placeholder="0.00") }}
+                                </div>
+                                <div class="mt-2 flex flex-wrap gap-2">
+                                    <span class="text-xs text-gray-500">Suggestions:</span>
+                                    <button type="button" onclick="setPrice({{ original_offer.offered_price |float * 0.9 }})" 
+                                            class="counter-suggestion text-xs bg-gray-100 px-2 py-1 rounded border">
+                                        10% off: ${{ "%.2f"|format(original_offer.offered_price | float * 0.9) }}
+                                    </button>
+                                    <button type="button" onclick="setPrice({{ original_offer.offered_price |float * 0.85 }})" 
+                                            class="counter-suggestion text-xs bg-gray-100 px-2 py-1 rounded border">
+                                        15% off: ${{ "%.2f"|format(original_offer.offered_price | float  * 0.85) }}
+                                    </button>
+                                    <button type="button" onclick="setPrice({{ original_offer.offered_price |float  * 0.8 }})" 
+                                            class="counter-suggestion text-xs bg-gray-100 px-2 py-1 rounded border">
+                                        20% off: ${{ "%.2f"|format(original_offer.offered_price | float  * 0.8) }}
+                                    </button>
+                                </div>
+                                <div id="priceError" class="text-red-500 text-xs mt-1 hidden"></div>
+                            </div>
+                            
+                            <!-- Quantity Field -->
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    Quantity ({{ original_offer.item.unit }})
+                                </label>
+                                {{ form.quantity(class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-blue-500 focus:border-blue-500", 
+                                                type="number", step="0.01", id="counterQuantity") }}
+                                <p class="text-xs text-gray-500 mt-1">Available: {{ original_offer.item.quantity }} {{ original_offer.item.unit }}</p>
+                            </div>
+                            
+                            <!-- Message Field -->
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    Message to Buyer (Optional)
+                                </label>
+                                {{ form.message(class="w-full border border-gray-300 rounded-lg px-4 py-2.5 rows-3 focus:ring-blue-500 focus:border-blue-500", 
+                                               rows="3", id="counterMessage", placeholder="Explain your counter offer...") }}
+                                <div id="messageCount" class="text-xs text-gray-500 text-right mt-1">0/1000</div>
+                            </div>
+                            
+                            <!-- Notes Box -->
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                                <div class="flex items-start space-x-3">
+                                    <i class="fas fa-info-circle text-blue-500 text-xl mt-0.5"></i>
+                                    <div class="text-sm text-blue-800">
+                                        <p class="font-semibold">What happens next?</p>
+                                        <ul class="list-disc list-inside space-y-1">
+                                            <li>The buyer will be notified of your counter offer</li>
+                                            <li>They can accept, reject, or counter again</li>
+                                            <li>This counter offer expires in 7 days</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Price Comparison -->
+                            <div class="border-t pt-4 mt-4">
+                                <div class="grid grid-cols-2 gap-4 text-sm">
+                                    <div class="bg-gray-50 rounded-lg p-3 text-center">
+                                        <p class="text-gray-500">Original Offer</p>
+                                        <p class="text-xl font-bold text-gray-900" id="displayOriginalPrice">
+                                            ${{ "%.2f"|format(original_offer.offered_price) }}
+                                        </p>
+                                    </div>
+                                    <div class="bg-green-50 rounded-lg p-3 text-center">
+                                        <p class="text-gray-500">Your Counter</p>
+                                        <p class="text-xl font-bold text-green-600" id="displayCounterPrice">$0.00</p>
+                                    </div>
+                                </div>
+                                <div class="mt-3 text-center">
+                                    <span id="priceDifference" class="text-sm text-gray-500">Difference: </span>
+                                </div>
+                            </div>
+                            
+                            <!-- Submit Buttons -->
+                            <div class="flex justify-end space-x-4 pt-6 border-t mt-6">
+                                <a href="{{ url_for('offers.index') }}" 
+                                   class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                                    Cancel
+                                </a>
+                                <button type="submit" id="submitBtn" 
+                                        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed">
+                                    <i class="fas fa-paper-plane mr-2"></i>Send Counter Offer
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+            </div>
+            
+            <!-- ========================================== -->
+            <!-- RIGHT COLUMN: Listing Summary (1/3) -->
+            <!-- ========================================== -->
+            <div class="lg:col-span-1 space-y-6">
+                
+                <!-- Listing Card -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden sticky top-20">
+                    <div class="border-b px-6 py-4 bg-gray-50">
+                        <h2 class="font-semibold text-gray-900">
+                            <i class="fas fa-box text-green-600 mr-2"></i>Listing
+                        </h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="aspect-w-16 aspect-h-9 mb-4">
+                            {% if original_offer.item.images and original_offer.item.images|length > 0 %}
+                            <img src="{{ url_for('static', filename='uploads/' + original_offer.listing.images[0]) }}" 
+                                 class="w-full h-40 object-cover rounded-lg">
+                            {% else %}
+                            <div class="w-full h-40 bg-gray-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-recycle text-4xl text-gray-400"></i>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <h3 class="font-semibold text-gray-900 mb-2">{{ original_offer.item.name }}</h3>
+                        <p class="text-sm text-gray-500">{{ original_offer.item.owned_company.name }}</p>
+                        
+                        <div class="mt-4 space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">Category:</span>
+                                <span>{{ original_offer.item.owned_category.name }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">Available:</span>
+                                <span>{{ original_offer.item.quantity }} {{ original_offer.item.unit }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">Listed Price:</span>
+                                <span>
+                                    {% if original_offer.item.price %}
+                                    ${{ "%.2f"|format(original_offer.item.price) }}
+                                    {% else %}
+                                    Make Offer
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">Location:</span>
+                                <span>{{ original_offer.item.pickup_city }}, {{ original_offer.item.pickup_state }}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Seller Rating -->
+                        <div class="mt-4 pt-4 border-t">
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-500">Seller Rating:</span>
+                                <div class="flex items-center">
+                                    {% for i in range(5) %}
+                                        {% if i < original_offer.item.owned_company.rating_avg|int %}
+                                            <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                        {% else %}
+                                            <i class="far fa-star text-yellow-400 text-xs"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <span class="text-xs text-gray-500 ml-1">
+                                        ({{ original_offer.item.owned_company.total_reviews }})
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tips Card -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <div class="border-b px-6 py-4 bg-gray-50">
+                        <h2 class="font-semibold text-gray-900">
+                            <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>Counter Offer Tips
+                        </h2>
+                    </div>
+                    <div class="p-6 text-sm space-y-3">
+                        <div class="flex items-start space-x-2">
+                            <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+                            <span>Be reasonable - aggressive counters may discourage buyers</span>
+                        </div>
+                        <div class="flex items-start space-x-2">
+                            <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+                            <span>Explain your reasoning in the message</span>
+                        </div>
+                        <div class="flex items-start space-x-2">
+                            <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+                            <span>Consider quantity adjustments to find middle ground</span>
+                        </div>
+                        <div class="flex items-start space-x-2">
+                            <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+                            <span>Remember: a counter offer is a negotiation, not a rejection</span>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ============================================
+    // PRICE SUGGESTIONS
+    // ============================================
+    function setPrice(price) {
+        document.getElementById('counterPrice').value = price.toFixed(2);
+        updatePriceDisplay();
+    }
+    
+    // ============================================
+    // PRICE DISPLAY UPDATES
+    // ============================================
+    const originalPrice = {{ original_offer.offered_price }};
+    const counterPriceInput = document.getElementById('counterPrice');
+    const displayCounterPrice = document.getElementById('displayCounterPrice');
+    const priceDifference = document.getElementById('priceDifference');
+    
+    function updatePriceDisplay() {
+        const counterPrice = parseFloat(counterPriceInput.value) || 0;
+        displayCounterPrice.textContent = '$' + counterPrice.toFixed(2);
+        
+        const diff = counterPrice - originalPrice;
+        const diffText = diff >= 0 ? '+' : '';
+        
+        if (counterPrice === 0) {
+            priceDifference.textContent = 'Enter your counter offer';
+        } else if (diff === 0) {
+            priceDifference.textContent = 'Same as original offer';
+        } else if (diff < 0) {
+            priceDifference.textContent = `You're offering $${Math.abs(diff).toFixed(2)} less (${(Math.abs(diff) / originalPrice * 100).toFixed(1)}% less)`;
+            priceDifference.className = 'text-sm text-blue-600';
+        } else {
+            priceDifference.textContent = `You're offering $${diff.toFixed(2)} more (${(diff / originalPrice * 100).toFixed(1)}% more)`;
+            priceDifference.className = 'text-sm text-red-600';
+        }
+    }
+    
+    counterPriceInput.addEventListener('input', updatePriceDisplay);
+    updatePriceDisplay();
+    
+    // ============================================
+    // QUANTITY VALIDATION
+    // ============================================
+    const quantityInput = document.getElementById('counterQuantity');
+    const availableQty = {{ original_offer.item.quantity }};
+    
+    quantityInput.addEventListener('change', function() {
+        const value = parseFloat(this.value);
+        if (value && value > availableQty) {
+            alert(`Quantity cannot exceed available ${availableQty} {{ original_offer.item.unit }}`);
+            this.value = availableQty;
+        }
+    });
+    
+    // ============================================
+    // MESSAGE CHARACTER COUNTER
+    // ============================================
+    const messageInput = document.getElementById('counterMessage');
+    const messageCount = document.getElementById('messageCount');
+    
+    messageInput.addEventListener('input', function() {
+        const length = this.value.length;
+        messageCount.textContent = `${length}/1000`;
+        if (length > 900) {
+            messageCount.style.color = '#ef4444';
+        } else if (length > 800) {
+            messageCount.style.color = '#f59e0b';
+        } else {
+            messageCount.style.color = '#6b7280';
+        }
+    });
+    
+    // ============================================
+    // FORM VALIDATION
+    // ============================================
+    document.getElementById('counterForm').addEventListener('submit', function(e) {
+        const price = parseFloat(counterPriceInput.value);
+        
+        if (!price || price <= 0) {
+            alert('Please enter a valid counter offer price.');
+            e.preventDefault();
+            return;
+        }
+        
+        if (price === originalPrice) {
+            if (!confirm('Your counter offer is the same as the original offer. The buyer may prefer to just accept the original offer. Continue?')) {
+                e.preventDefault();
+                return;
+            }
+        }
+        
+        // Show loading
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Sending...';
+    });
+</script>
+{% endblock %}

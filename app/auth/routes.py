@@ -6,7 +6,7 @@ from flask import Blueprint, flash,redirect,render_template, request,url_for,cur
 from app import db
 from app.auth import bp
 from flask_login import current_user, login_required, login_user, logout_user
-from app.auth.forms import CompanyRegisterForm, EditUserForm, ForgotPasswordForm, LoginForm, ResetPasswordForm,UserRegisterForm
+from app.auth.forms import CompanyRegisterForm, EditUserForm, ForgotPasswordForm, LoginForm, ResetPasswordForm,EditCompanyForm
 from app.auth.models import Notification, User
 from app.auth.models import Company
 from flask_mail import  Message
@@ -17,6 +17,8 @@ from werkzeug.utils import secure_filename
 def signup():
     form=CompanyRegisterForm()
     if form.validate_on_submit():
+         
+            
         company_to_create=Company(name=form.company_name.data,
                                   company_type=form.business_type.data,
                                   activity=form.company_activity.data,
@@ -33,6 +35,20 @@ def signup():
         db.session.add(company_to_create)
         
         company_created=Company.query.filter_by(name=form.company_name.data).first().id
+
+        # Handle logo upload
+        print("+++++++++++")
+        print(form.documents.data)
+        if form.documents.data:
+            documents = form.documents.data
+            if documents :
+                print(documents)
+                # Save new documents
+                filename = secure_filename(f"company_{company_created.id}_{datetime.utcnow().timestamp()}_{documents.filename}")
+                documents_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'companies/'+company_created.name+'/documents', filename)
+                os.makedirs(os.path.dirname(documents_path), exist_ok=True)
+                documents.save(documents_path)
+                company_created.documents = filename
         user_to_create=User(full_name=form.full_name.data,
                             email=form.email.data,
                             phone=form.phone.data,
@@ -92,21 +108,69 @@ def setting():
     company=Company.query.filter(User.company_id==current_user.company_id).first()
 
     return render_template('setting.html',user=current_user,company=company)
-@bp.route("/settings/company", methods=["POST","GET"])
+@bp.route('/edit-company', methods=['GET', 'POST'])
 @login_required
-def update_company():
-
-    form=CompanyRegisterForm()
+def edit_company():
+    """Edit company profile"""
+    
+    company = current_user.owned_company
+    
+    # Check permission - only owner or admin can edit company
+    if current_user.role not in ['Owner','owner','Admin','admin',"super_admin"]:
+        flash('You do not have permission to edit company profile.', 'danger')
+        return redirect(url_for('home'))
+    
+    form = EditCompanyForm(obj=company, company=company)
+    
     if form.validate_on_submit():
-        company = Company.query.get(current_user.company_id)
-
-        company.name = request.form["company_name"]
-        company.description = request.form["description"]
-
+        # Update company fields
+        company.name = form.name.data
+        company.email = form.email.data
+        company.phone = form.phone.data
+        company.website = form.website.data
+        company.description = form.description.data
+        
+        # Address
+        company.address= form.address.data
+        
+        company.city = form.city.data
+        company.country = form.country.data
+        company.postal_code = form.postal_code.data
+        
+        # Business details
+        company.business_type = form.business_type.data
+        company.business_size = form.business_size.data
+        company.year_established = form.year_established.data
+        
+        # Social Links
+        company.facebook = form.facebook.data
+        company.linkedin = form.linkedin.data
+        company.twitter = form.twitter.data
+        
+        # Handle logo upload
+        if form.logo_url.data:
+            logo_file = form.logo_url.data
+            if logo_file :
+                # Delete old logo if exists
+                if company.logo:
+                    old_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'companies/'+company.name+'logos', company.logo)
+                    if os.path.exists(old_path):
+                        os.remove(old_path)
+                
+                # Save new logo
+                filename = secure_filename(f"company_{company.id}_{datetime.utcnow().timestamp()}_{logo_file.filename}")
+                logo_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'companies/'+company.name+'/logos', filename)
+                os.makedirs(os.path.dirname(logo_path), exist_ok=True)
+                logo_file.save(logo_path)
+                company.logo = filename
+        
+        company.updated_at = datetime.utcnow()
         db.session.commit()
-
-        return redirect(url_for("auth.update_company"))
-    return render_template('edit_user.html',form=form)
+        
+        flash('Company profile updated successfully!', 'success')
+        return redirect(url_for('auth.edit_company'))
+    
+    return render_template('edit_company.html', form=form, company=company)
 
 @bp.route("/settings/profile", methods=["POST","GET"])
 @login_required

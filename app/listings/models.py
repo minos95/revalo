@@ -60,13 +60,15 @@ class Item(db.Model):
     def __repr__(self):
         return f'Item {self.name}'
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
         # Extract total_quantity if provided
         total = kwargs.get('quantity', 0)
         
         # Set available_quantity to match total_quantity
         if 'available_quantity' not in kwargs:
             kwargs['available_quantity'] = total
+            
+        super().__init__(**kwargs)
+        
         
         if not self.expires_at:
             days = current_app.config.get('LISTING_EXPIRY_DAYS', 30)

@@ -18,28 +18,35 @@ class Company(db.Model):
     phone = db.Column(db.String(50))
     website = db.Column(db.String(200))
     logo = db.Column(db.String(200))
+    documents = db.Column(db.String(200))
 
     rating_avg= db.Column(db.Integer(),default=0)
     total_reviews=db.Column(db.Integer(),default=0)
     total_transactions=db.Column(db.Integer(),default=0)
     total_revenue=db.Column(db.Integer(),default=0)
 
+    #location
     address = db.Column(db.String(length=30),nullable=False)
     country = db.Column(db.String(length=30),nullable=False)
     city = db.Column(db.String(length=30),nullable=False)
     Postal_code = db.Column(db.String(length=30))
     company_type = db.Column(db.String(length=30),nullable=False) #generator, recycler, trader
     activity = db.Column(db.String(length=30),nullable=False)
+    #information
     rc = db.Column(db.String(length=30))
     nif = db.Column(db.String(length=30))
     nis = db.Column(db.String(length=30))
     referal = db.Column(db.String(length=30))
+
     verified=db.Column(db.Boolean(),default=False)
     verified_by= db.Column(db.Integer())
     verified_at=db.Column(db.DateTime(timezone=True))
-      # Grace period tracking
-    subscription_grace_period_ends = db.Column(db.DateTime)
-    subscription_grace_period_used = db.Column(db.Boolean, default=False)
+
+    #social media
+    facebook = db.Column(db.String(length=30))
+    twitter=db.Column(db.String(length=30))
+    linkedin=db.Column(db.String(length=30))
+
 
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
 
@@ -47,13 +54,16 @@ class Company(db.Model):
     
     # Current subscription
     subscription_plan_id = db.Column(db.Integer, db.ForeignKey('subscription_plans.id'), nullable=True)
-    # temporary for pending payment 
-    subscription_plan_id_temporary = db.Column(db.Integer)
+    
 
     subscription_status = db.Column(db.String(20), default='free')  # free, active, past_due, cancelled, expired
     subscription_started_at = db.Column(db.DateTime)
     subscription_ends_at = db.Column(db.DateTime)
     subscription_cancelled_at = db.Column(db.DateTime)
+
+    # Grace period tracking
+    subscription_grace_period_ends = db.Column(db.DateTime)
+    subscription_grace_period_used = db.Column(db.Boolean, default=False)
     
     # Limits based on subscription
     max_active_listings = db.Column(db.Integer, default=3)      # Free tier: 3 listings

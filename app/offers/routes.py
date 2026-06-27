@@ -29,7 +29,7 @@ def index():
     
     # Build received offers query (offers made to this company's listings)
     received_query = Offer.query.join(Item).filter(
-        Item.company_id == company.id
+        (Item.company_id == company.id and  Offer.parent_offer_id == None ) or (Offer.buyer_company_id==company.id and Offer.parent_offer_id != None)
     )
     
     # Build sent offers query (offers made by this company)
@@ -146,7 +146,15 @@ def index():
                          current_status=status_filter,
                          current_type=current_type,now=datetime.now())
 
-@bp.route('/create/<int:listing_id>',methods=['POST','GET'])
+
+@bp.route('/detail/<int:offer_id>/',methods=['POST','GET'])
+@login_required
+def offer_detail(offer_id):
+    """Create a new offer for a listing"""
+    return render_template('offer_detail.html')
+
+
+@bp.route('/create/<int:listing_id>/',methods=['POST','GET'])
 @login_required
 def create_offer(listing_id):
     """Create a new offer for a listing"""
@@ -179,6 +187,7 @@ def create_offer(listing_id):
         flash('You already have a pending offer on this listing.', 'info')
         return redirect(url_for('offers.index'))
     
+   
     # Initialize form
     form = makeOfferForm()
     
@@ -198,6 +207,7 @@ def create_offer(listing_id):
                 requires_delivery=form.requires_delivery.data,
                 delivery_address=form.delivery_address.data
             )
+            
             
             flash(f'Your offer of ${form.price.data:.2f} has been sent to the seller!', 'success')
             
@@ -313,9 +323,14 @@ def accept_offer(offer_id):
     
     
     # Check if user can accept this offer (must be seller of the listing)
-    if listing.company_id != current_user.company_id:
-        flash('You do not have permission to accept this offer.', 'danger')
-        return redirect(url_for('offers.index'))
+    if offer.parent_offer_id:
+        if offer.buyer_company_id!=current_user.company_id:
+            flash('You do not have permission to accept this offer.', 'danger')
+            return redirect(url_for('offers.index'))
+    else:  
+        if listing.company_id != current_user.company_id:
+            flash('You do not have permission to accept this offer.', 'danger')
+            return redirect(url_for('offers.index'))
     
     if offer.status != 'pending':
         flash('This offer is no longer available.', 'warning')
@@ -351,9 +366,9 @@ def accept_offer(offer_id):
 
     #update quantity
     offer.item.available_quantity-=offer.quantity_requested
-    offer.item.solde_quantity+=offer.quantity_requested
-    if offer.item.solde_quantity==offer.item.quantity:
-         offer.item.status="solde" 
+    offer.item.sold_quantity+=offer.quantity_requested
+    if offer.item.sold_quantity==offer.item.quantity:
+         offer.item.status="sold" 
     db.session.commit()
     
     # Create notification for buyer
@@ -412,7 +427,7 @@ def reject_offer(offer_id):
 def counter_offer(offer_id):
     """Counter an offer"""
     original_offer = Offer.query.get_or_404(offer_id)
-    listing = original_offer.listing
+    listing = original_offer.item
     
     # Check permissions
     if listing.company_id != current_user.company_id:
@@ -428,11 +443,15 @@ def counter_offer(offer_id):
     if form.validate_on_submit():
         # Create counter offer
         counter = Offer(
-            listing_id=listing.id,
-            company_id=original_offer.company_id,
-            created_by_id=original_offer.created_by_id,
-            price=form.price.data,
-            quantity=form.quantity.data,
+            item_id=listing.id,
+            buyer_company_id=original_offer.buyer_company_id,
+            seller_company_id=original_offer.seller_company_id,
+            sender_company_id=current_user.owned_company.id,
+            buyer_id=original_offer.buyer_id,
+            seller_id=original_offer.seller_id,
+            unit=original_offer.unit,
+            offered_price=form.price.data,
+            quantity_requested=form.quantity.data,
             message=form.message.data,
             parent_offer_id=original_offer.id,
             status='pending'
@@ -446,7 +465,7 @@ def counter_offer(offer_id):
         
         # Create notification
         notification = Notification(
-            user_id=original_offer.created_by_id,
+            user_id=original_offer.buyer_id,
             type='offer_countered',
             title='Counter offer received',
             message=f'The seller has countered your offer with ${form.price.data}.',
@@ -461,10 +480,10 @@ def counter_offer(offer_id):
         return redirect(url_for('offers.index'))
     
     # Pre-fill form with original offer details
-    form.price.data = original_offer.price
-    form.quantity.data = original_offer.quantity
+    form.price.data = original_offer.offered_price
+    form.quantity.data = original_offer.quantity_requested
     
-    return render_template('offers/counter_offer.html', 
+    return render_template('counter_offer.html', 
                          form=form, 
                          original_offer=original_offer,
                          listing=listing)

@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import BooleanField, FileField, IntegerField, PasswordField, SelectField, StringField, SubmitField, ValidationError
+from wtforms import BooleanField, FileField, IntegerField, PasswordField, SelectField, StringField, SubmitField, TextAreaField, ValidationError
 from wtforms.validators import Length,EqualTo,Email,DataRequired, Optional,ValidationError
 from flask_wtf.file import FileField, FileAllowed
 from app.auth.models import Company, User
@@ -122,6 +122,10 @@ class CompanyRegisterForm(FlaskForm):
         ], validators=[DataRequired()])
     password=PasswordField(label='PASSWORD',validators=[Length(min=6),DataRequired()])
     confirm_password=PasswordField(label='CONFIRM PASSWORD',validators=[EqualTo('password')])
+     # Branding
+    documents = FileField('Documents', validators=[
+            FileAllowed(['pdf',"PDF"], 'Only pdf are allowed')
+        ])
     referal=StringField(label="Referal")
     submit=SubmitField(label="Create Account")
 
@@ -210,3 +214,97 @@ class SetPasswordForm(FlaskForm):
         DataRequired(),
         EqualTo('password', message='Passwords must match')
     ])
+
+class EditCompanyForm(FlaskForm):
+        """Form for editing company profile"""
+        
+        name = StringField('Company Name', validators=[
+            DataRequired(message='Company name is required'),
+            Length(min=2, max=100, message='Company name must be between 2 and 100 characters')
+        ])
+        
+        email = StringField('Company Email', validators=[
+            DataRequired(message='Email is required'),
+            Email(message='Please enter a valid email address')
+        ])
+        
+        phone = StringField('Phone Number', validators=[
+            Optional(),
+            Length(min=10, max=20)
+        ])
+        
+        website = StringField('Website', validators=[
+            Optional(),
+            Length(max=200)
+        ])
+        
+        description = TextAreaField('Company Description', validators=[
+            Optional(),
+            Length(max=2000, message='Description cannot exceed 2000 characters')
+        ])
+        
+        # Address fields
+        address= StringField('Address Line 1', validators=[
+            Optional(),
+            Length(max=200)
+        ])
+        
+        city = StringField('City', validators=[
+            Optional(),
+            Length(max=100)
+        ])
+        
+        
+        country = StringField('Country', validators=[
+            Optional(),
+            Length(max=50)
+        ])
+        
+        postal_code = StringField('Postal Code', validators=[
+            Optional(),
+            Length(max=20)
+        ])
+        
+        # Business details
+        business_type = SelectField('Business Type', choices=[
+            ('', 'Select Business Type'),
+            ('collector', 'Waste Collector'),
+            ('recycler', 'Recycler'),
+            ('manufacturer', 'Manufacturer'),
+            ('waste_processor', 'Waste Processor'),
+            ('broker', 'Broker/Trader'),
+            ('consultant', 'Consultant')
+        ], validators=[Optional()])
+        
+        business_size = SelectField('Business Size', choices=[
+            ('', 'Select Business Size'),
+            ('small', 'Small (1-10 employees)'),
+            ('medium', 'Medium (11-50 employees)'),
+            ('large', 'Large (51-200 employees)'),
+            ('enterprise', 'Enterprise (200+ employees)')
+        ], validators=[Optional()])
+        
+        year_established = IntegerField('Year Established', validators=[
+            Optional()
+        ])
+        
+        # Branding
+        logo_url = FileField('Company Logo', validators=[
+            FileAllowed(['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'], 'Only images are allowed!')
+        ])
+        
+        # Social Links
+        facebook = StringField('Facebook', validators=[Optional(), Length(max=200)])
+        linkedin = StringField('LinkedIn', validators=[Optional(), Length(max=200)])
+        twitter = StringField('Twitter', validators=[Optional(), Length(max=200)])
+        
+        def __init__(self, company=None, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.company = company
+        
+        def validate_name(self, field):
+            """Check if company name is already taken"""
+            if self.company and field.data != self.company.name:
+                company = Company.query.filter_by(name=field.data).first()
+                if company:
+                    raise ValidationError('This company name is already taken.')
