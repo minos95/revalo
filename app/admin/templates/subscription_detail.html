@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+
+{% block title %}Subscription - {{ company.name }} - Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .info-card {
+        transition: all 0.2s ease;
+    }
+    .info-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    .status-active { background: #d1fae5; color: #065f46; }
+    .status-free { background: #f3f4f6; color: #374151; }
+    .status-grace { background: #fef3c7; color: #92400e; }
+    .status-expired { background: #fee2e2; color: #991b1b; }
+    .status-cancelled { background: #fef2f2; color: #dc2626; }
+</style>
+{% endblock %}
+
+{% block content %}
+ {% set active_items = company.items | selectattr('status', 'equalto', 'active') | list %}
+<div class="bg-gray-50 min-h-screen py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Breadcrumb -->
+        <div class="flex items-center space-x-2 text-sm text-gray-500 mb-6">
+            <a href="{{ url_for('admin.subscriptions') }}" class="hover:text-purple-600">Subscriptions</a>
+            <i class="fas fa-chevron-right text-xs"></i>
+            <span class="text-gray-900 font-medium">{{ company.name }}</span>
+        </div>
+        
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">{{ company.name }}</h1>
+                <p class="text-gray-600 mt-1">Manage subscription for this company</p>
+            </div>
+            <div class="mt-4 md:mt-0 flex space-x-3">
+                <a href="{{ url_for('admin.companies') }}" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                    <i class="fas fa-arrow-left mr-2"></i>Back
+                </a>
+                <a href="{{ url_for('auth.detail_company', company_id=company.id) }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    <i class="fas fa-eye mr-2"></i>View Company
+                </a>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- ========================================== -->
+            <!-- LEFT COLUMN: Company Info & Subscription -->
+            <!-- ========================================== -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- Company Card -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden info-card">
+                    <div class="border-b px-6 py-4 bg-gray-50">
+                        <h2 class="font-semibold text-gray-900">
+                            <i class="fas fa-building text-purple-600 mr-2"></i>Company Information
+                        </h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
+                                {% if company.logo_url %}
+                                <img src="{{ company.logo_url }}" class="w-16 h-16 rounded-full object-cover">
+                                {% else %}
+                                <i class="fas fa-building text-2xl text-purple-600"></i>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-900">{{ company.name }}</h3>
+                                <p class="text-sm text-gray-500">{{ company.email }}</p>
+                                <p class="text-sm text-gray-500">{{ company.phone or 'No phone' }}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t">
+                            <div>
+                                <p class="text-xs text-gray-500">Member Since</p>
+                                <p class="font-medium">{{ company.created_at.strftime('%b %d, %Y') }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">Listings</p>
+                                <p class="font-medium">{{ company.items| length }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">Transactions</p>
+                                <p class="font-medium">{{ company.total_transactions }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">Rating</p>
+                                <p class="font-medium">{{ "%.1f"|format(company.rating_avg) }} ⭐</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Current Subscription Card -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden info-card">
+                    <div class="border-b px-6 py-4 bg-gray-50">
+                        <h2 class="font-semibold text-gray-900">
+                            <i class="fas fa-crown text-purple-600 mr-2"></i>Current Subscription
+                        </h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">Plan</p>
+                                <p class="text-2xl font-bold text-gray-900">
+                                    {{ company.subscription_plan.name if company.subscription_plan else 'Free' }}
+                                </p>
+                                <p class="text-sm text-gray-500 mt-1">
+                                    {{ company.subscription_plan.description if company.subscription_plan else 'Basic free plan' }}
+                                </p>
+                            </div>
+                            <div class="mt-4 md:mt-0 text-right">
+                                <span class="status-badge status-{{ company.subscription_status }}">
+                                    <i class="fas fa-circle text-[8px] mr-1"></i>
+                                    {{ company.subscription_status|title }}
+                                </span>
+                                {% if company.subscription_plan and company.subscription_plan.price_monthly > 0 %}
+                                <p class="text-sm text-gray-500 mt-1">
+                                    ${{ "%.2f"|format(company.subscription_plan.price_monthly) }}/month
+                                </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Subscription Details -->
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t">
+                            <div>
+                                <p class="text-xs text-gray-500">Started</p>
+                                <p class="font-medium">
+                                    {% if company.subscription_started_at %}
+                                    {{ company.subscription_started_at.strftime('%b %d, %Y') }}
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">Expires</p>
+                                <p class="font-medium {% if company.subscription_ends_at and company.subscription_ends_at < now() %}text-red-600{% endif %}">
+                                    {% if company.subscription_ends_at %}
+                                    {{ company.subscription_ends_at.strftime('%b %d, %Y') }}
+                                    {% else %}
+                                    Never
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">Days Left</p>
+                                <p class="font-medium">
+                                    {% if company.subscription_ends_at %}
+                                    {{ ((company.subscription_ends_at - now()).days) }} days
+                                    {% else %}
+                                    ∞
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">Auto-Renew</p>
+                                <p class="font-medium">{{ '✅ Yes' if company.auto_renew else '❌ No' }}</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Limits -->
+                        <div class="mt-4 pt-4 border-t">
+                            <p class="text-sm font-medium text-gray-700 mb-2">Usage Limits</p>
+                            <div class="space-y-2">
+                                <div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-500">Active Listings</span>
+                                        <span>{{ active_items | length }} / {{ company.max_active_listings }}</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        {% set pct = (active_items | length / company.max_active_listings * 100) if company.max_active_listings > 0 else 0 %}
+                                        <div class="bg-purple-600 rounded-full h-2" style="width: {{ pct }}%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-500">Team Members</span>
+                                        <span>{{ company.users | length }} / {{ company.max_team_members }}</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        {% set pct = (company.users |length / company.max_team_members * 100) if company.max_team_members > 0 else 0 %}
+                                        <div class="bg-purple-600 rounded-full h-2" style="width: {{ pct }}%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-500">Commission Rate</span>
+                                        <span>{{ company.commission_rate }}%</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-center">
+                                {% if company.subscription_status=="pending" %}
+                                <a href="{{url_for('admin.change_subscription_status',company_id=company.id)}}" class="button mt-2 w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700">
+                                <i class="fas fa-check mr-2"></i>Approuve Plan
+                                </a>
+                                </div>
+                            {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Payment History -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <div class="border-b px-6 py-4 bg-gray-50">
+                        <h2 class="font-semibold text-gray-900">
+                            <i class="fas fa-receipt text-purple-600 mr-2"></i>Payment History
+                        </h2>
+                    </div>
+                    <div class="overflow-x-auto">
+                        {% if payments %}
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500">Invoice</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500">Plan</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500">Amount</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                {% for payment in payments %}
+                                <tr>
+                                    <td class="px-6 py-4 text-sm font-mono">{{ payment.invoice_number or 'N/A' }}</td>
+                                    <td class="px-6 py-4 text-sm">{{ payment.subscription_plan.name }}</td>
+                                    <td class="px-6 py-4 text-sm font-bold">${{ "%.2f"|format(payment.amount) }}</td>
+                                    <td class="px-6 py-4">
+                                        <span class="px-2 py-1 text-xs rounded-full 
+                                            {% if payment.status == 'succeeded' %}bg-green-100 text-green-800
+                                            {% elif payment.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                            {% else %}bg-red-100 text-red-800{% endif %}">
+                                            {{ payment.status|title }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm">{{ payment.paid_at.strftime('%Y-%m-%d') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        {% else %}
+                        <div class="py-8 text-center">
+                            <i class="fas fa-receipt text-4xl text-gray-300 mb-3"></i>
+                            <p class="text-gray-500">No payment history found</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+            </div>
+            
+            <!-- ========================================== -->
+            <!-- RIGHT COLUMN: Actions -->
+            <!-- ========================================== -->
+            <div class="lg:col-span-1 space-y-6">
+                
+                <!-- Assign Plan -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <div class="border-b px-6 py-4 bg-gray-50">
+                        <h2 class="font-semibold text-gray-900">
+                            <i class="fas fa-pen text-purple-600 mr-2"></i>Assign Plan
+                        </h2>
+                    </div>
+                    <div class="p-6">
+                        <form method="POST" action="{{ url_for('admin.assign_subscription', company_id=company.id) }}" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Select Plan</label>
+                                <select name="plan_id" class="w-full border border-gray-300 rounded-lg px-3 py-2" required>
+                                    <option value="">Choose a plan...</option>
+                                    {% for plan in plans %}
+                                    <option value="{{ plan.id }}" {% if company.subscription_plan_id == plan.id %}selected{% endif %}>
+                                        {{ plan.name }} - ${{ plan.price_monthly }}/month
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Interval</label>
+                                    <select name="interval" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                        <option value="monthly">Monthly</option>
+                                        <option value="yearly">Yearly</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Months</label>
+                                    <input type="number" name="duration_months" value="1" min="1" max="36"
+                                           class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700">
+                                <i class="fas fa-check mr-2"></i>Assign Plan
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Subscription Actions -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <div class="border-b px-6 py-4 bg-gray-50">
+                        <h2 class="font-semibold text-gray-900">
+                            <i class="fas fa-tools text-purple-600 mr-2"></i>Actions
+                        </h2>
+                    </div>
+                    <div class="p-6 space-y-3">
+                        
+                        <!-- Extend -->
+                        <form method="POST" action="{{ url_for('admin.extend_subscription', company_id=company.id) }}" class="flex space-x-2">
+                            <input type="number" name="extend_months" value="1" min="1" max="12"
+                                   class="w-20 border border-gray-300 rounded-lg px-2 py-2">
+                            <button type="submit" class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
+                                <i class="fas fa-clock mr-1"></i>Extend
+                            </button>
+                        </form>
+                        
+                        <!-- Downgrade to Free -->
+                        <form method="POST" action="{{ url_for('admin.downgrade_company', company_id=company.id) }}" 
+                              onsubmit="return confirm('Downgrade {{ company.name }} to Free plan?')">
+                            <input type="hidden" name="reason" value="Admin downgrade">
+                            <button type="submit" class="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700">
+                                <i class="fas fa-arrow-down mr-2"></i>Downgrade to Free
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Quick Stats -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <div class="border-b px-6 py-4 bg-gray-50">
+                        <h2 class="font-semibold text-gray-900">
+                            <i class="fas fa-chart-simple text-purple-600 mr-2"></i>Quick Stats
+                        </h2>
+                    </div>
+                    <div class="p-6 space-y-3 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Total Paid</span>
+                            <span class="font-bold">${{ "%.2f"|format(payments|sum(attribute='amount')) }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Payment Count</span>
+                            <span>{{ payments|length }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Last Payment</span>
+                            <span>{{ payments[0].paid_at.strftime('%Y-%m-%d') if payments else 'Never' }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Active Listings</span>
+                           
+                            <span>{{ active_items |length}}</span>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Auto-format months input
+    document.querySelector('input[name="duration_months"]').addEventListener('change', function() {
+        if (this.value < 1) this.value = 1;
+        if (this.value > 36) this.value = 36;
+    });
+</script>
+{% endblock %}
+{% endblock %}

@@ -236,7 +236,7 @@
         document.getElementById('offerPrice').value = price.toFixed(2);
        // validatePrice();
     }
-  /*  const messageInput = document.getElementById('offerMessage');
+    const messageInput = document.getElementById('offerMessage');
     const requiresDelivery = document.getElementById('requiresDelivery');
     const deliveryContainer = document.getElementById('deliveryAddressContainer');
     const deliveryAddress = document.querySelector('[name="delivery_address"]');
@@ -244,7 +244,7 @@
     const priceInput = document.getElementById('offerPrice');
     const quantityInput = document.getElementById('offerQuantity');
     
-    
+    /*
     function validatePrice() {
         const price = parseFloat(priceInput.value);
         const errorDiv = document.getElementById('priceError');
@@ -271,7 +271,7 @@
         errorDiv.classList.add('hidden');
         return true;
     }
-    
+    */
     function validateQuantity() {
         const quantity = parseFloat(quantityInput.value);
         const errorDiv = document.getElementById('quantityError');
@@ -282,8 +282,8 @@
             return false;
         }
         
-        if (quantity > {{ listing.quantity }}) {
-            errorDiv.textContent = 'Quantity cannot exceed available {{ listing.quantity }} {{ listing.unit }}';
+        if (quantity > {{ listing.available_quantity }}) {
+            errorDiv.textContent = 'Quantity cannot exceed available {{ listing.available_quantity }} {{ listing.unit }}';
             errorDiv.classList.remove('hidden');
             return false;
         }
@@ -315,34 +315,34 @@
             deliveryContainer.classList.add('hidden');
             deliveryAddress.value = '';
         }
-    }); */
+    }); 
     
     // Real-time validation
-    /*priceInput.addEventListener('input', validatePrice);
+    priceInput.addEventListener('input', validatePrice);
     quantityInput.addEventListener('input', validateQuantity);
     deliveryAddress.addEventListener('input', validateDelivery);
     
     // Form submission validation
     document.getElementById('offerForm').addEventListener('submit', function(e) {
-        const isPriceValid = validatePrice();
+        //const isPriceValid = validatePrice();
         const isQuantityValid = validateQuantity();
         const isDeliveryValid = validateDelivery();
         
-        if (!isPriceValid || !isQuantityValid || !isDeliveryValid) {
+        if ( !isQuantityValid || !isDeliveryValid) {
             e.preventDefault();
             alert('Please fix the validation errors before submitting.');
         }
-    });*/
+    });
     
     // Check for existing offer on page load
-  {# fetch('{{ url_for("offers.check_offer_status", listing_id=listing.id) }}')
+  { fetch('{{ url_for("offers.check_offer_status", listing_id=listing.id) }}')
         .then(response => response.json())
         .then(data => {
             if (data.has_offer) {
                 alert('You already have a pending offer on this listing. Redirecting to your offers page.');
                 window.location.href = '{{ url_for("offers.index") }}';
             }
-        }); #}
+        }); }
 </script>
 {% endblock %}
 {% endblock %}

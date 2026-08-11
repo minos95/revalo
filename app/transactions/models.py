@@ -22,8 +22,8 @@ class Transaction(db.Model):
     unit = db.Column(db.String(20), default='kg')
     # Payment
     payment_status = db.Column(db.String(20), default='pending')  # pending, paid, refunded, failed
-    dilivery_status = db.Column(db.String(length=30),nullable=False,default="pending")
-
+    paid_at = db.Column(db.DateTime)
+    payment_url = db.Column(db.String(255))
      # Invoice
     invoice_number = db.Column(db.String(100), unique=True)
     invoice_url = db.Column(db.String(255))
@@ -33,13 +33,17 @@ class Transaction(db.Model):
     pickup_completed_at = db.Column(db.DateTime)
     pickup_notes = db.Column(db.Text)
     
+    in_transit_at = db.Column(db.DateTime)
     delivery_scheduled_at = db.Column(db.DateTime)
     delivery_completed_at = db.Column(db.DateTime)
     delivery_notes = db.Column(db.Text)
+    delivered_at = db.Column(db.DateTime)
 
     # Status tracking
     status = db.Column(db.String(20), default='pending', index=True)  # payment_pending,pending, confirmed, in_transit, completed, cancelled, dispute
-
+    # Audit trail
+    status_history = db.Column(db.JSON, default=[])
+    
     total_amount=db.Column(db.Numeric(10, 2),nullable=False)
     commission_rate=db.Column(db.Numeric(10, 2),nullable=False,default='0.07')
     commission_amount=db.Column(db.Numeric(10, 2),nullable=False)
@@ -56,7 +60,9 @@ class Transaction(db.Model):
     completed_at = db.Column(db.DateTime)
     cancelled_at = db.Column(db.DateTime)
     cancelled_reason = db.Column(db.Text)
-
+    created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
+    updated_at = db.Column(db.DateTime(timezone=True), default=db.func.now(), onupdate=db.func.now())
+    
       # Dispute tracking
     is_disputed = db.Column(db.Boolean, default=False)
     dispute_reason = db.Column(db.Text)
@@ -80,13 +86,12 @@ class Transaction(db.Model):
     payment_confirmed_at = db.Column(db.DateTime)
     payment_confirmed_by = db.Column(db.Integer, db.ForeignKey('user.id'))
     
-    created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
-    updated_at = db.Column(db.DateTime(timezone=True), default=db.func.now(), onupdate=db.func.now())
+    
   
    
    #references
     
-    review = db.relationship("Review", back_populates="owned_review",lazy=True)
+    #review = db.relationship("Review", back_populates="review",lazy=True)
     listing = db.relationship("Item", back_populates="transactions",lazy=True)
     buyer_company = db.relationship('Company', back_populates='buy_transactions',foreign_keys=[buyer_company_id],lazy=True)
     seller_company = db.relationship('Company', back_populates='sell_transactions',foreign_keys=[seller_company_id],lazy=True)
@@ -96,9 +101,10 @@ class Transaction(db.Model):
                                     back_populates='transactions_as_buyer_manager')
     offer = db.relationship("Offer", back_populates="transaction")
 
-    review = db.relationship('Review', back_populates='transaction')
+    reviews = db.relationship('Review', back_populates='transaction')
     
     #conversations= db.relationship('Conversation', backref='transaction')
+
 
     def mark_in_transit(self):
         if self.status=="pending" and self.seller_company_id==current_user.company_id:

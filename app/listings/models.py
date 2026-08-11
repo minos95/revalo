@@ -113,11 +113,80 @@ class View(db.Model):
 class Category(db.Model):
     id=db.Column(db.Integer(),primary_key=True)
     name=db.Column(db.String(length=30),nullable=False)
-    Description=db.Column(db.String(length=300),nullable=False)
+    slug = db.Column(db.String(100), unique=True, index=True)
+    description=db.Column(db.String(length=300))
+
+        # Display
+    icon = db.Column(db.String(50))  # FontAwesome icon class
+    color = db.Column(db.String(20))  # Hex color or Tailwind color
     default_image_url = db.Column(db.String(255))
+    
+
+      # Hierarchy
+    parent_id = db.Column(db.Integer, db.ForeignKey('category.id'))
+    children = db.relationship('Category', backref=db.backref('parent', remote_side=[id]), lazy='dynamic')
+
+    # Waste-specific fields
+    waste_type = db.Column(db.String(50))  # hazardous, non-hazardous, e-waste, etc.
+    requires_license = db.Column(db.Boolean, default=False)
+    requires_special_handling = db.Column(db.Boolean, default=False)
+    min_quantity_default = db.Column(db.Numeric(10, 2), default=0)
+
+     # Ordering
+    sort_order = db.Column(db.Integer, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+    is_featured = db.Column(db.Boolean, default=False)
+    
+    # Metadata
+    meta_title = db.Column(db.String(200))
+    meta_description = db.Column(db.Text)
+    meta_keywords = db.Column(db.String(200))
+    
    
     items=db.relationship("Item", back_populates="owned_category",lazy=True)
     qualities = db.relationship('Quality_attributes', back_populates='owned_quality',lazy=True)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if not self.slug:
+            self.slug = self.name.lower().replace(' ', '-')
+    
+    @property
+    def listing_count(self):
+        """Get number of listings in this category"""
+        return self.listings.filter_by(status='active').count()
+    
+    @property
+    def active_listing_count(self):
+        """Get number of active listings in this category"""
+        from datetime import datetime
+        return self.listings.filter(
+            Item.status == 'active',
+            Item.expires_at > datetime.utcnow()
+        ).count()
+    
+    @property
+    def attribute_count(self):
+        """Get number of quality attributes for this category"""
+        return self.quality_attributes.count()
+    
+    @property
+    def full_path(self):
+        """Get full category path"""
+        if self.parent:
+            return f"{self.parent.full_path} > {self.name}"
+        return self.name
+    
+    def get_parent_choices(self):
+        """Get choices for parent category (excluding self)"""
+        categories = Category.query.filter(
+            Category.id != self.id,
+            Category.is_active == True
+        ).order_by(Category.sort_order).all()
+        return [(c.id, c.full_path) for c in categories]
+    
+    def __repr__(self):
+        return f'<Category {self.name}>'
      
     
 class Quality_attributes(db.Model):
@@ -125,6 +194,8 @@ class Quality_attributes(db.Model):
     category_id= db.Column(db.Integer(),db.ForeignKey('category.id'))
     name=db.Column(db.String(length=30),nullable=False) #--- cleanliness, Compressed, Rust level, Crushed
     field=db.Column(db.String(length=30),nullable=False) #-----select,boolean,number,text
+    # Ordering
+    sort_order = db.Column(db.Integer, default=0)
     unit=db.Column(db.String(length=30))
     is_required=db.Column(db.Boolean())
     owned_quality = db.relationship('Category', back_populates='qualities',lazy=True)

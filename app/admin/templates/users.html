@@ -56,14 +56,14 @@
                         </td>
                         <td class="px-6 py-4 text-sm">{{ user.created_at.strftime('%Y-%m-%d') }}</td>
                         <td class="px-6 py-4">
-                            <span class="px-2 py-1 text-xs rounded-full {% if user.is_active %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
-                                {{ 'Active' if user.is_active else 'Inactive' }}
+                            <span class="px-2 py-1 text-xs rounded-full {% if user.status=='active' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                {{ 'Active' if user.status=='active' else 'Inactive' }}
                             </span>
                         </td>
                         <td class="px-6 py-4 text-right">
                             <form method="POST" action="{{ url_for('admin.toggle_user_status', user_id=user.id) }}" class="inline">
-                                <button type="submit" class="text-sm {% if user.is_active %}text-red-600 hover:text-red-800{% else %}text-green-600 hover:text-green-800{% endif %}">
-                                    {% if user.is_active %}Deactivate{% else %}Activate{% endif %}
+                                <button type="submit" class="text-sm {% if  user.status=='active' %}text-red-600 hover:text-red-800{% else %}text-green-600 hover:text-green-800{% endif %}">
+                                    {% if  user.status=='active' %}Deactivate{% else %}Activate{% endif %}
                                 </button>
                             </form>
                         </td>

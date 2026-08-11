@@ -116,7 +116,7 @@
                     <div class="relative inline-block">
                     <!-- Notification Icon (e.g., Bell) -->
                         <a href="{{ url_for('messages.index') }}" class="text-gray-700 hover:text-green-600">
-                            <i class="fas fa-envelope text-xl"></i>
+                            <i class="fa-regular fa-message text-xl"></i>
                             <span id="messageBadge" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 hidden">0</span>
                         </a>
                         {% if notif.conversation %}
@@ -203,6 +203,9 @@
     </a>
     <a href="{{ url_for('admin.categories') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
         <i class="fas fa-folder w-5 mr-2"></i>Categories 
+    </a>
+    <a href="{{ url_for('admin.subscriptions') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+        <i class="fas fa-folder w-5 mr-2"></i>Subscription Plans 
     </a>
     <a href="{{ url_for('admin.reports') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
         <i class="fas fa-chart-bar w-5 mr-2"></i>Reports <span class="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 inset-ring inset-ring-red-600/10">Badge</span>

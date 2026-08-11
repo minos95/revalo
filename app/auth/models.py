@@ -1,5 +1,6 @@
 from collections import namedtuple
 from datetime import datetime, timedelta
+import secrets
 
 from wtforms import ValidationError
 
@@ -22,15 +23,19 @@ class Company(db.Model):
 
     rating_avg= db.Column(db.Integer(),default=0)
     total_reviews=db.Column(db.Integer(),default=0)
+    rating_distribution = db.Column(db.JSON, default={
+        '5': 0, '4': 0, '3': 0, '2': 0, '1': 0
+    })
     total_transactions=db.Column(db.Integer(),default=0)
-    total_revenue=db.Column(db.Integer(),default=0)
+    total_revenue=db.Column(db.Numeric(10, 2),default=0)
 
     #location
     address = db.Column(db.String(length=30),nullable=False)
     country = db.Column(db.String(length=30),nullable=False)
     city = db.Column(db.String(length=30),nullable=False)
     Postal_code = db.Column(db.String(length=30))
-    company_type = db.Column(db.String(length=30),nullable=False) #generator, recycler, trader
+    business_type = db.Column(db.String(length=30)) #generator, recycler, trader
+    business_size= db.Column(db.String(length=30)) 
     activity = db.Column(db.String(length=30),nullable=False)
     #information
     rc = db.Column(db.String(length=30))
@@ -38,6 +43,7 @@ class Company(db.Model):
     nis = db.Column(db.String(length=30))
     referal = db.Column(db.String(length=30))
 
+    status=db.Column(db.String(length=30), default="pending")
     verified=db.Column(db.Boolean(),default=False)
     verified_by= db.Column(db.Integer())
     verified_at=db.Column(db.DateTime(timezone=True))
@@ -53,7 +59,7 @@ class Company(db.Model):
      # ========== SUBSCRIPTION FIELDS ==========
     
     # Current subscription
-    subscription_plan_id = db.Column(db.Integer, db.ForeignKey('subscription_plans.id'), nullable=True)
+    subscription_plan_id = db.Column(db.Integer, db.ForeignKey('subscription_plans.id'), default=1)
     
 
     subscription_status = db.Column(db.String(20), default='free')  # free, active, past_due, cancelled, expired
@@ -273,11 +279,17 @@ class User(db.Model,UserMixin):
     reset_password_token = db.Column(db.String(100), unique=True, index=True)
     reset_password_expires = db.Column(db.DateTime)
     
-    # Email verification fields
-    email_verification_token = db.Column(db.String(100), unique=True)
+    # ============================================
+    # EMAIL VERIFICATION FIELDS
+    # ============================================
     email_verified = db.Column(db.Boolean, default=False)
+    email_verified_at = db.Column(db.DateTime)
+    verification_token = db.Column(db.String(100), unique=True)
+    verification_token_expires = db.Column(db.DateTime)
+    verification_attempts = db.Column(db.Integer, default=0)
 
 
+    status=db.Column(db.String(length=30), default="active")
     authorized=db.Column(db.Boolean(),default=True)
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
 
@@ -345,6 +357,69 @@ class User(db.Model,UserMixin):
         self.reset_password_token = None
         self.reset_password_expires = None
         db.session.commit()
+        
+         # ============================================
+    # EMAIL VERIFICATION METHODS
+    # ============================================
+    
+    def generate_verification_token(self):
+        """Generate a unique verification token"""
+        token = secrets.token_urlsafe(32)
+        self.verification_token = token
+        self.verification_token_expires = datetime.utcnow() + timedelta(days=7)
+        self.verification_attempts = 0
+        db.session.commit()
+        return token
+    
+    def verify_email(self, token):
+        """Verify email with token"""
+        if self.email_verified:
+            return {'success': False, 'message': 'Email already verified.'}
+        
+        if self.verification_token != token:
+            self.verification_attempts += 1
+            db.session.commit()
+            
+            if self.verification_attempts >= 5:
+                return {'success': False, 'message': 'Too many failed attempts. Please request a new verification link.'}
+            
+            return {'success': False, 'message': 'Invalid verification token.'}
+        
+        if self.verification_token_expires and self.verification_token_expires < datetime.utcnow():
+            return {'success': False, 'message': 'Verification link has expired. Please request a new one.'}
+        
+        # Mark as verified
+        self.email_verified = True
+        self.email_verified_at = datetime.utcnow()
+        self.verification_token = None
+        self.verification_token_expires = None
+        db.session.commit()
+        
+        return {'success': True, 'message': 'Email verified successfully!'}
+    
+    def resend_verification_email(self):
+        """Resend verification email"""
+        if self.email_verified:
+            return {'success': False, 'message': 'Email already verified.'}
+        
+        # Generate new token
+        self.generate_verification_token()
+        db.session.commit()
+        
+        return {'success': True, 'message': 'Verification email sent.'}
+    def is_active(self):
+        print ("isactive_$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+        if self.status=="active":
+            print("++++++active")
+            return True
+        else:
+            print("--------suspended")
+            return False
+    
+    @property
+    def is_verified(self):
+        """Check if user is verified"""
+        return self.email_verified
     
 
 class Notification(db.Model):
@@ -441,9 +516,9 @@ class Review(db.Model):
     
     # User who wrote the review
     reviewer_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    
+    reviewer_type = db.Column(db.String(20))  # 'seller' or 'buyer'
     # Associated transaction
-    transaction_id = db.Column(db.Integer, db.ForeignKey('transaction.id'), unique=True)
+    transaction_id = db.Column(db.Integer, db.ForeignKey('transaction.id'))
     listing_id = db.Column(db.Integer, db.ForeignKey('item.id'))
     
     # Review content
@@ -480,7 +555,7 @@ class Review(db.Model):
      # Relationships
     company = db.relationship('Company', back_populates='reviews')
     reviewer = db.relationship('User', foreign_keys=[reviewer_id], back_populates='reviews_written')
-    transaction = db.relationship('Transaction', back_populates='review')
+    transaction = db.relationship('Transaction', back_populates='reviews')
     item = db.relationship('Item', back_populates='reviews')
     responder = db.relationship('User', foreign_keys=[responded_by])
     

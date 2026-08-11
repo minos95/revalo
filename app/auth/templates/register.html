@@ -11,7 +11,7 @@
             <p class="mt-2 text-sm text-gray-600">Join the circular economy today</p>
         </div>
         
-        <form class="mt-8 space-y-6" method="POST">
+        <form class="mt-8 space-y-6" method="POST" enctype="multipart/form-data">
             {{ form.hidden_tag() }}
             
             <!-- Company Information -->
@@ -25,6 +25,10 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Business Type</label>
                         {{ form.business_type(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2") }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Business Size</label>
+                        {{ form.business_size(class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2") }}
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">{{form.company_activity.label()}}</label>

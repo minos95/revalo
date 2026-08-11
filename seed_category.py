@@ -77,7 +77,7 @@ def seed_categories():
 
     for category_name, attributes in data.items():
 
-        category = Category(name=category_name,default_image_url=f"uploads/categories/{category_name}.jpg",Description="")
+        category = Category(name=category_name,default_image_url=f"uploads/categories/{category_name}.jpg",description="")
         db.session.add(category)
         db.session.flush()
 

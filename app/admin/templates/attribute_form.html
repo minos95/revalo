@@ -1,0 +1,511 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - {{ category.name }} - Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .attribute-type-card {
+        transition: all 0.2s ease;
+        cursor: pointer;
+        border: 2px solid transparent;
+    }
+    .attribute-type-card:hover {
+        border-color: #d1d5db;
+        transform: translateY(-2px);
+    }
+    .attribute-type-card.selected {
+        border-color: #8b5cf6;
+        background-color: #f3e8ff;
+    }
+    .option-input-group {
+        transition: all 0.2s ease;
+    }
+    .option-input-group:hover {
+        background-color: #f9fafb;
+    }
+    .preview-box {
+        background: #f8fafc;
+        border: 2px dashed #d1d5db;
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        min-height: 100px;
+        transition: all 0.2s ease;
+    }
+    .preview-box.has-value {
+        border-color: #8b5cf6;
+        background: #faf5ff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Breadcrumb -->
+        <div class="flex items-center space-x-2 text-sm text-gray-500 mb-6">
+            <a href="{{ url_for('admin.categories') }}" class="hover:text-purple-600">Categories</a>
+            <i class="fas fa-chevron-right text-xs"></i>
+            <a href="{{ url_for('admin.category_attributes', category_id=category.id) }}" class="hover:text-purple-600">
+                {{ category.name }}
+            </a>
+            <i class="fas fa-chevron-right text-xs"></i>
+            <span class="text-gray-900 font-medium">{{ title }}</span>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-purple-500 to-purple-600 px-6 py-4">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center">
+                        <i class="fas fa-clipboard-list text-2xl text-purple-600"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-white">{{ title }}</h1>
+                        <p class="text-purple-100 text-sm">
+                            Category: {{ category.name }}
+                            {% if attribute %}
+                            · Editing: {{ attribute.name }}
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-6">
+                <form method="POST" id="attributeForm" class="space-y-6">
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- ========================================== -->
+                    <!-- BASIC INFORMATION -->
+                    <!-- ========================================== -->
+                    <div class="border-b pb-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-info-circle text-purple-600 mr-2"></i>Basic Information
+                        </h2>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    Attribute Name <span class="text-red-500">*</span>
+                                </label>
+                                {{ form.name(class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-purple-500 focus:border-purple-500", 
+                                           placeholder="e.g., Material Grade, Purity Level, Color") }}
+                                {% for error in form.name.errors %}
+                                    <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Sort Order</label>
+                                {{ form.sort_order(class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-purple-500 focus:border-purple-500", 
+                                                  type="number", placeholder="0") }}
+                                <p class="text-xs text-gray-500 mt-1">Lower numbers appear first</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- ========================================== -->
+                    <!-- FIELD TYPE SELECTION -->
+                    <!-- ========================================== -->
+                    <div class="border-b pb-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-code text-purple-600 mr-2"></i>Field Type
+                        </h2>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+                            {% for choice in form.attribute_type.choices %}
+                            <div class="attribute-type-card p-3 rounded-lg text-center {% if form.attribute_type.data == choice[0] %}selected{% endif %}"
+                                 data-type="{{ choice[0] }}"
+                                 onclick="selectAttributeType('{{ choice[0] }}')">
+                                <div class="text-2xl mb-1">
+                                    {% if choice[0] == 'text' %}
+                                        <i class="fas fa-font text-blue-500"></i>
+                                    {% elif choice[0] == 'number' %}
+                                        <i class="fas fa-hashtag text-green-500"></i>
+                                    {% elif choice[0] == 'select' %}
+                                        <i class="fas fa-caret-down text-purple-500"></i>
+                                    {% elif choice[0] == 'radio' %}
+                                        <i class="fas fa-dot-circle text-red-500"></i>
+                                    {% elif choice[0] == 'checkbox' %}
+                                        <i class="fas fa-check-square text-yellow-500"></i>
+                                    {% elif choice[0] == 'textarea' %}
+                                        <i class="fas fa-align-left text-indigo-500"></i>
+                                    {% endif %}
+                                </div>
+                                <p class="text-xs font-medium">{{ choice[1] }}</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Hidden field type input -->
+                        {{ form.attribute_type }}
+                        
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            <span id="fieldTypeDescription">
+                                {% if form.attribute_type.data == 'text' %}
+                                    Single line text input for short answers
+                                {% elif form.attribute_type.data == 'number' %}
+                                    Numeric input with validation
+                                {% elif form.attribute_type.data == 'select' %}
+                                    Dropdown selection with predefined options
+                                {% elif form.attribute_type.data == 'radio' %}
+                                    Radio buttons for single selection
+                                {% elif form.attribute_type.data == 'checkbox' %}
+                                    Checkboxes for multiple selection
+                                {% elif form.attribute_type.data == 'textarea' %}
+                                    Multi-line text input for longer answers
+                                {% else %}
+                                    Select a field type above
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <!-- ========================================== -->
+                    <!-- OPTIONS (For select/radio/checkbox) -->
+                    <!-- ========================================== -->
+                    <div id="optionsSection" class="border-b pb-6 {% if form.attribute_type.data not in ['select', 'radio', 'checkbox'] %}hidden{% endif %}">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-list-ul text-purple-600 mr-2"></i>Options
+                        </h2>
+                        
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4 text-sm text-yellow-800">
+                            <i class="fas fa-lightbulb mr-2"></i>
+                            Enter one option per line. These will be the choices users can select.
+                        </div>
+                        
+                        <div id="optionsContainer">
+                            {% if attribute and attribute.options %}
+                                {% for option in attribute.options %}
+                                <div class="option-input-group flex items-center space-x-2 mb-2">
+                                    <div class="flex-1">
+                                        <input type="text" name="options_text" value="{{ option.value }}" 
+                                               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-purple-500 focus:border-purple-500"
+                                               placeholder="Option value">
+                                    </div>
+                                    <button type="button" onclick="removeOption(this)" class="text-red-500 hover:text-red-700">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="option-input-group flex items-center space-x-2 mb-2">
+                                    <div class="flex-1">
+                                        <input type="text" name="options_text" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-purple-500 focus:border-purple-500"
+                                               placeholder="Option 1">
+                                    </div>
+                                    <button type="button" onclick="removeOption(this)" class="text-red-500 hover:text-red-700">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div class="option-input-group flex items-center space-x-2 mb-2">
+                                    <div class="flex-1">
+                                        <input type="text" name="options_text" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-purple-500 focus:border-purple-500"
+                                               placeholder="Option 2">
+                                    </div>
+                                    <button type="button" onclick="removeOption(this)" class="text-red-500 hover:text-red-700">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div class="option-input-group flex items-center space-x-2 mb-2">
+                                    <div class="flex-1">
+                                        <input type="text" name="options_text" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-purple-500 focus:border-purple-500"
+                                               placeholder="Option 3">
+                                    </div>
+                                    <button type="button" onclick="removeOption(this)" class="text-red-500 hover:text-red-700">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <button type="button" onclick="addOption()" class="mt-2 text-sm text-purple-600 hover:text-purple-700">
+                            <i class="fas fa-plus mr-1"></i>Add Option
+                        </button>
+                    </div>
+                    
+                    <!-- ========================================== -->
+                    <!-- SETTINGS -->
+                    <!-- ========================================== -->
+                    <div class="border-b pb-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-cog text-purple-600 mr-2"></i>Settings
+                        </h2>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Placeholder Text</label>
+                                {{ form.placeholder(class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-purple-500 focus:border-purple-500", 
+                                                   placeholder="e.g., Enter material grade...") }}
+                                <p class="text-xs text-gray-500 mt-1">Shown inside the input field</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Help Text</label>
+                                {{ form.help_text(class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-purple-500 focus:border-purple-500", 
+                                                 placeholder="e.g., Select the condition of the material") }}
+                                <p class="text-xs text-gray-500 mt-1">Displayed below the field to help users</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <label class="flex items-center">
+                                {{ form.is_required(class="h-4 w-4 text-purple-600 focus:ring-purple-500") }}
+                                <span class="ml-2 text-sm text-gray-700">Required Field</span>
+                            </label>
+                            <label class="flex items-center">
+                                {{ form.is_active(class="h-4 w-4 text-purple-600 focus:ring-purple-500") }}
+                                <span class="ml-2 text-sm text-gray-700">Active</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- ========================================== -->
+                    <!-- PREVIEW -->
+                    <!-- ========================================== -->
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-eye text-purple-600 mr-2"></i>Preview
+                        </h2>
+                        
+                        <div id="previewContainer" class="preview-box">
+                            <p class="text-sm text-gray-400 text-center" id="previewPlaceholder">
+                                Fill in the fields above to see a live preview
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- ========================================== -->
+                    <!-- ACTIONS -->
+                    <!-- ========================================== -->
+                    <div class="flex justify-end space-x-4 pt-6 border-t">
+                        <a href="{{ url_for('admin.category_attributes', category_id=category.id) }}" 
+                           class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                            Cancel
+                        </a>
+                        <button type="submit" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+                            <i class="fas fa-save mr-2"></i>{% if attribute %}Update{% else %}Add{% endif %} Attribute
+                        </button>
+                    </div>
+                    
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================
+// FIELD TYPE SELECTION
+// ============================================
+function selectAttributeType(type) {
+    // Update hidden input
+    document.querySelector('[name="attribute_type"]').value = type;
+    
+    // Update UI
+    document.querySelectorAll('.attribute-type-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    document.querySelector(`.attribute-type-card[data-type="${type}"]`).classList.add('selected');
+    
+    // Update description
+    const descriptions = {
+        'text': 'Single line text input for short answers',
+        'number': 'Numeric input with validation',
+        'select': 'Dropdown selection with predefined options',
+        'radio': 'Radio buttons for single selection',
+        'checkbox': 'Checkboxes for multiple selection',
+        'textarea': 'Multi-line text input for longer answers'
+    };
+    document.getElementById('fieldTypeDescription').textContent = descriptions[type] || 'Select a field type above';
+    
+    // Show/hide options section
+    const optionsSection = document.getElementById('optionsSection');
+    if (['select', 'radio', 'checkbox'].includes(type)) {
+        optionsSection.classList.remove('hidden');
+    } else {
+        optionsSection.classList.add('hidden');
+    }
+    
+    // Update preview
+    updatePreview();
+}
+
+// ============================================
+// OPTIONS MANAGEMENT
+// ============================================
+function addOption() {
+    const container = document.getElementById('optionsContainer');
+    const div = document.createElement('div');
+    div.className = 'option-input-group flex items-center space-x-2 mb-2';
+    div.innerHTML = `
+        <div class="flex-1">
+            <input type="text" name="options_text" 
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-purple-500 focus:border-purple-500"
+                   placeholder="Option ${container.children.length + 1}">
+        </div>
+        <button type="button" onclick="removeOption(this)" class="text-red-500 hover:text-red-700">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    container.appendChild(div);
+    updatePreview();
+}
+
+function removeOption(button) {
+    const container = document.getElementById('optionsContainer');
+    if (container.children.length <= 1) {
+        alert('You need at least one option.');
+        return;
+    }
+    button.closest('.option-input-group').remove();
+    updatePreview();
+}
+
+// ============================================
+// LIVE PREVIEW
+// ============================================
+function updatePreview() {
+    const container = document.getElementById('previewContainer');
+    const name = document.querySelector('[name="name"]').value || 'Attribute Name';
+    const type = document.querySelector('[name="attribute_type"]').value || 'text';
+    const placeholder = document.querySelector('[name="placeholder"]').value || 'Enter value...';
+    const helpText = document.querySelector('[name="help_text"]').value || '';
+    const isRequired = document.querySelector('[name="is_required"]').checked;
+    
+    // Get options
+    const optionInputs = document.querySelectorAll('input[name="options_text"]');
+    const options = Array.from(optionInputs).map(input => input.value || `Option ${optionInputs.length}`);
+    
+    let previewHTML = `
+        <div class="mb-3">
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+                ${name} ${isRequired ? '<span class="text-red-500">*</span>' : ''}
+            </label>
+    `;
+    
+    // Render based on type
+    if (type === 'text') {
+        previewHTML += `
+            <input type="text" placeholder="${placeholder}" 
+                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-purple-500 focus:border-purple-500" disabled>
+        `;
+    } else if (type === 'number') {
+        previewHTML += `
+            <input type="number" placeholder="${placeholder}" 
+                   class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-purple-500 focus:border-purple-500" disabled>
+        `;
+    } else if (type === 'textarea') {
+        previewHTML += `
+            <textarea placeholder="${placeholder}" rows="3" 
+                      class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-purple-500 focus:border-purple-500" disabled></textarea>
+        `;
+    } else if (type === 'select') {
+        previewHTML += `
+            <select class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-purple-500 focus:border-purple-500" disabled>
+                <option value="">Select ${name}</option>
+        `;
+        options.forEach(opt => {
+            previewHTML += `<option value="${opt}">${opt}</option>`;
+        });
+        previewHTML += `</select>`;
+    } else if (type === 'radio') {
+        previewHTML += `<div class="space-y-2">`;
+        options.forEach((opt, i) => {
+            previewHTML += `
+                <label class="flex items-center">
+                    <input type="radio" name="preview_radio" value="${opt}" ${i === 0 ? 'checked' : ''} disabled>
+                    <span class="ml-2 text-sm text-gray-700">${opt}</span>
+                </label>
+            `;
+        });
+        previewHTML += `</div>`;
+    } else if (type === 'checkbox') {
+        previewHTML += `<div class="space-y-2">`;
+        options.forEach(opt => {
+            previewHTML += `
+                <label class="flex items-center">
+                    <input type="checkbox" value="${opt}" disabled>
+                    <span class="ml-2 text-sm text-gray-700">${opt}</span>
+                </label>
+            `;
+        });
+        previewHTML += `</div>`;
+    }
+    
+    if (helpText) {
+        previewHTML += `<p class="text-xs text-gray-500 mt-1">${helpText}</p>`;
+    }
+    
+    previewHTML += `</div>`;
+    
+    container.innerHTML = previewHTML;
+    container.classList.add('has-value');
+}
+
+// ============================================
+// EVENT LISTENERS FOR PREVIEW
+// ============================================
+document.querySelector('[name="name"]').addEventListener('input', updatePreview);
+document.querySelector('[name="placeholder"]').addEventListener('input', updatePreview);
+document.querySelector('[name="help_text"]').addEventListener('input', updatePreview);
+document.querySelector('[name="is_required"]').addEventListener('change', updatePreview);
+
+// Options change listener
+document.addEventListener('input', function(e) {
+    if (e.target.name === 'options_text') {
+        updatePreview();
+    }
+});
+
+// ============================================
+// FORM VALIDATION
+// ============================================
+document.getElementById('attributeForm').addEventListener('submit', function(e) {
+    const name = document.querySelector('[name="name"]').value.trim();
+    if (!name) {
+        e.preventDefault();
+        alert('Please enter an attribute name.');
+        document.querySelector('[name="name"]').focus();
+        return;
+    }
+    
+    const type = document.querySelector('[name="attribute_type"]').value;
+    if (!type) {
+        e.preventDefault();
+        alert('Please select a field type.');
+        return;
+    }
+    
+    // Validate options for select/radio/checkbox
+    if (['select', 'radio', 'checkbox'].includes(type)) {
+        const optionInputs = document.querySelectorAll('input[name="options_text"]');
+        const hasEmpty = Array.from(optionInputs).some(input => !input.value.trim());
+        if (hasEmpty) {
+            e.preventDefault();
+            alert('Please fill in all option values or remove empty options.');
+            return;
+        }
+        if (optionInputs.length < 2) {
+            e.preventDefault();
+            alert('Please add at least 2 options.');
+            return;
+        }
+    }
+});
+
+// ============================================
+// INITIALIZE PREVIEW
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    // Set initial preview
+    setTimeout(updatePreview, 100);
+    
+    // Set initial options for edit mode
+    // Already handled by the template
+});
+</script>
+{% endblock %}

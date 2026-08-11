@@ -450,6 +450,9 @@ def edit(listing_id):
             # Update listing status if needed
             if listing.status == 'expired' and listing.expires_at > datetime.utcnow():
                 listing.status = 'pending'
+
+            if listing.status=="draft":
+                listing.status="pending"
             
             db.session.commit()
             

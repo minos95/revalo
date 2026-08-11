@@ -142,11 +142,11 @@
                             
                             <!-- Step 2: Payment -->
                             <div class="status-step 
-                                {% if transaction.payment_status == 'paid' %}completed
+                                {% if transaction.payment_status == 'paid' or transaction.payment_status =='released' %}completed
                                 {% elif transaction.payment_status == 'pending' and transaction.status != 'cancelled' %}active{% endif %}">
                                 <div class="ml-4">
                                     <p class="font-medium text-gray-900">Payment Confirmed</p>
-                                    {% if transaction.paid_at %}
+                                    {% if transaction.payment_confirmed_at %}
                                         <p class="text-sm text-gray-500">
                                             {{ transaction.paid_at.strftime('%B %d, %Y at %I:%M %p') }}
                                         </p>
@@ -181,13 +181,13 @@
                             
                             <!-- Step 4: In Transit -->
                             <div class="status-step 
-                                {% if transaction.delivered_at %}completed
+                                {% if transaction.delivery_confirmed_at %}completed
                                 {% elif transaction.in_transit_at %}active{% endif %}">
                                 <div class="ml-4">
                                     <p class="font-medium text-gray-900">In Transit</p>
-                                    {% if transaction.delivered_at %}
+                                    {% if transaction.delivery_confirmed_at %}
                                         <p class="text-sm text-gray-500">
-                                            Delivered: {{ transaction.delivered_at.strftime('%B %d, %Y') }}
+                                            Delivered: {{ transaction.delivery_confirmed_at.strftime('%B %d, %Y') }}
                                         </p>
                                     {% elif transaction.in_transit_at %}
                                         <p class="text-sm text-gray-500">
@@ -232,7 +232,7 @@
                     <div class="p-6">
                         <div class="flex items-start space-x-4">
                             {% if transaction.listing.images and transaction.listing.images|length > 0 %}
-                            <img src="{{ url_for('static', filename='uploads/' + transaction.listing.images[0]) }}" 
+                            <img src="{{ url_for('static', filename=transaction.listing.images[0].uri) }}" 
                                  class="w-24 h-24 rounded-lg object-cover">
                             {% else %}
                             <div class="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center">
@@ -281,16 +281,16 @@
                         <div class="space-y-3">
                             <div class="flex justify-between items-center pb-3 border-b">
                                 <span class="text-gray-600">Item Price</span>
-                                <span class="font-medium">${{ "%.2f"|format(transaction.price) }}</span>
+                                <span class="font-medium">{{ "%.2f"|format(transaction.price) }} DA</span>
                             </div>
                             <div class="flex justify-between items-center pb-3 border-b">
                                 <span class="text-gray-600">Platform Fee ({{transaction.commission_rate}}%)</span>
-                                <span class="font-medium">${{ "%.2f"|format(transaction.commission_amount) }}</span>
+                                <span class="font-medium">${{ "%.2f"|format(transaction.commission_amount) }} DA</span>
                             </div>
                             <div class="flex justify-between items-center pt-2">
                                 <span class="text-lg font-semibold text-gray-900">Total Amount</span>
                                 <span class="text-2xl font-bold text-green-600">
-                                    ${{ "%.2f"|format(transaction.total_amount) }}
+                                    {{ "%.2f"|format(transaction.total_amount) }} DA
                                 </span>
                             </div>
                         </div>
@@ -432,8 +432,20 @@
                         <!-- ================================ -->
                         <!-- STEP 5: COMPLETED - Leave Review -->
                         <!-- ================================ -->
-                        {% if transaction.status == 'completed' and not transaction.review %}
+                         
+                        {% if transaction.status == 'completed'  and transaction.reviews.reviewer_id != current_user.id %}
+                        
                         <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                            
+                            {% if "buyer" in transaction.reviews | map(attribute='reviewer_type') and transaction.buyer_company_id==current_user.company_id%}
+                                <p class="font-medium text-green-800 mb-3">
+                                    <i class="fas fa-star mr-2"></i>You already made review
+                                </p>
+                            {%elif "seller" in transaction.reviews | map(attribute='reviewer_type') and transaction.seller_company_id==current_user.company_id%}
+                                <p class="font-medium text-green-800 mb-3">
+                                    <i class="fas fa-star mr-2"></i>You already made review
+                                </p>
+                            {%else%}
                             <p class="font-medium text-green-800 mb-3">
                                 <i class="fas fa-star mr-2"></i>Leave a Review
                             </p>
@@ -444,6 +456,7 @@
                                     class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 action-button">
                                 <i class="fas fa-star mr-2"></i>Write Review
                             </button>
+                            {% endif %}
                         </div>
                         {% endif %}
                         
@@ -479,8 +492,17 @@
                         {% endif %}
                         
                         <!-- ================================ -->
-                        <!-- DISPUTE BUTTON (Always visible if not completed) -->
+                        <!-- CONFIRM PAYMENT BUTTON (VISIBLE FOR SELLER AND PYAMENT STATUS PAID ) -->
                         <!-- ================================ -->
+                         {% if not transaction.payment_confirmed and transaction.seller_company_id == current_user.company_id %}
+                        <div class="border-t pt-4 mt-2">
+                            <button onclick="openConfirmPaymentModal()" 
+                                    class="w-full text-green-600  hover:text-green-700">
+                                <i class="fas fa-flag mr-2"></i>Confirm Payment
+                            </button>
+                        </div>
+                        {% endif %}
+                        
                         {% if transaction.status not in ['completed', 'cancelled'] %}
                         <div class="border-t pt-4 mt-2">
                             <button onclick="openDisputeModal()" 
@@ -613,6 +635,19 @@
                         </h2>
                     </div>
                     <div class="p-6 space-y-3">
+                        {% if transaction.payment_url %}
+                        <a href="{{ transaction.payment_url }}" target="_blank" 
+                           class="document-card flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
+                            <div class="flex items-center">
+                                <i class="fas fa-file-invoice text-green-600 mr-3"></i>
+                                <div>
+                                    <p class="font-medium text-gray-900">Payment receipt</p>
+                                    <p class="text-xs text-gray-500">Download PDF</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-download text-gray-400"></i>
+                        </a>
+                        {% endif %}
                         {% if transaction.invoice_url %}
                         <a href="{{ transaction.invoice_url }}" target="_blank" 
                            class="document-card flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
@@ -641,7 +676,7 @@
                         </a>
                         {% endif %}
                         
-                        {% if not transaction.invoice_url and not transaction.weight_certificate_url %}
+                        {% if not transaction.invoice_url and not transaction.weight_certificate_url and not transaction.payment_url %}
                         <p class="text-gray-500 text-center py-4">No documents available yet</p>
                         {% endif %}
                     </div>
@@ -655,6 +690,29 @@
 <!-- ============================================ -->
 <!-- MODALS -->
 <!-- ============================================ -->
+
+<!-- confirmpayment Modal -->
+<div id="confirmPaymentModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-md w-full">
+        <div class="p-6">
+            <h3 class="text-xl font-bold mb-4">Confirm payment received</h3>
+            <form method="POST" action="{{ url_for('transactions.confirm_payment', transaction_id=transaction.id) }}">
+                <div class="space-y-4">
+                     <h6>Confirm you receveid the payment from the buyer</h6>
+                    
+                     <div class="flex justify-end space-x-3">
+                        <button type="button" onclick="closeConfirmPaymentModal()" 
+                                class="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                            Confirm Payment
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 
 <!-- Schedule Pickup Modal -->
 <div id="schedulePickupModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
@@ -916,6 +974,12 @@
     // ============================================
     // MODAL CONTROLS
     // ============================================
+    function openConfirmPaymentModal() {
+        document.getElementById('confirmPaymentModal').classList.remove('hidden');
+    }
+    function closeConfirmPaymentModal() {
+        document.getElementById('confirmPaymentModal').classList.add('hidden');
+    }
     
     function openSchedulePickupModal() {
         document.getElementById('schedulePickupModal').classList.remove('hidden');
@@ -962,9 +1026,11 @@
     function openDisputeModal() {
         document.getElementById('disputeModal').classList.remove('hidden');
     }
+    
     function closeDisputeModal() {
         document.getElementById('disputeModal').classList.add('hidden');
     }
+
     
     // ============================================
     // RATING STARS

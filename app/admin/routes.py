@@ -4,9 +4,9 @@ from sqlalchemy import func, desc
 from datetime import datetime, timedelta
 
 from app.admin import bp
-from app.admin.forms import AdminSettingsForm, CategoryForm, ModerationForm
+from app.admin.forms import AdminSettingsForm, CategoryAttributeForm, CategoryForm, ModerationForm, SubscriptionPlanForm
 from app.auth.models import User, Company
-from app.listings.models import Item,Category
+from app.listings.models import Item,Category, Quality_attribute_options, Quality_attributes
 from app.transactions.models import Transaction
 from app.offers.models import Offer
 from app.subscription.models import SubscriptionPlan,SubscriptionPayment
@@ -150,10 +150,16 @@ def users():
 def toggle_user_status(user_id):
     """Activate/deactivate user"""
     user = User.query.get_or_404(user_id)
-    user.is_active = not user.is_active
+    
+    if  user.status=='active':
+        print('+++++++++++++')
+        user.status="suspended"
+    else:
+        print('----------------')
+        user.status="active"
     db.session.commit()
     
-    status = 'activated' if user.is_active else 'deactivated'
+    status = 'active' if not user.is_active else 'deactivated'
     flash(f'User {user.email} has been {status}.', 'success')
     return redirect(url_for('admin.users'))
 
@@ -216,6 +222,7 @@ def verify_company(company_id):
     company.verified = True
     company.verified_at = datetime.utcnow()
     company.verified_by = current_user.id
+    company.status="active"
     db.session.commit()
     
     flash(f'Company {company.name} has been verified.', 'success')
@@ -228,12 +235,13 @@ def unverify_company(company_id):
     """Unverify a company"""
     company = Company.query.get_or_404(company_id)
     company.verified = False
+    company.status="suspended"
     db.session.commit()
     
     flash(f'Company {company.name} has been unverified.', 'warning')
     return redirect(url_for('admin.companies'))
 
-@bp.route('/companies/<int:company_id>/change-subscription-status', methods=['POST'])
+@bp.route('/companies/<int:company_id>/change-subscription-status', methods=['POST','GET'])
 @admin_required
 def change_subscription_status(company_id):
     """Change company plan"""
@@ -259,7 +267,345 @@ def change_subscription_status(company_id):
     db.session.commit()
     flash(f'Subscription plan  changed to {sub_plan.name}.', 'success')
     
-    return redirect(url_for('admin.companies'))
+    return redirect(url_for('admin.company_subscription',company_id=company.id))
+
+
+
+# ============================================
+# SUBSCRIPTION DASHBOARD
+# ============================================
+
+@bp.route('/subscriptions')
+@login_required
+def subscriptions():
+    """Admin subscription management dashboard"""
+    
+    # Stats
+    total_companies = Company.query.count()
+    active_subscriptions = Company.query.filter_by(subscription_status='active').count()
+    free_companies = Company.query.filter_by(subscription_status='free').count()
+    grace_period = Company.query.filter_by(subscription_status='grace_period').count()
+    expired = Company.query.filter_by(subscription_status='expired').count()
+    
+    # Revenue stats
+    monthly_revenue = db.session.query(func.sum(SubscriptionPayment.amount)).filter(
+        SubscriptionPayment.status == 'succeeded',
+        SubscriptionPayment.paid_at >= datetime.utcnow() - timedelta(days=30)
+    ).scalar() or 0
+    
+    total_revenue = db.session.query(func.sum(SubscriptionPayment.amount)).filter(
+        SubscriptionPayment.status == 'succeeded'
+    ).scalar() or 0
+    
+    # Recent payments
+    recent_payments = SubscriptionPayment.query.order_by(
+        desc(SubscriptionPayment.paid_at)
+    ).limit(10).all()
+    
+    # Company subscriptions
+    companies = Company.query.order_by(Company.created_at.desc()).limit(20).all()
+    
+    return render_template('subscriptions.html',
+                         total_companies=total_companies,
+                         active_subscriptions=active_subscriptions,
+                         free_companies=free_companies,
+                         grace_period=grace_period,
+                         expired=expired,
+                         monthly_revenue=monthly_revenue,
+                         total_revenue=total_revenue,
+                         recent_payments=recent_payments,
+                         companies=companies)
+
+
+# ============================================
+# SUBSCRIPTION PLANS
+# ============================================
+
+@bp.route('/subscription/plans')
+@login_required
+def subscription_plans():
+    """Manage subscription plans"""
+    
+    plans = SubscriptionPlan.query.order_by(SubscriptionPlan.sort_order).all()
+    return render_template('subscription_plans.html', plans=plans)
+
+
+@bp.route('/subscription/plans/add', methods=['GET', 'POST'])
+@login_required
+def add_subscription_plan():
+    """Add a new subscription plan"""
+    
+    form = SubscriptionPlanForm()
+    
+    if form.validate_on_submit():
+        try:
+            plan = SubscriptionPlan(
+                name=form.name.data,
+                slug=form.slug.data or form.name.data.lower().replace(' ', '-'),
+                description=form.description.data,
+                price_monthly=form.price_monthly.data or 0,
+                price_yearly=form.price_yearly.data or 0,
+                currency=form.currency.data,
+                max_active_listings=form.max_active_listings.data or 0,
+                max_featured_listings=form.max_featured_listings.data or 0,
+                max_team_members=form.max_team_members.data or 1,
+                max_monthly_transactions=form.max_monthly_transactions.data or 0,
+                commission_rate=form.commission_rate.data or 5.0,
+                has_analytics=form.has_analytics.data,
+                has_api_access=form.has_api_access.data,
+                has_priority_support=form.has_priority_support.data,
+                has_bulk_upload=form.has_bulk_upload.data,
+                has_advanced_filters=form.has_advanced_filters.data,
+                has_dedicated_manager=form.has_dedicated_manager.data,
+                sort_order=form.sort_order.data or 0,
+                is_active=form.is_active.data,
+                is_popular=form.is_popular.data
+            )
+            
+            db.session.add(plan)
+            db.session.commit()
+            
+            flash(f'Plan "{plan.name}" created successfully!', 'success')
+            return redirect(url_for('admin.subscription_plans'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error creating plan: {str(e)}', 'danger')
+    
+    return render_template('subscription_plan_form.html',
+                         form=form,
+                         title='Add Subscription Plan',
+                         plan=None)
+
+
+@bp.route('/subscription/plans/<int:plan_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_subscription_plan(plan_id):
+    """Edit a subscription plan"""
+    
+    plan = SubscriptionPlan.query.get_or_404(plan_id)
+    form = SubscriptionPlanForm(obj=plan)
+    
+    if form.validate_on_submit():
+        try:
+            plan.name = form.name.data
+            plan.slug = form.slug.data or form.name.data.lower().replace(' ', '-')
+            plan.description = form.description.data
+            plan.price_monthly = form.price_monthly.data or 0
+            plan.price_yearly = form.price_yearly.data or 0
+            plan.currency = form.currency.data
+            plan.max_active_listings = form.max_active_listings.data or 0
+            plan.max_featured_listings = form.max_featured_listings.data or 0
+            plan.max_team_members = form.max_team_members.data or 1
+            plan.max_monthly_transactions = form.max_monthly_transactions.data or 0
+            plan.commission_rate = form.commission_rate.data or 5.0
+            plan.has_analytics = form.has_analytics.data
+            plan.has_api_access = form.has_api_access.data
+            plan.has_priority_support = form.has_priority_support.data
+            plan.has_bulk_upload = form.has_bulk_upload.data
+            plan.has_advanced_filters = form.has_advanced_filters.data
+            plan.has_dedicated_manager = form.has_dedicated_manager.data
+            plan.sort_order = form.sort_order.data or 0
+            plan.is_active = form.is_active.data
+            plan.is_popular = form.is_popular.data
+            plan.updated_at = datetime.utcnow()
+            
+            db.session.commit()
+            
+            flash(f'Plan "{plan.name}" updated successfully!', 'success')
+            return redirect(url_for('admin.subscription_plans'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating plan: {str(e)}', 'danger')
+    
+    return render_template('subscription_plan_form.html',
+                         form=form,
+                         title='Edit Subscription Plan',
+                         plan=plan)
+
+
+@bp.route('/subscription/plans/<int:plan_id>/delete', methods=['POST'])
+@login_required
+def delete_subscription_plan(plan_id):
+    """Delete a subscription plan"""
+    
+    plan = SubscriptionPlan.query.get_or_404(plan_id)
+    
+    # Check if plan is in use
+    if plan.companies.count() > 0:
+        flash('Cannot delete plan with active subscribers.', 'danger')
+        return redirect(url_for('admin.subscription_plans'))
+    
+    try:
+        db.session.delete(plan)
+        db.session.commit()
+        flash(f'Plan "{plan.name}" deleted successfully.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting plan: {str(e)}', 'danger')
+    
+    return redirect(url_for('admin.subscription_plans'))
+
+
+@bp.route('/subscription/plans/<int:plan_id>/toggle', methods=['POST'])
+@login_required
+def toggle_subscription_plan(plan_id):
+    """Toggle plan active status"""
+    
+    plan = SubscriptionPlan.query.get_or_404(plan_id)
+    plan.is_active = not plan.is_active
+    db.session.commit()
+    
+    status = 'activated' if plan.is_active else 'deactivated'
+    flash(f'Plan "{plan.name}" {status}.', 'success')
+    
+    return redirect(url_for('admin.subscription_plans'))
+
+
+# ============================================
+# COMPANY SUBSCRIPTION MANAGEMENT
+# ============================================
+
+@bp.route('/subscription/company/<int:company_id>')
+@login_required
+def company_subscription(company_id):
+    """View and manage a company's subscription"""
+    
+    company = Company.query.get_or_404(company_id)
+    plans = SubscriptionPlan.query.filter_by(is_active=True).all()
+    payments = SubscriptionPayment.query.filter_by(
+        company_id=company_id
+    ).order_by(desc(SubscriptionPayment.paid_at)).all()
+    
+    return render_template('subscription_detail.html',
+                         company=company,
+                         plans=plans,
+                         payments=payments)
+
+
+@bp.route('/subscription/company/<int:company_id>/assign', methods=['POST'])
+@login_required
+def assign_subscription(company_id):
+    """Assign a subscription plan to a company"""
+    
+    company = Company.query.get_or_404(company_id)
+    plan_id = request.form.get('plan_id', type=int)
+    interval = request.form.get('interval', 'monthly')
+    duration_months = request.form.get('duration_months', type=int, default=1)
+    
+    plan = SubscriptionPlan.query.get(plan_id)
+    if not plan:
+        flash('Invalid subscription plan.', 'danger')
+        return redirect(url_for('admin.company_subscription', company_id=company_id))
+    
+    try:
+        # Calculate pricing
+        if interval == 'yearly':
+            price = plan.price_yearly
+            end_date = datetime.utcnow() + timedelta(days=365)
+        else:
+            price = plan.price_monthly
+            end_date = datetime.utcnow() + timedelta(days=30 * duration_months)
+        
+        # Update company
+        company.subscription_plan_id = plan.id
+        company.subscription_status = 'active'
+        company.subscription_started_at = datetime.utcnow()
+        company.subscription_ends_at = end_date
+        company.max_active_listings = plan.max_active_listings
+        company.max_featured_listings = plan.max_featured_listings
+        company.max_team_members = plan.max_team_members
+        company.max_monthly_transactions = plan.max_monthly_transactions
+        company.commission_rate = plan.commission_rate
+        
+        # Create payment record (admin assigned)
+        payment = SubscriptionPayment(
+            company_id=company.id,
+            subscription_plan_id=plan.id,
+            amount=price,
+            currency='DA',
+            interval=interval,
+            period_start=datetime.utcnow(),
+            period_end=end_date,
+            status='succeeded',
+            payment_method='admin_assigned',
+            notes=f'Assigned by admin {current_user.email}'
+        )
+        payment.generate_invoice_number()
+        
+        db.session.add(payment)
+        db.session.commit()
+        
+        flash(f'Subscription "{plan.name}" assigned to {company.name} successfully!', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error assigning subscription: {str(e)}', 'danger')
+    
+    return redirect(url_for('admin.company_subscription', company_id=company_id))
+
+
+@bp.route('/subscription/company/<int:company_id>/downgrade', methods=['POST'])
+@login_required
+def downgrade_company(company_id):
+    """Downgrade company to free plan"""
+    
+    company = Company.query.get_or_404(company_id)
+    reason = request.form.get('reason', '')
+    
+    try:
+        free_plan = SubscriptionPlan.query.filter_by(slug='free').first()
+        
+        if free_plan:
+            company.subscription_plan_id = free_plan.id
+            company.max_active_listings = free_plan.max_active_listings
+            company.max_featured_listings = free_plan.max_featured_listings
+            company.max_team_members = free_plan.max_team_members
+            company.max_monthly_transactions = free_plan.max_monthly_transactions
+            company.commission_rate = free_plan.commission_rate
+        
+        company.subscription_status = 'expired'
+        company.subscription_ends_at = datetime.utcnow()
+        company.subscription_notes = reason
+        
+        db.session.commit()
+        
+        flash(f'Company "{company.name}" downgraded to Free plan.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error downgrading company: {str(e)}', 'danger')
+    
+    return redirect(url_for('admin.company_subscription', company_id=company_id))
+
+
+@bp.route('/subscription/company/<int:company_id>/extend', methods=['POST'])
+@login_required
+def extend_subscription(company_id):
+    """Extend a company's subscription"""
+    
+    company = Company.query.get_or_404(company_id)
+    extend_months = request.form.get('extend_months', type=int, default=1)
+    
+    if not company.subscription_ends_at:
+        flash('Company has no active subscription to extend.', 'danger')
+        return redirect(url_for('admin.company_subscription', company_id=company_id))
+    
+    try:
+        company.subscription_ends_at += timedelta(days=30 * extend_months)
+        company.subscription_status = 'active'
+        
+        db.session.commit()
+        
+        flash(f'Subscription extended by {extend_months} months.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error extending subscription: {str(e)}', 'danger')
+    
+    return redirect(url_for('admin.company_subscription', company_id=company_id))
 
 
 # ============================================
@@ -357,7 +703,7 @@ def transactions():
 def transaction_detail(transaction_id):
     """View transaction details"""
     transaction = Transaction.query.get_or_404(transaction_id)
-    return render_template('admin/transaction_detail.html', transaction=transaction)
+    return render_template('transactions_detail.html', transaction=transaction)
 
 
 @bp.route('/transactions/<int:transaction_id>/resolve-dispute', methods=['POST'])
@@ -388,72 +734,344 @@ def resolve_dispute(transaction_id):
 # CATEGORIES MANAGEMENT
 # ============================================
 
-@bp.route('/categories')
-@admin_required
-def categories():
-    """Manage categories"""
-    categories = Category.query.all()
-    return render_template('categories.html', categories=categories)
 
+# ============================================
+# CATEGORIES LIST
+# ============================================
+
+@bp.route('/categories')
+@login_required
+def categories():
+    """List all categories with their attributes"""
+    
+    # Get all categories with ordering
+    categories = Category.query.order_by(Category.parent_id, Category.sort_order).all()
+    
+    # Get stats
+    total_categories = Category.query.count()
+    active_categories = Category.query.filter_by(is_active=True).count()
+    total_attributes = Quality_attributes.query.count() 
+    
+    return render_template('categories.html',
+                         categories=categories,
+                         total_categories=total_categories,
+                         active_categories=active_categories,
+                         total_attributes=total_attributes)
+
+
+# ============================================
+# CREATE CATEGORY
+# ============================================
 
 @bp.route('/categories/create', methods=['GET', 'POST'])
-@admin_required
+@login_required
 def create_category():
     """Create a new category"""
+    
     form = CategoryForm()
     
-    if form.validate_on_submit():
-        category = Category(
-            name=form.name.data,
-            slug=form.name.data.lower().replace(' ', '-'),
-            description=form.description.data,
-            icon=form.icon.data,
-            parent_id=form.parent_id.data or None,
-            sort_order=form.sort_order.data,
-            is_active=form.is_active.data
-        )
-        db.session.add(category)
-        db.session.commit()
-        
-        flash('Category created successfully!', 'success')
-        return redirect(url_for('admin.categories'))
+    # Populate parent category choices
+    #form.parent_id.choices = [(0, 'None (Top Level)')] + [
+    #    (c.id, c.name) for c in Category.query.filter_by(is_active=True).order_by(Category.name).all()
+    #]
     
-    return render_template('category_form.html', form=form, title='Create Category')
+    if form.validate_on_submit():
+        try:
+            category = Category(
+                name=form.name.data,
+                slug=form.slug.data or form.name.data.lower().replace(' ', '-'),
+                description=form.description.data,
+                icon=form.icon.data,
+                color=form.color.data,
+                waste_type=form.waste_type.data,
+                requires_license=form.requires_license.data,
+                requires_special_handling=form.requires_special_handling.data,
+                min_quantity_default=form.min_quantity_default.data or 0,
+                sort_order=form.sort_order.data or 0,
+                is_active=form.is_active.data,
+                is_featured=form.is_featured.data,
+                meta_title=form.meta_title.data,
+                meta_description=form.meta_description.data
+            )
+            
+            # Set parent (if selected)
+            #if form.parent_id.data and form.parent_id.data != 0:
+             #   category.parent_id = form.parent_id.data
+            
+            db.session.add(category)
+            db.session.commit()
+            
+            flash(f'Category "{category.name}" created successfully!', 'success')
+            return redirect(url_for('admin.categories'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error creating category: {str(e)}', 'danger')
+    
+    return render_template('category_form.html', 
+                         form=form, 
+                         title='Create Category',
+                         category=None)
 
+
+# ============================================
+# EDIT CATEGORY
+# ============================================
 
 @bp.route('/categories/<int:category_id>/edit', methods=['GET', 'POST'])
-@admin_required
+@login_required
 def edit_category(category_id):
-    """Edit a category"""
+    """Edit an existing category"""
+    
     category = Category.query.get_or_404(category_id)
     form = CategoryForm(obj=category)
     
-    if form.validate_on_submit():
-        category.name = form.name.data
-        category.description = form.description.data
-        category.icon = form.icon.data
-        category.parent_id = form.parent_id.data or None
-        category.sort_order = form.sort_order.data
-        category.is_active = form.is_active.data
-        db.session.commit()
-        
-        flash('Category updated!', 'success')
-        return redirect(url_for('admin.categories'))
-    
-    return render_template('admin/category_form.html', form=form, title='Edit Category', category=category)
+   
 
+    
+    if form.validate_on_submit():
+        print('++++++++++++++++++++++')
+        try:
+            print('----------------------')
+            print(form.sort_order.data)
+            category.name = form.name.data
+            category.slug = form.slug.data or form.name.data.lower().replace(' ', '-')
+            category.description = form.description.data
+            category.icon = form.icon.data
+            category.color = form.color.data
+            category.waste_type = form.waste_type.data
+            category.requires_license = form.requires_license.data
+            category.requires_special_handling = form.requires_special_handling.data
+            category.min_quantity_default = form.min_quantity_default.data or 0
+            category.sort_order = form.sort_order.data or 0
+            category.is_active = form.is_active.data
+            category.is_featured = form.is_featured.data
+            category.meta_title = form.meta_title.data
+            category.meta_description = form.meta_description.data
+            category.updated_at = datetime.utcnow()
+            
+            # Update parent
+            #if form.parent_id.data and form.parent_id.data != 0:
+            #    category.parent_id = form.parent_id.data
+            #else:
+            #    category.parent_id = None
+            
+            db.session.commit()
+            
+            flash(f'Category "{category.name}" updated successfully!', 'success')
+            return redirect(url_for('admin.categories'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating category: {str(e)}', 'danger')
+    
+    return render_template('category_form.html', 
+                         form=form, 
+                         title='Edit Category',
+                         category=category)
+
+
+# ============================================
+# DELETE CATEGORY
+# ============================================
 
 @bp.route('/categories/<int:category_id>/delete', methods=['POST'])
-@admin_required
+@login_required
 def delete_category(category_id):
-    """Delete a category"""
-    category = Category.query.get_or_404(category_id)
-    db.session.delete(category)
-    db.session.commit()
+    """Delete a category (admin only)"""
     
-    flash('Category deleted.', 'success')
+    category = Category.query.get_or_404(category_id)
+    
+    # Check if category has listings
+    if len(category.items) > 0:
+        flash('Cannot delete category with active listings. Reassign or delete listings first.', 'danger')
+        return redirect(url_for('admin.categories'))
+    
+    try:
+        db.session.delete(category)
+        db.session.commit()
+        flash(f'Category "{category.name}" deleted successfully.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting category: {str(e)}', 'danger')
+    
     return redirect(url_for('admin.categories'))
 
+
+# ============================================
+# TOGGLE CATEGORY STATUS
+# ============================================
+
+@bp.route('/categories/<int:category_id>/toggle-status', methods=['POST'])
+@login_required
+def toggle_category_status(category_id):
+    """Toggle category active status"""
+    
+    category = Category.query.get_or_404(category_id)
+    category.is_active = not category.is_active
+    db.session.commit()
+    
+    status = 'activated' if category.is_active else 'deactivated'
+    flash(f'Category "{category.name}" {status}.', 'success')
+    
+    return redirect(url_for('admin.categories'))
+
+
+# ============================================
+# MANAGE CATEGORY ATTRIBUTES
+# ============================================
+
+@bp.route('/categories/<int:category_id>/attributes')
+@login_required
+def category_attributes(category_id):
+    """Manage quality attributes for a category"""
+    
+    category = Category.query.get_or_404(category_id)
+    attributes = Quality_attributes.query.filter_by(
+        category_id=category_id
+    ).order_by(Quality_attributes.sort_order).all()
+    
+    return render_template('category_attributes.html',
+                         category=category,
+                         attributes=attributes)
+
+
+# ============================================
+# ADD CATEGORY ATTRIBUTE
+# ============================================
+
+@bp.route('/categories/<int:category_id>/attributes/add', methods=['GET', 'POST'])
+@login_required
+def add_category_attribute(category_id):
+    """Add a quality attribute to a category"""
+    
+    category = Category.query.get_or_404(category_id)
+    form = CategoryAttributeForm()
+    
+    if form.validate_on_submit():
+        try:
+            attribute = Quality_attributes(
+                category_id=category.id,
+                name=form.name.data,
+                attribute_type=form.attribute_type.data,
+                is_required=form.is_required.data,
+                placeholder=form.placeholder.data,
+                help_text=form.help_text.data,
+                sort_order=form.sort_order.data or 0,
+                is_active=form.is_active.data
+            )
+            
+            db.session.add(attribute)
+            db.session.flush()
+            
+            # Add options for select/radio/checkbox types
+            if form.attribute_type.data in ['select', 'radio', 'checkbox']:
+                options_text = request.form.get('options_text', '')
+                if options_text:
+                    option_values = [opt.strip() for opt in options_text.split('\n') if opt.strip()]
+                    for i, value in enumerate(option_values):
+                        option = Quality_attribute_options(
+                            attribute_id=attribute.id,
+                            value=value,
+                            sort_order=i
+                        )
+                        db.session.add(option)
+            
+            db.session.commit()
+            
+            flash(f'Attribute "{attribute.name}" added successfully!', 'success')
+            return redirect(url_for('admin.category_attributes', category_id=category.id))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error adding attribute: {str(e)}', 'danger')
+    
+    return render_template('attribute_form.html',
+                         form=form,
+                         category=category,
+                         title='Add Attribute')
+
+
+# ============================================
+# EDIT CATEGORY ATTRIBUTE
+# ============================================
+
+@bp.route('/attributes/<int:attribute_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_category_attribute(attribute_id):
+    """Edit a quality attribute"""
+    
+    attribute = Quality_attributes.query.get_or_404(attribute_id)
+    category = attribute.owned_quality
+    form = CategoryAttributeForm(obj=attribute)
+    
+    if form.validate_on_submit():
+        try:
+            attribute.name = form.name.data
+            attribute.attribute_type = form.attribute_type.data
+            attribute.is_required = form.is_required.data
+            attribute.placeholder = form.placeholder.data
+            attribute.help_text = form.help_text.data
+            attribute.sort_order = form.sort_order.data or 0
+            attribute.is_active = form.is_active.data
+            attribute.updated_at = datetime.utcnow()
+            
+            # Update options if type changed
+            if form.attribute_type.data in ['select', 'radio', 'checkbox']:
+                # Clear existing options
+                Quality_attribute_options.query.filter_by(attribute_id=attribute.id).delete()
+                
+                # Add new options
+                options_text = request.form.get('options_text', '')
+                if options_text:
+                    option_values = [opt.strip() for opt in options_text.split('\n') if opt.strip()]
+                    for i, value in enumerate(option_values):
+                        option = Quality_attribute_options(
+                            attribute_id=attribute.id,
+                            value=value,
+                            sort_order=i
+                        )
+                        db.session.add(option)
+            
+            db.session.commit()
+            
+            flash(f'Attribute "{attribute.name}" updated successfully!', 'success')
+            return redirect(url_for('admin.category_attributes', category_id=category.id))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating attribute: {str(e)}', 'danger')
+    
+    return render_template('attribute_form.html',
+                         form=form,
+                         category=category,
+                         attribute=attribute,
+                         title='Edit Attribute')
+
+
+# ============================================
+# DELETE CATEGORY ATTRIBUTE
+# ============================================
+
+@bp.route('/attributes/<int:attribute_id>/delete', methods=['POST'])
+@login_required
+def delete_category_attribute(attribute_id):
+    """Delete a quality attribute"""
+    
+    attribute = QualityAttribute.query.get_or_404(attribute_id)
+    category_id = attribute.category_id
+    
+    try:
+        db.session.delete(attribute)
+        db.session.commit()
+        flash(f'Attribute deleted successfully.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting attribute: {str(e)}', 'danger')
+    
+    return redirect(url_for('admin.category_attributes', category_id=category_id))
 
 # ============================================
 # REPORTS

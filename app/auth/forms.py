@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
-from wtforms import BooleanField, FileField, IntegerField, PasswordField, SelectField, StringField, SubmitField, TextAreaField, ValidationError
+from wtforms import BooleanField, IntegerField, PasswordField, SelectField, StringField, SubmitField, TextAreaField, ValidationError
 from wtforms.validators import Length,EqualTo,Email,DataRequired, Optional,ValidationError
-from flask_wtf.file import FileField, FileAllowed
+from flask_wtf.file import FileField, FileRequired, FileAllowed
 from app.auth.models import Company, User
 
 
@@ -15,9 +15,24 @@ class CompanyRegisterForm(FlaskForm):
         if name:
             raise ValidationError('The Company already exist')
     company_name=StringField(label="COMPANY NAME",validators=[Length(min=2,max=30),DataRequired()])
-    business_type=SelectField('Type of company', choices=[
-            'SARL','EURL','SASU','SAS'      
-        ], validators=[DataRequired()])
+    
+    business_type = SelectField('Business Type', choices=[
+            ('', 'Select Business Type'),
+            ('collector', 'Waste Collector'),
+            ('recycler', 'Recycler'),
+            ('manufacturer', 'Manufacturer'),
+            ('waste_processor', 'Waste Processor'),
+            ('broker', 'Broker/Trader'),
+            ('consultant', 'Consultant')
+        ], validators=[Optional()])
+        
+    business_size = SelectField('Business Size', choices=[
+            ('', 'Select Business Size'),
+            ('small', 'Small (1-10 employees)'),
+            ('medium', 'Medium (11-50 employees)'),
+            ('large', 'Large (51-200 employees)'),
+            ('enterprise', 'Enterprise (200+ employees)')
+        ], validators=[Optional()])
     company_activity=SelectField('Activity', choices=[
             "Recycler",
             "Agriculture",
@@ -124,7 +139,7 @@ class CompanyRegisterForm(FlaskForm):
     confirm_password=PasswordField(label='CONFIRM PASSWORD',validators=[EqualTo('password')])
      # Branding
     documents = FileField('Documents', validators=[
-            FileAllowed(['pdf',"PDF"], 'Only pdf are allowed')
+            FileAllowed(['pdf',"PDF","jpeg",'jpg'], 'Only pdf are allowed')
         ])
     referal=StringField(label="Referal")
     submit=SubmitField(label="Create Account")
@@ -227,6 +242,10 @@ class EditCompanyForm(FlaskForm):
             DataRequired(message='Email is required'),
             Email(message='Please enter a valid email address')
         ])
+        
+        documents = FileField('Documents', validators=[
+                    FileAllowed(['pdf',"PDF","jpeg",'jpg'], 'Only pdf are allowed')
+                ])
         
         phone = StringField('Phone Number', validators=[
             Optional(),

@@ -7,30 +7,37 @@
     .payment-card {
         transition: all 0.2s ease;
     }
+
     .payment-card:hover {
         transform: translateY(-2px);
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
     }
+
     .payment-method {
         cursor: pointer;
         transition: all 0.2s ease;
         border: 2px solid transparent;
     }
+
     .payment-method:hover {
         border-color: #d1d5db;
     }
+
     .payment-method.selected {
         border-color: #10b981;
         background-color: #f0fdf4;
     }
+
     .card-input {
         transition: all 0.2s ease;
     }
+
     .card-input:focus {
         border-color: #10b981;
         box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
         outline: none;
     }
+
     .secure-badge {
         background: #f0fdf4;
         border: 1px solid #10b981;
@@ -48,26 +55,26 @@
 {% block content %}
 <div class="bg-gray-50 min-h-screen py-8">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         <!-- Header -->
         <div class="mb-6">
             <div class="flex items-center space-x-3">
-                <a href="{{ url_for('transactions.detail', transaction_id=transaction.id) }}" 
-                   class="text-gray-500 hover:text-gray-700">
+                <a href="{{ url_for('transactions.detail', transaction_id=transaction.id) }}"
+                    class="text-gray-500 hover:text-gray-700">
                     <i class="fas fa-arrow-left text-xl"></i>
                 </a>
                 <h1 class="text-2xl font-bold text-gray-900">Complete Payment</h1>
             </div>
             <p class="text-gray-600 mt-1">Transaction #{{ transaction.id }}</p>
         </div>
-        
+
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
-            
+
             <!-- ========================================== -->
             <!-- LEFT COLUMN: Payment Form (3/5) -->
             <!-- ========================================== -->
             <div class="lg:col-span-3 space-y-6">
-                
+
                 <!-- Transaction Summary Card -->
                 <div class="bg-white rounded-xl shadow-md overflow-hidden payment-card">
                     <div class="border-b px-6 py-4 bg-gray-50">
@@ -78,30 +85,32 @@
                     <div class="p-6">
                         <div class="flex items-start space-x-4">
                             {% if transaction.listing.images and transaction.listing.images|length > 0 %}
-                            <img src="{{ url_for('static', filename='uploads/' + transaction.listing.images[0]) }}" 
-                                 class="w-20 h-20 rounded-lg object-cover">
+                            <img src="{{ url_for('static', filename=transaction.listing.images[0].uri) }}" 
+                                class="w-20 h-20 rounded-lg object-cover">
                             {% else %}
                             <div class="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center">
                                 <i class="fas fa-recycle text-3xl text-gray-400"></i>
                             </div>
                             {% endif %}
-                            
+
                             <div class="flex-1">
                                 <p class="font-semibold text-gray-900">{{ transaction.listing.title }}</p>
                                 <p class="text-sm text-gray-500">{{ transaction.listing.owned_company.name }}</p>
                                 <div class="grid grid-cols-2 gap-2 mt-2 text-sm">
                                     <div>
                                         <span class="text-gray-500">Quantity:</span>
-                                        <span class="font-medium">{{ transaction.quantity }} {{ transaction.listing.unit }}</span>
+                                        <span class="font-medium">{{ transaction.quantity }} {{ transaction.listing.unit
+                                            }}</span>
                                     </div>
                                     <div>
                                         <span class="text-gray-500">Price:</span>
-                                        <span class="font-medium text-green-600">{{ "%.2f"|format(transaction.price) }}DA</span>
+                                        <span class="font-medium text-green-600">{{ "%.2f"|format(transaction.price)
+                                            }}DA</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="mt-4 pt-4 border-t">
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Subtotal</span>
@@ -113,12 +122,13 @@
                             </div>
                             <div class="flex justify-between mt-3 pt-3 border-t font-bold">
                                 <span class="text-gray-900">Total</span>
-                                <span class="text-xl text-green-600">{{ "%.2f"|format(transaction.total_amount) }}DA</span>
+                                <span class="text-xl text-green-600">{{ "%.2f"|format(transaction.total_amount)
+                                    }}DA</span>
                             </div>
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Payment Form -->
                 <div class="bg-white rounded-xl shadow-md overflow-hidden">
                     <div class="border-b px-6 py-4 bg-gray-50">
@@ -126,65 +136,60 @@
                             <i class="fas fa-credit-card text-green-600 mr-2"></i>Payment Details
                         </h2>
                     </div>
-                    
+
                     <div class="p-6">
-                        <form method="POST" action="{{ url_for('transactions.process_payment', transaction_id=transaction.id) }}" id="paymentForm">
-                            {{ form.hidden_tag() if form else '' }}
+                        <form action=" {{ url_for( 'transactions.process_payment', transaction_id=transaction.id ) }} "
+                            method="POST" id="paymentForm" enctype="multipart/form-data">
                             
+
                             <!-- Payment Method Selection -->
                             <div class="mb-6">
-                                <label class="block text-sm font-medium text-gray-700 mb-3">Select Payment Method</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-3">Select Payment
+                                    Method</label>
                                 <div class="grid grid-cols-2 gap-3">
-                                    <div class="payment-method p-3 border selected rounded-lg text-center" 
-                                         data-method="bank-transfer" onclick="selectMethod('bank-transfer')">
+                                    <div class="payment-method p-3 border selected rounded-lg text-center"
+                                        data-method="bank-transfer" onclick="selectMethod('bank-transfer')">
                                         <i class="fa-solid fa-money-bill-transfer text-2xl text-blue-600 mb-1"></i>
                                         <p class="text-sm font-medium">bank-transfer</p>
                                     </div>
-                                    <div class="payment-method  p-3 border rounded-lg text-center" 
-                                         data-method="card" onclick="selectMethod('card')">
+                                    <div class="payment-method  p-3 border rounded-lg text-center" data-method="card"
+                                        onclick="selectMethod('card')">
                                         <i class="fas fa-credit-card text-2xl text-green-600 mb-1"></i>
                                         <p class="text-sm font-medium">Credit Card</p>
                                     </div>
-                                    
+
                                 </div>
                             </div>
-                            
+
                             <!-- Credit Card Form -->
                             <div id="cardForm" class="hidden space-y-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
                                     <div class="relative">
-                                        <input type="text" id="card_number" name="card_number" 
-                                               placeholder="4242 4242 4242 4242" maxlength="19"
-                                               class="card-input w-full border border-gray-300 rounded-lg px-4 py-2.5 pl-10"
-                                               >
+                                        <input type="text" id="card_number" name="card_number"
+                                            placeholder="4242 4242 4242 4242" maxlength="19"
+                                            class="card-input w-full border border-gray-300 rounded-lg px-4 py-2.5 pl-10">
                                         <i class="fas fa-credit-card absolute left-3 top-3 text-gray-400"></i>
                                     </div>
                                 </div>
                                 <div class="grid grid-cols-3 gap-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
-                                        <input type="text" id="expiry" name="expiry" 
-                                               placeholder="MM/YY" maxlength="5"
-                                               class="card-input w-full border border-gray-300 rounded-lg px-4 py-2.5"
-                                               >
+                                        <input type="text" id="expiry" name="expiry" placeholder="MM/YY" maxlength="5"
+                                            class="card-input w-full border border-gray-300 rounded-lg px-4 py-2.5">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">CVC</label>
-                                        <input type="text" id="cvc" name="cvc" 
-                                               placeholder="123" maxlength="4"
-                                               class="card-input w-full border border-gray-300 rounded-lg px-4 py-2.5"
-                                               >
+                                        <input type="text" id="cvc" name="cvc" placeholder="123" maxlength="4"
+                                            class="card-input w-full border border-gray-300 rounded-lg px-4 py-2.5">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">ZIP Code</label>
-                                        <input type="text" id="zip" name="zip" 
-                                               placeholder="12345"
-                                               class="card-input w-full border border-gray-300 rounded-lg px-4 py-2.5"
-                                               >
+                                        <input type="text" id="zip" name="zip" placeholder="12345"
+                                            class="card-input w-full border border-gray-300 rounded-lg px-4 py-2.5">
                                     </div>
                                 </div>
-                                
+
                                 <!-- Card Brand Icons -->
                                 <div class="flex space-x-2 mt-2">
                                     <i class="fab fa-cc-visa text-2xl text-gray-400"></i>
@@ -193,21 +198,31 @@
                                     <i class="fab fa-cc-discover text-2xl text-gray-400"></i>
                                 </div>
                             </div>
-                            
+
                             <!-- bank transfer Form (Hidden) -->
                             <div id="bankForm" class=" text-center py-8">
                                 <i class="fa-solid fa-money-bill-transfer text-6xl text-blue-500 mb-4"></i>
                                 <p class="text-gray-600 mb-2">Please Confirm your payment with your bank .</p>
+                                <label class="block text-sm font-medium text-gray-700 mb-3">Upload payment
+                                    receipt</label>
+                                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-400 transition cursor-pointer"
+                                    onclick="document.getElementById('payment_url').click()">
+                                    <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
+                                    <p class="text-gray-600">Click to upload payment receipt</p>
+                                    <p class="text-xs text-gray-500 mt-1">PDF, JPG, JPEG up to 2MB </p>
+                                    <input type="file" name="payment_url" id="payment_url" class="hidden">
+                                </div>
                                 <p class="text-sm text-gray-500">After click on Confirm payment button.</p>
                             </div>
-                            
+
                             <!-- Submit Button -->
                             <div class="mt-6 pt-6 border-t">
-                                <button type="submit" id="submitBtn" 
-                                        class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold text-lg">
-                                    <i class="fas fa-lock mr-2"></i>Confirm payment {{ "%.2f"|format(transaction.total_amount) }}DA
+                                <button type="submit" id="submitBtn"
+                                    class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold text-lg">
+                                    <i class="fas fa-lock mr-2"></i>Confirm payment {{
+                                    "%.2f"|format(transaction.total_amount) }}DA
                                 </button>
-                                
+
                                 <div class="flex items-center justify-center mt-4 text-sm text-gray-500">
                                     <i class="fas fa-shield-alt mr-2 text-green-600"></i>
                                     <span>Your payment is secure and encrypted</span>
@@ -216,14 +231,14 @@
                         </form>
                     </div>
                 </div>
-                
+
             </div>
-            
+
             <!-- ========================================== -->
             <!-- RIGHT COLUMN: Order Summary (2/5) -->
             <!-- ========================================== -->
             <div class="lg:col-span-2 space-y-6">
-                
+
                 <!-- Seller Info -->
                 <div class="bg-white rounded-xl shadow-md overflow-hidden">
                     <div class="border-b px-6 py-4 bg-gray-50">
@@ -244,22 +259,23 @@
                                 <p class="font-semibold text-gray-900">{{ transaction.seller_company.name }}</p>
                                 <div class="flex items-center mt-1">
                                     {% for i in range(5) %}
-                                        {% if i < transaction.seller_company.rating_avg|int %}
-                                            <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                    {% if i < transaction.seller_company.rating_avg|int %} <i
+                                        class="fas fa-star text-yellow-400 text-xs"></i>
                                         {% else %}
-                                            <i class="far fa-star text-yellow-400 text-xs"></i>
+                                        <i class="far fa-star text-yellow-400 text-xs"></i>
                                         {% endif %}
-                                    {% endfor %}
-                                    <span class="text-xs text-gray-500 ml-1">
-                                        ({{ transaction.seller_company.total_reviews }})
-                                    </span>
+                                        {% endfor %}
+                                        <span class="text-xs text-gray-500 ml-1">
+                                            ({{ transaction.seller_company.total_reviews }})
+                                        </span>
                                 </div>
                             </div>
                         </div>
                         <div class="space-y-2 text-sm">
                             <div class="flex justify-between">
                                 <span class="text-gray-500">Location:</span>
-                                <span>{{ transaction.seller_company.city }}, {{ transaction.seller_company.country }}</span>
+                                <span>{{ transaction.seller_company.city }}, {{ transaction.seller_company.country
+                                    }}</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-500">Member Since:</span>
@@ -276,7 +292,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Order Summary -->
                 <div class="bg-white rounded-xl shadow-md overflow-hidden">
                     <div class="border-b px-6 py-4 bg-gray-50">
@@ -307,7 +323,7 @@
                                 <span class="text-green-600">{{ "%.2f"|format(transaction.total_amount) }}DA</span>
                             </div>
                         </div>
-                        
+
                         <!-- Delivery Details -->
                         <div class="mt-4 pt-4 border-t">
                             <p class="text-sm font-medium text-gray-700 mb-2">Delivery Details</p>
@@ -322,7 +338,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Secure Payment Badge -->
                 <div class="bg-white rounded-xl shadow-md p-6">
                     <div class="secure-badge">
@@ -330,10 +346,11 @@
                         <span>Secured by EcoWaste</span>
                     </div>
                     <p class="text-xs text-gray-500 mt-3">
-                        All payment information is encrypted and secure. Your payment is protected by our buyer protection policy.
+                        All payment information is encrypted and secure. Your payment is protected by our buyer
+                        protection policy.
                     </p>
                 </div>
-                
+
             </div>
         </div>
     </div>
@@ -349,7 +366,7 @@
             el.classList.remove('selected');
         });
         document.querySelector(`.payment-method[data-method="${method}"]`).classList.add('selected');
-        
+
         // Show/hide forms
         if (method === 'card') {
             document.getElementById('cardForm').classList.remove('hidden');
@@ -361,20 +378,20 @@
             document.getElementById('submitBtn').innerHTML = `<i class="fab fa-paypal mr-2"></i>Confirm payment {{ "%.2f"|format(transaction.total_amount) }}DA`;
         }
     }
-    
+
     // ============================================
     // CARD INPUT FORMATTING
     // ============================================
     const cardNumber = document.getElementById('card_number');
     const expiry = document.getElementById('expiry');
     const cvc = document.getElementById('cvc');
-    
+
     // Card number formatting (4242 4242 4242 4242)
-    cardNumber.addEventListener('input', function(e) {
+    cardNumber.addEventListener('input', function (e) {
         let value = this.value.replace(/\D/g, '');
         value = value.replace(/(\d{4})/g, '$1 ').trim();
         this.value = value.slice(0, 19);
-        
+
         // Detect card brand
         const firstDigit = value.charAt(0);
         let brand = '';
@@ -382,7 +399,7 @@
         else if (firstDigit === '5') brand = 'mastercard';
         else if (firstDigit === '3') brand = 'amex';
         else if (firstDigit === '6') brand = 'discover';
-        
+
         document.querySelectorAll('.fa-cc').forEach(el => {
             el.classList.remove('text-gray-900');
         });
@@ -390,64 +407,64 @@
             document.querySelector(`.fa-cc-${brand}`)?.classList.add('text-gray-900');
         }
     });
-    
+
     // Expiry formatting (MM/YY)
-    expiry.addEventListener('input', function(e) {
+    expiry.addEventListener('input', function (e) {
         let value = this.value.replace(/\D/g, '');
         if (value.length >= 2) {
             value = value.slice(0, 2) + '/' + value.slice(2, 4);
         }
         this.value = value;
     });
-    
+
     // CVC - only numbers, max 4
-    cvc.addEventListener('input', function(e) {
+    cvc.addEventListener('input', function (e) {
         this.value = this.value.replace(/\D/g, '').slice(0, 4);
     });
-    
+
     // ============================================
     // FORM VALIDATION
     // ============================================
-    document.getElementById('paymentForm').addEventListener('submit', function(e) {
+    document.getElementById('paymentForm').addEventListener('submit', function (e) {
         const method = document.querySelector('.payment-method.selected').dataset.method;
-        
+
         if (method === 'card') {
             const cardNum = document.getElementById('card_number').value.replace(/\s/g, '');
             const expiryVal = document.getElementById('expiry').value;
             const cvcVal = document.getElementById('cvc').value;
             const zipVal = document.getElementById('zip').value;
-            
+
             if (cardNum.length < 16) {
                 alert('Please enter a valid card number.');
                 e.preventDefault();
                 return;
             }
-            
+
             if (!expiryVal.match(/^\d{2}\/\d{2}$/)) {
                 alert('Please enter a valid expiry date (MM/YY).');
                 e.preventDefault();
                 return;
             }
-            
+
             if (cvcVal.length < 3) {
                 alert('Please enter a valid CVC code.');
                 e.preventDefault();
                 return;
             }
-            
+
             if (!zipVal) {
                 alert('Please enter your ZIP code.');
                 e.preventDefault();
                 return;
             }
         }
-        
+
         // Show loading state
         const btn = document.getElementById('submitBtn');
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
     });
-    
+
     // ============================================
     // SECURE ICON ANIMATION
     // ============================================
@@ -467,11 +484,11 @@
     // ============================================
     // CONFIRMATION DIALOG
     // ============================================
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         // Add confirm dialog when user clicks back
         const backLink = document.querySelector('a[href*="transaction.detail"]');
         if (backLink) {
-            backLink.addEventListener('click', function(e) {
+            backLink.addEventListener('click', function (e) {
                 if (!confirm('Are you sure you want to leave this page? Your payment will not be completed.')) {
                     e.preventDefault();
                 }

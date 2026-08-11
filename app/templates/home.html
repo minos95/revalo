@@ -127,8 +127,8 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             {% for company in featured_companies %}
             <div class="bg-white rounded-xl shadow-md p-6 text-center">
-                {% if company.logo_url %}
-                <img src="{{ company.logo_url }}" class="w-20 h-20 rounded-full mx-auto mb-4 object-cover">
+                {% if company.logo %}
+                <img src="{{ url_for('static', filename='uploads/companies/'+company.name+'/logos/' + company.logo) }}" class="w-20 h-20 rounded-full mx-auto mb-4 object-cover">
                 {% else %}
                 <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i class="fas fa-building text-3xl text-green-600"></i>
@@ -137,8 +137,8 @@
                 <h3 class="font-semibold text-lg">{{ company.name }}</h3>
                 <div class="flex items-center justify-center mt-2">
                     <i class="fas fa-star text-yellow-400"></i>
-                   {# <span class="ml-1 font-medium">{{ "%.1f"|format(company.rating_avg) }}</span>
-                    <span class="text-gray-500 text-sm ml-1">({{ company.total_reviews }})</span>#}
+                   <span class="ml-1 font-medium">{{ "%.1f"|format(company.rating_avg) }}</span>
+                    <span class="text-gray-500 text-sm ml-1">({{ company.total_reviews }})</span>
                 </div>
                 <p class="text-sm text-gray-500 mt-2">{{ company.city }}, {{ company.country }}</p>
                 

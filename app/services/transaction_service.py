@@ -5,6 +5,7 @@ from app.auth.models import User
 from app.transactions.models import Transaction
 from app import db
 from app.services.notification_service import NotificationService
+from flask_login import current_user
 
 class TransactionService:
     """Service for managing transaction lifecycle"""
@@ -153,38 +154,119 @@ class TransactionService:
         return transaction
     
     @staticmethod
-    def complete_transaction(transaction_id):
-        """Step 6: Complete transaction (release payment)"""
-        
+    def complete_transaction(transaction_id, payment_reference=None):
+        """
+        Complete transaction after delivery confirmation.
+        Only seller can complete, releases payment.
+        """
         transaction = Transaction.query.get(transaction_id)
         if not transaction:
             raise ValueError('Transaction not found')
         
-        if transaction.status != 'delivered':
-            raise ValueError(f'Cannot complete in {transaction.status} status')
+        # Check status
+        if transaction.status != 'delivered' :
+            raise ValueError(f'Cannot complete transaction in {transaction.status} status')
         
+        
+        
+        # Update transaction
         transaction.status = 'completed'
         transaction.completed_at = datetime.utcnow()
-        transaction.payment_confirmed = True
-        transaction.payment_confirmed_at = datetime.utcnow()
-        transaction.payment_status = 'released'
-        transaction.payment_released_at = datetime.utcnow()
+        #transaction.payment_status = 'released'
+        #transaction.payment_released_at = datetime.utcnow()
+        #transaction.payment_confirmed = True
+        #transaction.payment_confirmed_at = datetime.utcnow()
+        
+        if payment_reference:
+            transaction.payment_reference = payment_reference
         
         # Update company stats
         seller_company = transaction.seller_company
-        seller_company.total_transactions += 1
-        seller_company.total_revenue += transaction.final_price
+        seller_company.total_transactions = (seller_company.total_transactions or 0) + 1
+        seller_company.total_revenue = (seller_company.total_revenue or 0) + (transaction.total_amount - transaction.commission_amount)
         
         buyer_company = transaction.buyer_company
-        buyer_company.total_transactions += 1
+        buyer_company.total_transactions = (buyer_company.total_transactions or 0) + 1
         
+        # Log transition
         TransactionService._log_transition(
             transaction,
             'completed',
-            'Transaction completed - payment released'
+            'Transaction completed, payment released'
         )
         
         db.session.commit()
+        
+        # Notify buyer
+        NotificationService.create_notification(
+            user_id=transaction.buyer_manager_id,
+            notification_type='transaction_completed',
+            title='Transaction Complete!',
+            message=f'Transaction #{transaction.id} has been completed successfully.',
+            related_type='transaction',
+            related_id=transaction.id,
+            priority='high'
+        )
+        
+        return transaction
+    
+    @staticmethod
+    def report_dispute(transaction_id, user_id, issue_type, description, evidence_files=None):
+        """
+        Report a dispute for a transaction.
+        Both parties can report.
+        """
+        transaction = Transaction.query.get(transaction_id)
+        if not transaction:
+            raise ValueError('Transaction not found')
+        
+        # Check if already disputed
+        if transaction.is_disputed:
+            raise ValueError('This transaction is already under dispute')
+        
+        # Check if transaction is eligible (not completed or cancelled)
+        if transaction.status in ['completed', 'cancelled']:
+            raise ValueError(f'Cannot dispute a {transaction.status} transaction')
+        
+        # Check permission (must be participant)
+        is_seller = transaction.seller_company.users.filter_by(id=user_id).first() is not None
+        is_buyer = transaction.buyer_company.users.filter_by(id=user_id).first() is not None
+        if not (is_seller or is_buyer):
+            raise PermissionError('You are not a party to this transaction')
+        
+        # Update transaction
+        transaction.is_disputed = True
+        transaction.dispute_status = 'pending'
+        transaction.dispute_raised_by = user_id
+        transaction.dispute_raised_at = datetime.utcnow()
+        transaction.dispute_issue_type = issue_type
+        transaction.dispute_description = description
+        
+        if evidence_files:
+            transaction.dispute_evidence = evidence_files  # JSON list of file URLs
+        
+        # Log transition
+        TransactionService._log_transition(
+            transaction,
+            'disputed',
+            f'Dispute raised: {issue_type}'
+        )
+        
+        db.session.commit()
+        
+        # Notify admin
+        admins = User.query.filter_by(role='admin').all()
+        for admin in admins:
+            NotificationService.create_notification(
+                user_id=admin.id,
+                notification_type='dispute_reported',
+                title='New Dispute Reported',
+                message=f'Transaction #{transaction.id} has been disputed by {transaction.dispute_raised_by_user.full_name}.',
+                related_type='transaction',
+                related_id=transaction.id,
+                priority='urgent'
+            )
+        
         return transaction
     
     @staticmethod
@@ -283,61 +365,4 @@ class TransactionService:
         
         return timeline
     
-    @staticmethod
-    def report_dispute(transaction_id, user_id, issue_type, description, evidence_files=None):
-        """
-        Report a dispute for a transaction.
-        Both parties can report.
-        """
-        transaction = Transaction.query.get(transaction_id)
-        if not transaction:
-            raise ValueError('Transaction not found')
-        
-        # Check if already disputed
-        if transaction.is_disputed:
-            raise ValueError('This transaction is already under dispute')
-        
-        # Check if transaction is eligible (not completed or cancelled)
-        if transaction.status in ['completed', 'cancelled']:
-            raise ValueError(f'Cannot dispute a {transaction.status} transaction')
-        
-        # Check permission (must be participant)
-        is_seller = transaction.seller_company.users.filter_by(id=user_id).first() is not None
-        is_buyer = transaction.buyer_company.users.filter_by(id=user_id).first() is not None
-        if not (is_seller or is_buyer):
-            raise PermissionError('You are not a party to this transaction')
-        
-        # Update transaction
-        transaction.is_disputed = True
-        transaction.dispute_status = 'pending'
-        transaction.dispute_raised_by = user_id
-        transaction.dispute_raised_at = datetime.utcnow()
-        transaction.dispute_issue_type = issue_type
-        transaction.dispute_description = description
-        
-        if evidence_files:
-            transaction.dispute_evidence = evidence_files  # JSON list of file URLs
-        
-        # Log transition
-        TransactionService._log_transition(
-            transaction,
-            'disputed',
-            f'Dispute raised: {issue_type}'
-        )
-        
-        db.session.commit()
-        
-        # Notify admin
-        admins = User.query.filter_by(role='super_admin').all()
-        for admin in admins:
-            NotificationService.create_notification(
-                user_id=admin.id,
-                notification_type='dispute_reported',
-                title='New Dispute Reported',
-                message=f'Transaction #{transaction.id} has been disputed by {transaction.dispute_raised_by_user.full_name}.',
-                related_type='transaction',
-                related_id=transaction.id,
-                priority='urgent'
-            )
-        
-        return transaction
+    

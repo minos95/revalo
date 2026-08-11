@@ -11,7 +11,7 @@ from app.listings.models import Item
 from app.offers.forms import  makeOfferForm, rejectOfferForm, validateOfferForm
 from app.offers.models import Offer
 from app.auth.models import Notification
-from sqlalchemy import desc,or_
+from sqlalchemy import and_, desc,or_
 from app.offers import bp
 
 
@@ -28,14 +28,21 @@ def index():
     per_page = 20
     
     # Build received offers query (offers made to this company's listings)
-    received_query = Offer.query.join(Item).filter(
-        (Item.company_id == company.id and  Offer.parent_offer_id == None ) or (Offer.buyer_company_id==company.id and Offer.parent_offer_id != None)
-    )
+    #received_query = Offer.query.join(Item).filter(
+    #    (Item.company_id == company.id and  Offer.parent_offer_id == None ) or (Offer.buyer_company_id==company.id and Offer.parent_offer_id != None)
+    #)
+
+    received_query = Offer.query.filter(
+            or_(and_(Offer.seller_company_id == company.id , Offer.parent_offer_id.is_(None)), and_(Offer.buyer_company_id==company.id , Offer.parent_offer_id.is_not(None)))
+        )
     
     # Build sent offers query (offers made by this company)
     sent_query = Offer.query.filter(
         Offer.sender_company_id == company.id
     )
+    print(f'..........................{company.id}')
+    print(f'++++++++++++++received_query: {received_query}')
+    print(f'-----------------sent_query: {sent_query}')
     
     # Apply status filters
     if status_filter != 'all':
@@ -94,7 +101,8 @@ def index():
     # Order by most recent
     received_query = received_query.order_by(desc(Offer.created_at))
     sent_query = sent_query.order_by(desc(Offer.created_at))
-    
+
+   
     # Paginate
     if type_filter == 'received':
         pagination = received_query.paginate(page=page, per_page=per_page, error_out=False)
@@ -113,6 +121,8 @@ def index():
         offers.sort(key=lambda x: x.created_at, reverse=True)
         pagination = None
         current_type = 'all'
+    #print(f'++++++++++++++received_query: {received_pagination.items}')
+    #print(f'-----------------received_query: {sent_pagination.items}')
     
     # Get offer statistics
     total_offers = received_counts['total'] + sent_counts['total']
@@ -182,6 +192,8 @@ def create_offer(listing_id):
         Offer.sender_company_id == current_user.company_id,
         Offer.status == 'pending'
     ).first()
+
+    
     
     if existing_offer:
         flash('You already have a pending offer on this listing.', 'info')
@@ -192,7 +204,12 @@ def create_offer(listing_id):
     form = makeOfferForm()
     
     if form.validate_on_submit():
-        
+
+        # check if quantity exist
+        if listing.available_quantity<form.quantity.data:
+            flash("The quantity isn't available.", 'warning')
+            return redirect(url_for('offers.create_offer', listing_id=listing.id))
+
         print("----------------offer")
         try:
             # Create the offer
@@ -225,7 +242,7 @@ def create_offer(listing_id):
     
     # Pre-fill quantity if not specified
     if request.method == 'GET' and not form.quantity.data:
-        form.quantity.data = listing.quantity
+        form.quantity.data = listing.available_quantity
     
     return render_template(
         'create_offer.html',

@@ -1,9 +1,10 @@
 import os
 import app
+from app.services.rating_service import RatingService
 from app.services.transaction_service import TransactionService
-from flask import Blueprint, render_template,request,redirect,url_for,flash
+from flask import Blueprint, render_template,request,redirect,url_for,flash,current_app
 from app import db
-from app.auth.models import Company, Notification, User
+from app.auth.models import Company, Notification, Review, User
 from app.listings.models import Category,Item, Quality_attributes
 from app.services.notification_service import NotificationService
 from app.transactions.forms import markInTransitForm
@@ -41,6 +42,64 @@ def detail(transaction_id):
 
 
 
+
+# app/transactions/routes.py
+
+@bp.route('/<int:transaction_id>/pay', methods=['GET', 'POST'])
+@login_required
+def process_payment(transaction_id):
+    """Process payment for transaction"""
+    
+    transaction = Transaction.query.get_or_404(transaction_id)
+    
+    # Check if user is buyer
+    if transaction.buyer_company_id != current_user.company_id:
+        flash('You are not authorized to pay for this transaction.', 'danger')
+        return redirect(url_for('transactions.detail', transaction_id=transaction.id))
+    
+    # Check if payment already processed
+    if transaction.payment_status == 'paid':
+        flash('Payment already processed.', 'info')
+        return redirect(url_for('transactions.detail', transaction_id=transaction.id))
+    
+    if request.method == 'POST':
+        # Process payment (Stripe/PayPal/etc)
+        # For demo, simulate payment
+        file=request.files['payment_url']   
+        transaction.payment_status = 'paid'
+        transaction.paid_at = datetime.utcnow()
+        transaction.status = 'confirmed'
+        transaction.confirmed_at = datetime.utcnow()
+        
+        
+        if file and allowed_file(file.filename) :
+                print('--------------------------- file')
+                filename = secure_filename(f"payment_{transaction_id}_{current_user.id}_{file.filename}")
+                file_path=os.path.join(current_app.config['UPLOAD_FOLDER'], f'transactions/{transaction_id}/payment', filename)
+                os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                file.save(file_path) 
+                transaction.payment_url=filename    
+        
+        db.session.commit()
+        
+        # Notify seller
+        notification = Notification(
+                user_id=transaction.seller_manager_id,
+                type='transaction_paid',
+                title='Transaction paid!',
+                message=f'Transaction #{transaction.id} has been paid please confirm you received it.',
+                related_type='transaction',
+                related_id=transaction.id
+            )
+        db.session.add(notification)
+            
+        db.session.commit()  
+        
+        flash('Payment successful! Seller has been notified.', 'success')
+        return redirect(url_for('transactions.detail', transaction_id=transaction.id))
+    
+    return render_template('transactions_payment.html', transaction=transaction)
+
 @bp.route("/confirm_payment/<int:transaction_id>",methods=["POST"])
 def confirm_payment(transaction_id):
     transaction=Transaction.query.get_or_404(transaction_id)
@@ -50,8 +109,8 @@ def confirm_payment(transaction_id):
         return redirect(url_for('transactions.detail', transaction_id=transaction.id))
     
     # Check if transaction is in correct state
-    if transaction.status != 'payment_pending':
-        flash(f'Cannot confirm payment. Transaction status is {transaction.status}.', 'warning')
+    if transaction.status != 'confirmed':
+        flash(f'Cannot confirm payment. Transaction payment status is {transaction.status}.', 'warning')
         return redirect(url_for('transactions.detail', transaction_id=transaction.id))
     
     # Check if payment is already confirmed
@@ -60,6 +119,7 @@ def confirm_payment(transaction_id):
         return redirect(url_for('transactions.detail', transaction_id=transaction.id))
     
     if request.method == 'POST':
+        print("+++++++++++++++++++++++++++++method post")
         try:
             # Get payment details from form
             #payment_reference = request.form.get('payment_reference', '')
@@ -69,10 +129,7 @@ def confirm_payment(transaction_id):
             transaction.payment_confirmed = True
             transaction.payment_confirmed_at = datetime.utcnow()
             transaction.payment_confirmed_by = current_user.id
-            #transaction.payment_reference = payment_reference
-            #transaction.payment_notes = payment_notes
-            transaction.status = 'pending'
-            transaction.payment_confirmed=True
+            
             transaction.payment_confirmed_by=current_user.id
             transaction.payment_confirmed_at=datetime.utcnow()
             
@@ -123,54 +180,6 @@ def confirm_payment(transaction_id):
             return redirect(url_for('transactions.detail', transaction_id=transaction.id))
         
 
-# app/transactions/routes.py
-
-@bp.route('/<int:transaction_id>/pay', methods=['GET', 'POST'])
-@login_required
-def process_payment(transaction_id):
-    """Process payment for transaction"""
-    
-    transaction = Transaction.query.get_or_404(transaction_id)
-    
-    # Check if user is buyer
-    if transaction.buyer_company_id != current_user.company_id:
-        flash('You are not authorized to pay for this transaction.', 'danger')
-        return redirect(url_for('transactions.detail', transaction_id=transaction.id))
-    
-    # Check if payment already processed
-    if transaction.payment_status == 'paid':
-        flash('Payment already processed.', 'info')
-        return redirect(url_for('transactions.detail', transaction_id=transaction.id))
-    
-    if request.method == 'POST':
-        # Process payment (Stripe/PayPal/etc)
-        # For demo, simulate payment
-        transaction.payment_status = 'paid'
-        transaction.paid_at = datetime.utcnow()
-        transaction.status = 'confirmed'
-        transaction.confirmed_at = datetime.utcnow()
-        
-        db.session.commit()
-        
-        # Notify seller
-        notification = Notification(
-                user_id=transaction.seller_manager_id,
-                type='transaction_paid',
-                title='Transaction paid!',
-                message=f'Transaction #{transaction.id} has been paid please confirm you received it.',
-                related_type='transaction',
-                related_id=transaction.id
-            )
-        db.session.add(notification)
-            
-        db.session.commit()  
-        
-        flash('Payment successful! Seller has been notified.', 'success')
-        return redirect(url_for('transactions.detail', transaction_id=transaction.id))
-    
-    return render_template('transactions_payment.html', transaction=transaction)
-
-# app/transactions/routes.py
 
 @bp.route('/<int:transaction_id>/schedule-pickup', methods=['GET', 'POST'])
 @login_required
@@ -227,25 +236,36 @@ def confirm_pickup(transaction_id):
         flash('Only the seller can confirm pickup.', 'danger')
         return redirect(url_for('transactions.detail', transaction_id=transaction.id))
     
-    # Update status
-    transaction.pickup_completed_at = datetime.utcnow()
-    transaction.status = 'in_transit'
-    transaction.in_transit_at = datetime.utcnow()
+    if request.method == 'POST':
+        file=request.files['weight_certificate']  
+    
+        if file and allowed_file(file.filename) :
+                    print('--------------------------- file')
+                    filename = secure_filename(f"weight_certificate_{transaction_id}_{current_user.id}_{file.filename}")
+                    file_path=os.path.join(current_app.config['UPLOAD_FOLDER'], f'transactions/{transaction_id}/weight_certificate', filename)
+                    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                    file.save(file_path) 
+                    transaction.weight_certificate_url=filename    
+        
+        # Update status
+        transaction.pickup_completed_at = datetime.utcnow()
+        transaction.status = 'in_transit'
+        transaction.in_transit_at = datetime.utcnow()
     
     
     
-    # Notify buyer
-    notification = Notification(
-                user_id=transaction.buyer_manager_id,
-                type='transaction_confirm_pickup',
-                title='Transaction confirmed pickup!',
-                message=f'Transaction #{transaction.id} pickup has been scheduled.',
-                related_type='transaction',
-                related_id=transaction.id
-            )
-    db.session.add(notification)
+        # Notify buyer
+        notification = Notification(
+                    user_id=transaction.buyer_manager_id,
+                    type='transaction_confirm_pickup',
+                    title='Transaction confirmed pickup!',
+                    message=f'Transaction #{transaction.id} pickup has been scheduled.',
+                    related_type='transaction',
+                    related_id=transaction.id
+                )
+        db.session.add(notification)
 
-    db.session.commit()
+        db.session.commit()
     
     flash('Pickup confirmed! Materials are in transit.', 'success')
     return redirect(url_for('transactions.detail', transaction_id=transaction.id))
@@ -255,42 +275,94 @@ def confirm_pickup(transaction_id):
 @bp.route('/<int:transaction_id>/confirm-delivery', methods=['POST'])
 @login_required
 def confirm_delivery(transaction_id):
-    """Buyer confirms delivery of materials"""
-    
+    """
+    Buyer confirms delivery of materials.
+    Only the buyer can confirm delivery.
+    """
     transaction = Transaction.query.get_or_404(transaction_id)
     
-    # Only buyer can confirm delivery
+    # Check if user is the buyer
     if transaction.buyer_company_id != current_user.company_id:
         flash('Only the buyer can confirm delivery.', 'danger')
         return redirect(url_for('transactions.detail', transaction_id=transaction.id))
     
+    # Check if transaction is in correct state
     if transaction.status != 'in_transit':
-        flash('Cannot confirm delivery at this stage.', 'warning')
+        flash(f'Cannot confirm delivery in {transaction.status} status.', 'warning')
         return redirect(url_for('transactions.detail', transaction_id=transaction.id))
     
-    # Update status
-    transaction.delivery_completed_at = datetime.utcnow()
-    transaction.status = 'completed'
-    transaction.delivered_at = datetime.utcnow()
+    # Check if already confirmed
+    if transaction.delivery_confirmed:
+        flash('Delivery already confirmed.', 'info')
+        return redirect(url_for('transactions.detail', transaction_id=transaction.id))
     
-    
-    
-    # Notify seller
-    
-    notification = Notification(
-                user_id=transaction.seller_manager_id,
-                type='transaction_confirm_delivery',
-                title='Transaction confirmed delivery!',
-                message=f'Transaction #{transaction.id}. The commodity has been delivered.',
-                related_type='transaction',
-                related_id=transaction.id
+    if request.method == 'POST':
+        try:
+            quality_notes = request.form.get('quality_notes', '')
+            
+            # Update transaction
+            transaction.delivery_confirmed = True
+            transaction.delivery_confirmed_at = datetime.utcnow()
+            transaction.delivery_confirmed_by = current_user.id
+            transaction.status = 'delivered'
+            transaction.delivered_at = datetime.utcnow()
+            
+            
+            
+            if quality_notes:
+                transaction.quality_notes = quality_notes
+            
+            # Log transition
+            TransactionService._log_transition(
+                transaction,
+                'delivered',
+                f'Delivery confirmed by buyer: {quality_notes[:50] if quality_notes else "No issues"}'
             )
-    db.session.add(notification)
-
-    db.session.commit()
+            
+            db.session.commit()
+            
+            # Notify seller
+            NotificationService.create_notification(
+                user_id=transaction.seller_manager_id,
+                notification_type='delivery_confirmed',
+                title='Delivery Confirmed',
+                message=f'Buyer has confirmed delivery of materials for transaction #{transaction.id}.',
+                related_type='transaction',
+                related_id=transaction.id,
+                priority='high'
+            )
+            
+            # Notify buyer (confirmation)
+            NotificationService.create_notification(
+                user_id=current_user.id,
+                notification_type='delivery_confirmed',
+                title='Delivery Confirmed',
+                message=f'You have confirmed delivery for transaction #{transaction.id}.',
+                related_type='transaction',
+                related_id=transaction.id,
+                priority='normal'
+            )
+            
+            flash('Delivery confirmed successfully! Payment will be released to the seller.', 'success')
+            
+            # Check if seller should get payment automatically
+            # This depends on your business logic
+            # Option 1: Auto-release payment
+            # Option 2: Wait for seller to confirm payment
+            if transaction.payment_confirmed:
+                print('---------------------------- transaction completed')
+                TransactionService.complete_transaction(transaction.id)
+              
+            return redirect(url_for('transactions.detail', transaction_id=transaction.id))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error confirming delivery: {str(e)}', 'danger')
+            return redirect(url_for('transactions.detail', transaction_id=transaction.id))
     
-    flash('Delivery confirmed! Payment will be released.', 'success')
-    return redirect(url_for('transactions.detail', transaction_id=transaction.id))
+    # GET request - show confirmation page
+    return render_template('transactions/confirm_delivery.html', transaction=transaction)
+
 
 
 
@@ -319,13 +391,14 @@ def leave_review(transaction_id):
         # Determine reviewee
         is_seller = transaction.seller_company_id == current_user.company_id
         reviewee_id = transaction.buyer_company_id if is_seller else transaction.seller_company_id
-        
+        reviewer_type = 'seller' if is_seller else 'buyer'
         # Create review
         review = Review(
             company_id=reviewee_id,
             reviewer_id=current_user.id,
+            reviewer_type=reviewer_type,
             transaction_id=transaction.id,
-            listing_id=transaction.listing_id,
+            listing_id=transaction.item_id,
             rating=rating,
             comment=comment
         )
@@ -334,7 +407,7 @@ def leave_review(transaction_id):
         db.session.commit()
         
         # Update company rating
-        update_company_rating(reviewee_id)
+        RatingService.update_company_rating(reviewee_id)
         
         flash('Review submitted successfully!', 'success')
         return redirect(url_for('transactions.detail', transaction_id=transaction.id))

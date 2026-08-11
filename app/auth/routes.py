@@ -2,6 +2,8 @@ from datetime import datetime
 import os
 
 import app
+from app.services.email_service import EmailService
+from app.services.notification_service import NotificationService
 from flask import Blueprint, flash,redirect,render_template, request,url_for,current_app
 from app import db
 from app.auth import bp
@@ -16,11 +18,19 @@ from werkzeug.utils import secure_filename
 @bp.route("/signup",methods=['GET','POST'])
 def signup():
     form=CompanyRegisterForm()
+
+    if current_user.is_authenticated:
+        return redirect(url_for('home'))
     if form.validate_on_submit():
-         
+         # Check if user already exists
+        existing_user = User.query.filter_by(email=form.email.data).first()
+        if existing_user:
+            flash('A user with this email already exists.', 'danger')
+            return redirect(url_for('login'))
             
         company_to_create=Company(name=form.company_name.data,
-                                  company_type=form.business_type.data,
+                                  business_type=form.business_type.data,
+                                  business_size=form.business_size.data,
                                   activity=form.company_activity.data,
                                   address=form.address.data,
                                   country=form.country.data,
@@ -32,29 +42,38 @@ def signup():
                                   nif=form.nif.data,
                                   nis=form.nis.data,
                                   referal=form.referal.data)
+  
+        
         db.session.add(company_to_create)
         
-        company_created=Company.query.filter_by(name=form.company_name.data).first().id
+        company_created=Company.query.filter_by(name=form.company_name.data).first()
 
         # Handle logo upload
-        print("+++++++++++")
+        print("***************+++++++++++")
         print(form.documents.data)
-        if form.documents.data:
-            documents = form.documents.data
+        if form.documents.data and allowed_file:
+            documents=form.documents.data
+            documents_name = secure_filename(form.documents.data.filename)
             if documents :
                 print(documents)
                 # Save new documents
-                filename = secure_filename(f"company_{company_created.id}_{datetime.utcnow().timestamp()}_{documents.filename}")
+                filename = secure_filename(f"company_{company_created.id}_{datetime.utcnow().timestamp()}_{documents_name}")
                 documents_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'companies/'+company_created.name+'/documents', filename)
                 os.makedirs(os.path.dirname(documents_path), exist_ok=True)
                 documents.save(documents_path)
                 company_created.documents = filename
+
         user_to_create=User(full_name=form.full_name.data,
                             email=form.email.data,
                             phone=form.phone.data,
                             role=form.role.data,
                             password=form.password.data,
-                            company_id=company_created)
+                            company_id=company_created.id)
+        
+        
+        db.session.add(user_to_create)
+        db.session.flush()
+        
         notification1=Notification(user_id=1,
                                 type="new_company",
                                 title="New Company",
@@ -70,13 +89,27 @@ def signup():
                                 )
         db.session.add(notification1)
         db.session.add(notification2)
-        db.session.add(user_to_create)
+       
+        # Generate verification token
+        token = user_to_create.generate_verification_token()
         db.session.commit()
+         # Send verification email
+        EmailService.send_verification_email(user_to_create, token)
         return redirect(url_for('home'))
     if form.errors!={}:
         for field,err_msg in form.errors.items():
             flash(f'error {getattr(form, field).label.text}: {err_msg}',category='danger')
     return render_template('register.html',form=form)
+
+# ============================================
+# HELPER FUNCTION
+# ============================================
+
+def allowed_file(filename):
+    """Check if file extension is allowed."""
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in {'pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp'}
+
 
 @bp.route("/login",methods=['GET','POST'])
 def login():
@@ -87,12 +120,24 @@ def login():
        attempted_user=User.query.filter_by(email=form.email.data).first()
        if attempted_user  and attempted_user.check_password_correction(
            attempted_password=form.password.data):
-           if  attempted_user.owned_company.verified:
-            login_user(attempted_user)
-            flash("success you are logged in",category='success')
-            return redirect(url_for('dashboard'))
-           else:
-               flash(f'{attempted_user.owned_company.name} still in verification by EcoWaste admin',category='danger')
+            if  attempted_user.owned_company.status=="active":
+                    if attempted_user.status=="active":
+                        if attempted_user.email_verified:
+                            login_user(attempted_user)
+                            flash("success you are logged in",category='success')
+                            return redirect(url_for('dashboard'))
+                        else:
+                            flash('Verify you email',category='danger')
+                    elif attempted_user.status=="suspended":
+                        flash('You are suspended',category='danger')
+                    elif attempted_user.status=="suspended":
+                        flash('You are suspended',category='danger')
+                   
+            
+            elif attempted_user.owned_company.status=="suspended":
+                flash(f'{attempted_user.owned_company.name} suspended by EcoWaste admin',category='danger')
+            else:
+                flash(f'{attempted_user.owned_company.name} still in verification by EcoWaste admin',category='danger')
        else:
            flash('Username or password are incorrect! please try again',category='danger')
    return render_template('login.html',form=form)
@@ -108,11 +153,18 @@ def setting():
     company=Company.query.filter(User.company_id==current_user.company_id).first()
 
     return render_template('setting.html',user=current_user,company=company)
+
+@bp.route('/detail', methods=['GET', 'POST'])
+@login_required
+def detail_company():
+    """detail company profile"""
+
+    return render_template('detail_company.html')
+
 @bp.route('/edit-company', methods=['GET', 'POST'])
 @login_required
 def edit_company():
     """Edit company profile"""
-    
     company = current_user.owned_company
     
     # Check permission - only owner or admin can edit company
@@ -123,6 +175,7 @@ def edit_company():
     form = EditCompanyForm(obj=company, company=company)
     
     if form.validate_on_submit():
+       
         # Update company fields
         company.name = form.name.data
         company.email = form.email.data
@@ -149,6 +202,7 @@ def edit_company():
         
         # Handle logo upload
         if form.logo_url.data:
+            print('++++++++')
             logo_file = form.logo_url.data
             if logo_file :
                 # Delete old logo if exists
@@ -163,6 +217,19 @@ def edit_company():
                 os.makedirs(os.path.dirname(logo_path), exist_ok=True)
                 logo_file.save(logo_path)
                 company.logo = filename
+
+        # handle documents upload
+        if form.documents.data and allowed_file:
+                    documents=form.documents.data
+                    documents_name = secure_filename(form.documents.data.filename)
+                    if documents :
+                        print(documents)
+                        # Save new documents
+                        filename = secure_filename(f"company_{company.id}_{datetime.utcnow().timestamp()}_{documents_name}")
+                        documents_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'companies/'+company.name+'/documents', filename)
+                        os.makedirs(os.path.dirname(documents_path), exist_ok=True)
+                        documents.save(documents_path)
+                        company.documents = filename
         
         company.updated_at = datetime.utcnow()
         db.session.commit()
@@ -401,3 +468,122 @@ def send_reset_email(email, token, name):
     except Exception as e:
         print('-----------------------------------')
         print(f'Failed to send reset email: {str(e)}')
+
+
+
+
+# ============================================
+# VERIFY EMAIL
+# ============================================
+
+@bp.route('/verify-email/<token>', methods=['GET', 'POST'])
+def verify_email(token):
+    """Verify email address with token"""
+    
+    # Find user with this token
+    user = User.query.filter_by(verification_token=token).first()
+    
+    if not user:
+        flash('Invalid verification link.', 'danger')
+        return redirect(url_for('auth.login'))
+    
+    # Check if already verified
+    if user.email_verified:
+        flash('Email already verified. Please login.', 'info')
+        return redirect(url_for('auth.login'))
+    
+    # Verify email
+    result = user.verify_email(token)
+    
+    if result['success']:
+        # Send welcome email
+        EmailService.send_welcome_email(user)
+        
+        # Create notification
+        NotificationService.create_notification(
+            user_id=user.id,
+            notification_type='email_verified',
+            title='Email Verified!',
+            message='Your email address has been verified successfully.',
+            priority='normal'
+        )
+        
+        flash('Email verified successfully! You can now login.', 'success')
+        return redirect(url_for('auth.login'))
+    
+    else:
+        flash(result['message'], 'danger')
+        return redirect(url_for('auth.login'))
+
+
+# ============================================
+# VERIFICATION SENT PAGE
+# ============================================
+
+@bp.route('/verification-sent')
+def verification_sent():
+    """Page showing verification email was sent"""
+    
+    email = request.args.get('email', '')
+    return render_template('verification_sent.html', email=email)
+
+
+# ============================================
+# RESEND VERIFICATION EMAIL
+# ============================================
+
+@bp.route('/resend-verification', methods=['GET', 'POST'])
+@login_required
+def resend_verification():
+    """Resend verification email"""
+    
+    if current_user.email_verified:
+        flash('Email already verified.', 'info')
+        return redirect(url_for('main.index'))
+    
+    if request.method == 'POST':
+        result = current_user.resend_verification_email()
+        
+        if result['success']:
+            # Send email
+            EmailService.send_verification_email(current_user, current_user.verification_token)
+            flash('Verification email sent. Please check your inbox.', 'success')
+            return redirect(url_for('auth.verification_sent', email=current_user.email))
+        else:
+            flash(result['message'], 'danger')
+    
+    return render_template('auth/resend_verification.html')
+
+
+# ============================================
+# VERIFICATION SUCCESS PAGE
+# ============================================
+
+@bp.route('/verification-success')
+def verification_success():
+    """Email verification success page"""
+    return render_template('auth/verification_success.html')
+
+
+# ============================================
+# VERIFICATION REQUIRED DECORATOR (Optional)
+# ============================================
+
+def verification_required(f):
+    """Decorator to require email verification"""
+    from functools import wraps
+    from flask import abort
+    
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            flash('Please login to access this page.', 'warning')
+            return redirect(url_for('auth.login'))
+        
+        if not current_user.email_verified:
+            flash('Please verify your email address to access this feature.', 'warning')
+            return redirect(url_for('auth.resend_verification'))
+        
+        return f(*args, **kwargs)
+    
+    return decorated_function

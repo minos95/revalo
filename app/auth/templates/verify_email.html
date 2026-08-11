@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Your Email - EcoWaste</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f9fafb;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e5f45 0%, #2c8e64 100%);
+            padding: 32px 40px;
+            text-align: center;
+        }
+        .header h1 {
+            color: #ffffff;
+            font-size: 28px;
+            margin: 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .header p {
+            color: rgba(255, 255, 255, 0.85);
+            margin: 8px 0 0;
+            font-size: 16px;
+        }
+        .content {
+            padding: 40px;
+        }
+        .content h2 {
+            color: #1a1a2e;
+            font-size: 22px;
+            margin-top: 0;
+            margin-bottom: 16px;
+        }
+        .content p {
+            color: #4b5563;
+            font-size: 16px;
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+        .button {
+            display: inline-block;
+            background: #2c8e64;
+            color: #ffffff;
+            padding: 14px 40px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 16px 0 24px;
+            transition: background-color 0.2s;
+        }
+        .button:hover {
+            background: #1e5f45;
+        }
+        .info-box {
+            background: #f3f4f6;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin: 20px 0;
+            font-size: 14px;
+            color: #6b7280;
+        }
+        .info-box code {
+            background: #e5e7eb;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 13px;
+            word-break: break-all;
+        }
+        .footer {
+            background: #f9fafb;
+            padding: 24px 40px;
+            text-align: center;
+            border-top: 1px solid #e5e7eb;
+        }
+        .footer p {
+            color: #9ca3af;
+            font-size: 13px;
+            margin: 4px 0;
+        }
+        .footer a {
+            color: #2c8e64;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>♻️ EcoWaste</h1>
+            <p>Verify Your Email Address</p>
+        </div>
+        
+        <div class="content">
+            <h2>Hello {{ user.full_name }},</h2>
+            
+            <p>Thank you for creating an account with EcoWaste! To get started, please verify your email address by clicking the button below.</p>
+            
+            <div style="text-align: center;">
+                <a href="{{ verification_url }}" class="button">Verify Email Address</a>
+            </div>
+            
+            <div class="info-box">
+                <strong>🔗 Or copy and paste this link:</strong><br>
+                <code>{{ verification_url }}</code>
+            </div>
+            
+            <p style="font-size: 14px; color: #6b7280;">
+                <strong>⚠️ This link expires in 7 days.</strong><br>
+                If you didn't create an account, you can safely ignore this email.
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p>&copy; 2024 EcoWaste. All rights reserved.</p>
+            <p>This is an automated message, please do not reply.</p>
+            <p>
+                <a href="{{ url_for('home', _external=True) }}">Visit EcoWaste</a> ·
+                <a href="{{ url_for('auth.login', _external=True) }}">Login</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

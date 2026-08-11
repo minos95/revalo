@@ -150,8 +150,12 @@
                         <!-- Key Details -->
                         <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 border-t">
                             <div>
-                                <p class="text-xs text-gray-500">Quantity</p>
+                                <p class="text-xs text-gray-500">Total Quantity</p>
                                 <p class="font-medium text-gray-900">{{ listing.quantity }} {{ listing.unit }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">Available Quantity</p>
+                                <p class="font-medium text-gray-900">{{ listing.available_quantity }} {{ listing.unit }}</p>
                             </div>
                             <div>
                                 <p class="text-xs text-gray-500">Posted</p>

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Attributes - {{ category.name }} - Admin{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen py-8">
+    <div class="max-w-6xl mx-auto px-4">
+        
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <div class="flex items-center space-x-4">
+                    <a href="{{ url_for('admin.categories') }}" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Attributes: {{ category.name }}</h1>
+                        <p class="text-gray-600 mt-1">Manage quality specifications for this category</p>
+                    </div>
+                </div>
+            </div>
+            <a href="{{ url_for('admin.add_category_attribute', category_id=category.id) }}" 
+               class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
+                <i class="fas fa-plus mr-2"></i>Add Attribute
+            </a>
+        </div>
+        
+        <!-- Category Info -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                        <i class="fas {{ category.icon or 'fa-folder' }} text-2xl text-green-600"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">{{ category.name }}</h2>
+                        <p class="text-sm text-gray-500">{{ category.full_path }}</p>
+                    </div>
+                </div>
+                <div class="text-sm text-gray-500">
+                    <span class="font-medium">{{ attributes|length }}</span> attributes
+                </div>
+            </div>
+        </div>
+        
+        <!-- Attributes List -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+            {% if attributes %}
+            <div class="divide-y divide-gray-200">
+                {% for attr in attributes %}
+                <div class="p-4 hover:bg-gray-50">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="flex items-center space-x-3">
+                                <h3 class="font-semibold text-gray-900">{{ attr.name }}</h3>
+                                <span class="px-2 py-0.5 text-xs rounded-full 
+                                    {% if attr.attribute_type == 'select' %}bg-blue-100 text-blue-800
+                                    {% elif attr.attribute_type == 'radio' %}bg-purple-100 text-purple-800
+                                    {% elif attr.attribute_type == 'checkbox' %}bg-pink-100 text-pink-800
+                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ attr.attribute_type|title }}
+                                </span>
+                                {% if attr.is_required %}
+                                <span class="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-800">Required</span>
+                                {% endif %}
+                                {% if not attr.is_active %}
+                                <span class="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-500">Inactive</span>
+                                {% endif %}
+                            </div>
+                            <div class="mt-1 space-y-1">
+                                {% if attr.help_text %}
+                                <p class="text-sm text-gray-500">{{ attr.help_text }}</p>
+                                {% endif %}
+                                {% if attr.options %}
+                                <div class="flex flex-wrap gap-1 mt-1">
+                                    {% for option in attr.options %}
+                                    <span class="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">
+                                        {{ option.value }}
+                                    </span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                {% if attr.placeholder %}
+                                <p class="text-xs text-gray-400">Placeholder: {{ attr.placeholder }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs text-gray-400 mr-2">Order: {{ attr.sort_order }}</span>
+                            <a href="{{ url_for('admin.edit_category_attribute', attribute_id=attr.id) }}" 
+                               class="text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <form method="POST" action="{{ url_for('admin.delete_category_attribute', attribute_id=attr.id) }}" 
+                                  onsubmit="return confirm('Delete this attribute?')" class="inline">
+                                <button type="submit" class="text-red-600 hover:text-red-800">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="py-12 text-center">
+                <i class="fas fa-clipboard-list text-4xl text-gray-300 mb-3"></i>
+                <p class="text-gray-500">No attributes found for this category</p>
+                <a href="{{ url_for('admin.add_category_attribute', category_id=category.id) }}" 
+                   class="inline-block mt-4 text-purple-600 hover:text-purple-700">
+                    Add your first attribute →
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        
+    </div>
+</div>
+{% endblock %}

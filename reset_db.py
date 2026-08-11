@@ -6,19 +6,21 @@ with app.app_context():
     db.drop_all()
     db.create_all()
 
-company_admin=Company(name='Admin',
+company_admin=Company(name='Ecowest',
                     address='Oran',
                     country='Algerie',
                     city='Oran', 
-                    company_type="Metal",
-                    activity="Metal")
+                    business_type="Admin",
+                    activity="Metal",
+                    status="active")
 user_admin=User(company_id=1,
-                full_name='Amine Amine',
+                full_name='Amine amine',
                 phone='0666666666',
                 email="rh@gmail.com",
                 email_verified=True,
                 password_hash=bcrypt.generate_password_hash("azerty123").decode('utf-8'),
                 role="super_admin",
+                status="active",
                 authorized=True)
 
 with app.app_context():

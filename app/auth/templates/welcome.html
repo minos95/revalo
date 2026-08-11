@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome to EcoWaste! 🎉{% endblock %}
+
+{% block extra_css %}
+<style>
+    .welcome-container {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 50%, #f0fdf4 100%);
+    }
+    .welcome-card {
+        animation: slideUp 0.6s ease-out;
+        max-width: 600px;
+        width: 100%;
+    }
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(40px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    .success-icon {
+        animation: bounce 1s ease infinite;
+    }
+    @keyframes bounce {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+    .feature-card {
+        transition: all 0.3s ease;
+        border: 1px solid #e5e7eb;
+    }
+    .feature-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        border-color: #10b981;
+    }
+    .confetti {
+        position: fixed;
+        pointer-events: none;
+        z-index: 9999;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="welcome-container">
+    <div class="welcome-card">
+        
+        <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+            
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-green-500 to-green-600 px-8 py-8 text-center relative overflow-hidden">
+                <!-- Decorative circles -->
+                <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
+                <div class="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-12 -mb-12"></div>
+                
+                <div class="relative z-10">
+                    <div class="success-icon inline-block">
+                        <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                            <i class="fas fa-check-circle text-5xl text-green-600"></i>
+                        </div>
+                    </div>
+                    
+                    <h1 class="text-3xl font-bold text-white mb-2">
+                        🎉 Welcome to EcoWaste!
+                    </h1>
+                    <p class="text-green-100 text-lg">
+                        Your email has been verified successfully
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Content -->
+            <div class="px-8 py-8">
+                
+                <!-- Welcome Message -->
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">
+                        Hello, {{ user.full_name }}! 👋
+                    </h2>
+                    <p class="text-gray-600">
+                        Thank you for verifying your email address. You're now ready to start using EcoWaste.
+                    </p>
+                </div>
+                
+                <!-- Quick Start Features -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    <div class="feature-card rounded-xl p-4 text-center hover:bg-green-50 transition">
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-search text-xl text-green-600"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-1">Browse Listings</h3>
+                        <p class="text-sm text-gray-500">Find waste materials to buy or recycle</p>
+                    </div>
+                    
+                    <div class="feature-card rounded-xl p-4 text-center hover:bg-green-50 transition">
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-plus-circle text-xl text-blue-600"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-1">Post Listings</h3>
+                        <p class="text-sm text-gray-500">List your waste materials for sale</p>
+                    </div>
+                    
+                    <div class="feature-card rounded-xl p-4 text-center hover:bg-green-50 transition">
+                        <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-handshake text-xl text-purple-600"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-1">Make Offers</h3>
+                        <p class="text-sm text-gray-500">Negotiate deals with other companies</p>
+                    </div>
+                    
+                    <div class="feature-card rounded-xl p-4 text-center hover:bg-green-50 transition">
+                        <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-chart-line text-xl text-yellow-600"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-1">Track Transactions</h3>
+                        <p class="text-sm text-gray-500">Monitor all your deals in one place</p>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <a href="{{ url_for('listings.market_category') }}" 
+                       class="flex-1 bg-green-600 text-white text-center px-6 py-3 rounded-xl hover:bg-green-700 transition font-medium">
+                        <i class="fas fa-arrow-right mr-2"></i>Explore Marketplace
+                    </a>
+                
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="bg-gray-50 px-8 py-4 border-t text-center">
+                <p class="text-sm text-gray-500">
+                    <i class="fas fa-shield-alt text-green-500 mr-1"></i>
+                    Your account is now verified. You have full access to all features.
+                </p>
+            </div>
+        </div>
+        
+        <!-- Extra Tips -->
+        <div class="mt-6 text-center">
+            <p class="text-sm text-gray-500">
+                Need help? 
+                <a href="#" class="text-green-600 hover:text-green-700 font-medium">Contact Support</a>
+                or check our 
+                <a href="#" class="text-green-600 hover:text-green-700 font-medium">Help Center</a>
+            </p>
+        </div>
+        
+    </div>
+</div>
+
+<!-- Simple confetti effect -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Small celebration effect
+    const colors = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+    
+    for (let i = 0; i < 30; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.cssText = `
+            position: fixed;
+            width: ${Math.random() * 8 + 4}px;
+            height: ${Math.random() * 8 + 4}px;
+            background: ${colors[Math.floor(Math.random() * colors.length)]};
+            left: ${Math.random() * 100}%;
+            top: -10px;
+            border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+            opacity: 0.8;
+            animation: confettiFall ${Math.random() * 2 + 2}s ease-in forwards;
+            animation-delay: ${Math.random() * 0.5}s;
+            pointer-events: none;
+            z-index: 9999;
+        `;
+        document.body.appendChild(confetti);
+        
+        // Remove after animation
+        setTimeout(() => {
+            confetti.remove();
+        }, 3000);
+    }
+});
+
+// Add keyframe animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes confettiFall {
+        0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0.8; }
+        100% { transform: translateY(100vh) rotate(720deg) scale(0.5); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

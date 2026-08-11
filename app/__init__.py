@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 
 from flask import Flask
@@ -43,6 +44,9 @@ app.config['MAIL_DEFAULT_SENDER'] =  ('Ecowaste', 'rahal.aminos@gmail.com')
 
 mail.init_app(app)
 
+@app.context_processor
+def inject_now():
+    return {'now': datetime.utcnow}
 
 #Register blueprint
 from app.auth import bp as auth_bp

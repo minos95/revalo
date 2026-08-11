@@ -51,7 +51,7 @@ def upgrade():
     plans = SubscriptionPlan.query.filter(
         SubscriptionPlan.is_active == True,
         SubscriptionPlan.price_monthly > 0,  # Paid plans only
-        SubscriptionPlan.id>company.subscription_plan_id
+        SubscriptionPlan.id > company.subscription_plan_id
     ).order_by(SubscriptionPlan.price_monthly).all()
     
     form.plan_id.choices = [(p.id, f"{p.name} - ${p.price_monthly}/month") for p in plans]
