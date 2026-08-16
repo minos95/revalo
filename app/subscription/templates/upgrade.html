@@ -86,6 +86,19 @@
         <form method="POST" id="upgradeForm">
             {{ form.hidden_tag() }}
             
+            <!-- Billing Interval Toggle -->
+            <div class="text-center mb-8">
+                <div class="billing-toggle inline-flex">
+                    <span class="billing-option {% if form.interval.data == 'monthly' %}active{% endif %}" data-interval="monthly" onclick="changeInterval(this)">
+                        Monthly Billing
+                    </span>
+                    <span class="billing-option {% if form.interval.data == 'yearly' %}active{% endif %}" data-interval="yearly" onclick="changeInterval(this)">
+                        Yearly Billing
+                        <span class="text-xs ml-1">(Save 15%)</span>
+                    </span>
+                </div>
+                {{ form.interval(id="interval-form", class="hidden" ) }}
+            </div>
             <!-- Plan Selection -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 {% for plan in plans %}
@@ -97,9 +110,9 @@
                      onclick="selectPlan({{ plan.id }})">
                     
                     {% if plan.is_popular %}
-                    <div class="plan-badge">
-                        <span class="bg-green-500 text-white text-xs px-3 py-1 rounded-full">Most Popular</span>
-                    </div>
+                        <div class="plan-badge">
+                            <span class="bg-green-500 text-white text-xs px-3 py-1 rounded-full">Most Popular</span>
+                        </div>
                     {% endif %}
                     
                     <h3 class="text-xl font-bold text-gray-900">{{ plan.name }}</h3>
@@ -109,17 +122,18 @@
                         <span class="text-3xl font-bold text-gray-900 price-display" data-plan="{{ plan.id }}" data-interval="monthly">
                             {{ "%.0f"|format(plan.price_monthly) }}DA
                         </span>
-                        <span class="text-gray-500">/month</span>
+                        <span class="text-gray-500 price-display">/month</span>
                     </div>
                     
                     {% if plan.price_yearly and plan.price_yearly < plan.price_monthly * 12 %}
                     
                     <div class="mt-1">
                       
-                        <span class="text-sm text-gray-500  " data-plan="{{ plan.id }}">
-                            {{ "%.0f"|format(plan.price_yearly) }}/year DA
+                        <span class="text-sm text-gray-500 yearly-price " data-plan="{{ plan.id }}">
+                            {{ "%.0f"|format(plan.price_yearly) }}DA
                         </span>
-                        <span class="savings-badge  " data-plan="{{ plan.id }}">
+                        <span class="text-gray-500 price-display">/year</span>
+                        <span class="savings-badge yearly-savings " data-plan="{{ plan.id }}">
                             Save {{ ((plan.price_monthly * 12 - plan.price_yearly) / (plan.price_monthly * 12) * 100)|round }}%
                         </span>
                     </div>
@@ -195,19 +209,7 @@
              <div class="hidden">
             {{ form.plan_id }}
             </div>
-            <!-- Billing Interval Toggle -->
-            <div class="text-center mb-8">
-                <div class="billing-toggle inline-flex">
-                    <span class="billing-option {% if form.interval.data == 'monthly' %}active{% endif %}" data-interval="monthly">
-                        Monthly Billing
-                    </span>
-                    <span class="billing-option {% if form.interval.data == 'yearly' %}active{% endif %}" data-interval="yearly">
-                        Yearly Billing
-                        <span class="text-xs ml-1">(Save 15%)</span>
-                    </span>
-                </div>
-                {{ form.interval(id="interval-form", onchange="changeInterval()" ) }}
-            </div>
+            
             
             <!-- Payment Method Section -->
             <div class="bg-white rounded-xl shadow-md overflow-hidden mb-8">
@@ -314,11 +316,17 @@
 <script>
     // Plan selection
     let selectedPlanId = {{ form.plan_id.data or plans[0].id if plans else 'null' }};
-    let selectedInterval = '{{ form.interval.data or "monthly" }}';
+    let selectedInterval = '{{ form.interval.data or "yearly" }}';
+
+   
     
-    function changeInterval(){
+    function changeInterval(element){
         console.log("-------------------")
-        selectedInterval=document.getElementById('interval-form').value
+        
+        //selectedInterval=document.getElementById('interval-form').value
+        selectedInterval = element.dataset.interval;
+        document.getElementById('interval-form').value=selectedInterval
+        setInterval(selectedInterval)
         updateSummary()
     }
    
@@ -348,8 +356,12 @@
     }
     
     function setInterval(interval) {
-        selectedInterval = interval;
-        document.getElementById('interval').value = interval;
+        
+        
+        
+         interval=selectedInterval ;
+        
+        //document.getElementById('interval').value = interval;
         
         // Update active state
         document.querySelectorAll('.billing-option').forEach(opt => {

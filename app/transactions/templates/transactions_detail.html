@@ -635,8 +635,9 @@
                         </h2>
                     </div>
                     <div class="p-6 space-y-3">
+                        /*current_app.config['UPLOAD_FOLDER'], f'transactions/{transaction_id}/payment'*/
                         {% if transaction.payment_url %}
-                        <a href="{{ transaction.payment_url }}" target="_blank" 
+                        <a href="{{ url_for('transactions.download_payment',transaction_id=transaction.id ,filename=transaction.payment_url) }}" 
                            class="document-card flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
                             <div class="flex items-center">
                                 <i class="fas fa-file-invoice text-green-600 mr-3"></i>

@@ -49,9 +49,7 @@ def dashboard():
     completed_transactions = Transaction.query.filter_by(status='completed').count()
     
     # Revenue
-    total_revenue = db.session.query(func.sum(Transaction.price)).filter(
-        Transaction.status == 'completed'
-    ).scalar() or 0
+    total_revenue = db.session.query(func.sum(SubscriptionPayment.amount)).scalar() or 0
     
     monthly_revenue = db.session.query(func.sum(Transaction.price)).filter(
         Transaction.status == 'completed',

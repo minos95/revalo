@@ -82,10 +82,7 @@ def dashboard():
     ).count()
     
     # Total revenue (from completed sales)
-    total_revenue = db.session.query(func.sum(Transaction.price)).filter(
-        Transaction.seller_company_id == company.id,
-        Transaction.status == 'completed'
-    ).scalar() or 0
+    total_revenue = company.total_revenue
     
     # Average rating
     """avg_rating = db.session.query(func.avg(Review.rating)).filter(

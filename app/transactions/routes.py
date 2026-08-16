@@ -2,7 +2,7 @@ import os
 import app
 from app.services.rating_service import RatingService
 from app.services.transaction_service import TransactionService
-from flask import Blueprint, render_template,request,redirect,url_for,flash,current_app
+from flask import Blueprint, render_template,request,redirect,url_for,flash,current_app,send_from_directory
 from app import db
 from app.auth.models import Company, Notification, Review, User
 from app.listings.models import Category,Item, Quality_attributes
@@ -618,3 +618,11 @@ def cancel(transaction_id):
         flash(f'Error cancelling transaction: {str(e)}', 'danger')
     
     return redirect(url_for('transactions.detail', transaction_id=transaction_id))
+
+@bp.route('/uploads/<transaction_id>/<path:filename>')
+def download_payment(filename,transaction_id):
+    return send_from_directory(
+        os.path.join(current_app.config['UPLOAD_FOLDER'], f'transactions/{transaction_id}/payment'),
+        filename,
+        as_attachment=True
+    )

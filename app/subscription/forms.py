@@ -7,8 +7,9 @@ class UpgradeForm(FlaskForm):
     
     plan_id = SelectField('Select Plan', coerce=int, validators=[DataRequired()])
     interval = SelectField('Billing Interval', choices=[
-        ('monthly', 'Monthly'),
-        ('yearly', 'Yearly (Save 15%)')
+        ('yearly', 'Yearly (Save 15%)'),
+        ('monthly', 'Monthly')
+        
     ], validators=[DataRequired()])
     payment_method = SelectField('Payment Method', choices=[
         ('stripe', 'Credit Card'),
