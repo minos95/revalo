@@ -47,6 +47,15 @@ jobs:
           VM_IP: ${{ secrets.AZURE_VM_IP }}
           VM_PATH: ${{ secrets.AZURE_VM_PATH }}  # e.g., /home/ubuntu/app
         run: |
+          # Create .ssh directory
+            mkdir -p ~/.ssh
+            
+            # Write the SSH key to the correct location
+            echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+            chmod 600 ~/.ssh/deploy_key
+            
+            # Use the key with correct path
+            scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -r ./app ubuntu@$VM_IP:/home/ubuntu/ecowaste/
           # Create deployment directory
           mkdir -p deploy_package
           
