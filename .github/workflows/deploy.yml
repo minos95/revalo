@@ -47,6 +47,15 @@ jobs:
           VM_IP: ${{ secrets.AZURE_VM_IP }}
           VM_PATH: ${{ secrets.AZURE_VM_PATH }}  # e.g., /home/ubuntu/app
         run: |
+         # Start SSH agent
+          eval "$(ssh-agent -s)"
+          
+          # Add key to agent
+          echo "$SSH_PRIVATE_KEY" | ssh-add -
+          
+          # Deploy using SSH agent
+          scp -o StrictHostKeyChecking=no -r ./app amine@$VM_IP:/home/ubuntu/ecowaste/
+          
           # Create deployment directory
           mkdir -p deploy_package
           
