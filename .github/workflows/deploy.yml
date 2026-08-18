@@ -34,8 +34,8 @@ jobs:
           echo "🔍 Testing SSH connection..."
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $SSH_USER@$VM_IP "echo '✅ SSH connection successful'"
           
-          echo "📁 Creating directory structure..."
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $SSH_USER@$VM_IP "mkdir -p /home/$SSH_USER/ecowaste/app /home/$SSH_USER/ecowaste/templates /home/$SSH_USER/ecowaste/static"
+          echo "📁 Creating directory with sudo..."
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $SSH_USER@$VM_IP "sudo mkdir -p /home/$SSH_USER/ecowaste && sudo chown $SSH_USER:$SSH_USER /home/$SSH_USER/ecowaste"
           
           echo "📤 Copying application files..."
           # Copy each directory individually
