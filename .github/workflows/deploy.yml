@@ -28,37 +28,21 @@ jobs:
           
           ssh-keyscan -H $VM_IP >> ~/.ssh/known_hosts 2>/dev/null
           
-          echo "📦 Creating deployment package..."
-          # Create tar archive (excluding unnecessary files)
-          tar -czf deploy.tar.gz \
-            --exclude='.git' \
-            --exclude='.github' \
-            --exclude='__pycache__' \
-            --exclude='*.pyc' \
-            --exclude='venv' \
-            --exclude='.env' \
-            --exclude='.pytest_cache' \
-            --exclude='instance' \
-            .
-          
           echo "📁 Creating directory on VM..."
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $SSH_USER@$VM_IP "mkdir -p /home/$SSH_USER/ecowaste"
           
-          echo "📤 Copying archive to VM..."
-          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no deploy.tar.gz $SSH_USER@$VM_IP:/home/$SSH_USER/
+          echo "📤 Copying files..."
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -r \
+            ./app \
+            ./templates \
+            ./static \
+            ./run.py \
+            ./requirements.txt \
+            $SSH_USER@$VM_IP:/home/$SSH_USER/ecowaste/
           
-          echo "📦 Extracting on VM..."
+          echo "🔄 Running deployment commands..."
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $SSH_USER@$VM_IP << 'ENDSSH'
-            cd /home/$SSH_USER
-            mkdir -p ecowaste_temp
-            tar -xzf deploy.tar.gz -C ecowaste_temp/
-            
-            # Move files to final location
-            rm -rf ecowaste
-            mv ecowaste_temp ecowaste
-            rm deploy.tar.gz
-            
-            cd ecowaste
+            cd /home/$SSH_USER/ecowaste
             
             # Create virtual environment if needed
             if [ ! -d "venv" ]; then
