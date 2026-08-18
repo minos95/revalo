@@ -55,7 +55,7 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           
           # Use the key with correct path
-          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -r ./app ubuntu@$VM_IP:/home/ubuntu/ecowaste/
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -r ./app amine@$VM_IP:/home/amine/ecowaste/
           # Create deployment directory
           mkdir -p deploy_package
           
