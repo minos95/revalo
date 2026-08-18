@@ -1,122 +1,45 @@
-name: Deploy to Azure VM
+name: Deploy Flask App to Azure VM
 
 on:
   push:
     branches:
       - main
-      - master
-    paths-ignore:
-      - 'README.md'
-      - '.gitignore'
-      - '*.md'
-  workflow_dispatch:  # Allows manual trigger
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
-      # Step 1: Checkout code
-      - name: Checkout code
-        uses: actions/checkout@v3
-      
-      # Step 2: Set up Python
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-          cache: 'pip'
-      
-      # Step 3: Install dependencies
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      
-      # Step 4: Run tests
-      - name: Run tests
-        run: |
-          pytest tests/ --cov=app
-        continue-on-error: true  # Optional: continue even if tests fail
-      
-      # Step 5: Deploy to Azure VM
-      - name: Deploy to Azure VM
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.AZURE_SSH_PRIVATE_KEY }}
-          SSH_USER: ${{ secrets.AZURE_SSH_USER }}
-          VM_IP: ${{ secrets.AZURE_VM_IP }}
-          VM_PATH: ${{ secrets.AZURE_VM_PATH }}  # e.g., /home/ubuntu/app
-        run: |
-         # Create .ssh directory
-          mkdir -p ~/.ssh
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Deploy via SSH
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.VM_HOST }}
+        username: ${{ secrets.VM_USER }}
+        key: ${{ secrets.VM_SSH_KEY }}
+        script: |
+          # Navigate to project directory
+          cd /var/www/flaskapp
           
-          # Write the SSH key to the correct location
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          
-          # Use the key with correct path 
-          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -r ./app amine@$VM_IP:/home/amine/ecowaste/
-          # Create deployment directory
-          mkdir -p deploy_package
-          
-          # Copy application files (exclude unnecessary files)
-          rsync -av --exclude='.git' --exclude='.github' \
-            --exclude='__pycache__' --exclude='*.pyc' \
-            --exclude='.env' --exclude='venv' \
-            --exclude='.pytest_cache' --exclude='.coverage' \
-            ./ deploy_package/
-          
-          # Create deployment script
-          cat > deploy_script.sh << 'EOF'
-          #!/bin/bash
-          set -e
-          
-          echo "🚀 Starting deployment..."
-          
-          # Set up SSH known hosts
-          mkdir -p ~/.ssh
-          echo "${{ secrets.AZURE_SSH_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
-          
-          # Copy files to VM
-          echo "📦 Copying files..."
-          scp -i ~/.ssh/deploy_key -r deploy_package/* ${{ secrets.AZURE_SSH_USER }}@${{ secrets.AZURE_VM_IP }}:${{ secrets.AZURE_VM_PATH }}
-          
-          # Execute deployment commands on VM
-          echo "🔄 Running deployment commands..."
-          ssh -i ~/.ssh/deploy_key ${{ secrets.AZURE_SSH_USER }}@${{ secrets.AZURE_VM_IP }} << 'ENDSSH'
-          
-          cd ${{ secrets.AZURE_VM_PATH }}
-          
-          # Activate virtual environment or create if not exists
-          if [ ! -d "venv" ]; then
-            echo "📦 Creating virtual environment..."
-            python3 -m venv venv
+          # Initialize git if not already a repository, otherwise pull latest code
+          if [ ! -d ".git" ]; then
+            git clone https://github.com{{ github.repository }}.git .
+          else
+            git pull origin main
           fi
           
+          # Setup virtual environment
+          python3 -m venv venv
           source venv/bin/activate
           
-          # Install/update dependencies
-          echo "📦 Installing dependencies..."
+          # Install dependencies
           pip install --upgrade pip
-          pip install -r requirements.txt
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
           
-          # Run database migrations
-          echo "🗄️ Running database migrations..."
-          flask db upgrade
-          
-          # Collect static files
-          echo "📁 Collecting static files..."
-          flask collect
-          
-          # Restart the application service
-          echo "🔄 Restarting application..."
-          sudo systemctl restart ecowaste
-          sudo systemctl status ecowaste --no-pager
-          
-          echo "✅ Deployment completed successfully!"
-          ENDSSH
-          
-          EOF
-          
-          chmod +x deploy_script.sh
-          ./deploy_script.sh
+          # Restart the systemd service to apply changes
+          sudo systemctl restart flaskapp
+          sudo systemctl enable flaskapp
