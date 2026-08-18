@@ -2,121 +2,77 @@ name: Deploy to Azure VM
 
 on:
   push:
-    branches:
-      - main
-      - master
-    paths-ignore:
-      - 'README.md'
-      - '.gitignore'
-      - '*.md'
-  workflow_dispatch:  # Allows manual trigger
+    branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     
     steps:
-      # Step 1: Checkout code
       - name: Checkout code
         uses: actions/checkout@v3
       
-      # Step 2: Set up Python
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-          cache: 'pip'
-      
-      # Step 3: Install dependencies
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      
-      # Step 4: Run tests
-      - name: Run tests
-        run: |
-          pytest tests/ --cov=app
-        continue-on-error: true  # Optional: continue even if tests fail
-      
-      # Step 5: Deploy to Azure VM
       - name: Deploy to Azure VM
         env:
           SSH_PRIVATE_KEY: ${{ secrets.AZURE_SSH_PRIVATE_KEY }}
           SSH_USER: ${{ secrets.AZURE_SSH_USER }}
           VM_IP: ${{ secrets.AZURE_VM_IP }}
-          VM_PATH: ${{ secrets.AZURE_VM_PATH }}  # e.g., /home/ubuntu/app
         run: |
-          # Create .ssh directory
-            mkdir -p ~/.ssh
-            
-            # Write the SSH key to the correct location
-            echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
-            chmod 600 ~/.ssh/deploy_key
-            
-            # Use the key with correct path
-            scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -r ./app amine@$VM_IP:/home/amine/ecowaste/
-          # Create deployment directory
-          mkdir -p deploy_package
-          
-          # Copy application files (exclude unnecessary files)
-          rsync -av --exclude='.git' --exclude='.github' \
-            --exclude='__pycache__' --exclude='*.pyc' \
-            --exclude='.env' --exclude='venv' \
-            --exclude='.pytest_cache' --exclude='.coverage' \
-            ./ deploy_package/
-          
-          # Create deployment script
-          cat > deploy_script.sh << 'EOF'
-          #!/bin/bash
-          set -e
-          
-          echo "🚀 Starting deployment..."
-          
-          # Set up SSH known hosts
+          echo "🔑 Setting up SSH..."
           mkdir -p ~/.ssh
-          echo "${{ secrets.AZURE_SSH_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+          chmod 700 ~/.ssh
           
-          # Copy files to VM
-          echo "📦 Copying files..."
-          scp -i ~/.ssh/deploy_key -r deploy_package/* ${{ secrets.AZURE_SSH_USER }}@${{ secrets.AZURE_VM_IP }}:${{ secrets.AZURE_VM_PATH }}
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
           
-          # Execute deployment commands on VM
-          echo "🔄 Running deployment commands..."
-          ssh -i ~/.ssh/deploy_key ${{ secrets.AZURE_SSH_USER }}@${{ secrets.AZURE_VM_IP }} << 'ENDSSH'
+          ssh-keyscan -H $VM_IP >> ~/.ssh/known_hosts 2>/dev/null
           
-          cd ${{ secrets.AZURE_VM_PATH }}
+          echo "📦 Creating deployment package..."
+          # Create tar archive (excluding unnecessary files)
+          tar -czf deploy.tar.gz \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='__pycache__' \
+            --exclude='*.pyc' \
+            --exclude='venv' \
+            --exclude='.env' \
+            --exclude='.pytest_cache' \
+            --exclude='instance' \
+            .
           
-          # Activate virtual environment or create if not exists
-          if [ ! -d "venv" ]; then
-            echo "📦 Creating virtual environment..."
-            python3 -m venv venv
-          fi
+          echo "📁 Creating directory on VM..."
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $SSH_USER@$VM_IP "mkdir -p /home/$SSH_USER/ecowaste"
           
-          source venv/bin/activate
+          echo "📤 Copying archive to VM..."
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no deploy.tar.gz $SSH_USER@$VM_IP:/home/$SSH_USER/
           
-          # Install/update dependencies
-          echo "📦 Installing dependencies..."
-          pip install --upgrade pip
-          pip install -r requirements.txt
-          
-          # Run database migrations
-          echo "🗄️ Running database migrations..."
-          flask db upgrade
-          
-          # Collect static files
-          echo "📁 Collecting static files..."
-          flask collect
-          
-          # Restart the application service
-          echo "🔄 Restarting application..."
-          sudo systemctl restart ecowaste
-          sudo systemctl status ecowaste --no-pager
-          
-          echo "✅ Deployment completed successfully!"
+          echo "📦 Extracting on VM..."
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $SSH_USER@$VM_IP << 'ENDSSH'
+            cd /home/$SSH_USER
+            mkdir -p ecowaste_temp
+            tar -xzf deploy.tar.gz -C ecowaste_temp/
+            
+            # Move files to final location
+            rm -rf ecowaste
+            mv ecowaste_temp ecowaste
+            rm deploy.tar.gz
+            
+            cd ecowaste
+            
+            # Create virtual environment if needed
+            if [ ! -d "venv" ]; then
+              python3 -m venv venv
+            fi
+            
+            source venv/bin/activate
+            pip install --upgrade pip
+            pip install -r requirements.txt
+            
+            if [ -d "migrations" ]; then
+              flask db upgrade
+            fi
+            
+            sudo systemctl restart ecowaste
+            echo "✅ Deployment completed!"
           ENDSSH
-          
-          EOF
-          
-          chmod +x deploy_script.sh
-          ./deploy_script.sh
