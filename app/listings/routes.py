@@ -59,8 +59,6 @@ def market(category_id):
     
     quality_filter={}
     listings=Item.query
-    print('++++++++++++++++++++++++++++++++++++++++++++++++')
-    print(listings)
     for attribute in attributes:
         if request.args.get(attribute.name):
             
