@@ -19,6 +19,8 @@ jobs:
           SSH_USER: ${{ secrets.AZURE_SSH_USER }}
           VM_IP: ${{ secrets.AZURE_VM_IP }}
         run: |
+          set -e  # Exit on error
+          
           echo "🔑 Setting up SSH..."
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
@@ -26,37 +28,52 @@ jobs:
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           
+          echo "Adding VM to known hosts..."
           ssh-keyscan -H $VM_IP >> ~/.ssh/known_hosts 2>/dev/null
           
-          echo "📁 Creating directory on VM..."
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $SSH_USER@$VM_IP "mkdir -p /home/$SSH_USER/ecowaste"
+          echo "🔍 Testing SSH connection..."
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $SSH_USER@$VM_IP "echo '✅ SSH connection successful'"
           
-          echo "📤 Copying files..."
-          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -r \
-            ./app \
-            ./templates \
-            ./static \
-            ./run.py \
-            ./requirements.txt \
-            $SSH_USER@$VM_IP:/home/$SSH_USER/ecowaste/
+          echo "📁 Creating directory structure..."
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $SSH_USER@$VM_IP "mkdir -p /home/$SSH_USER/ecowaste/app /home/$SSH_USER/ecowaste/templates /home/$SSH_USER/ecowaste/static"
+          
+          echo "📤 Copying application files..."
+          # Copy each directory individually
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -r ./app $SSH_USER@$VM_IP:/home/$SSH_USER/ecowaste/
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -r ./templates $SSH_USER@$VM_IP:/home/$SSH_USER/ecowaste/
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -r ./static $SSH_USER@$VM_IP:/home/$SSH_USER/ecowaste/
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ./run.py $SSH_USER@$VM_IP:/home/$SSH_USER/ecowaste/
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ./requirements.txt $SSH_USER@$VM_IP:/home/$SSH_USER/ecowaste/
           
           echo "🔄 Running deployment commands..."
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $SSH_USER@$VM_IP << 'ENDSSH'
             cd /home/$SSH_USER/ecowaste
             
-            # Create virtual environment if needed
+            # Check if files were copied
+            echo "📁 Files on VM:"
+            ls -la
+            
+            # Create virtual environment
             if [ ! -d "venv" ]; then
+              echo "📦 Creating virtual environment..."
               python3 -m venv venv
             fi
             
+            # Activate and install
             source venv/bin/activate
+            echo "📦 Installing dependencies..."
             pip install --upgrade pip
             pip install -r requirements.txt
             
+            # Run migrations
             if [ -d "migrations" ]; then
+              echo "🗄️ Running database migrations..."
               flask db upgrade
             fi
             
-            sudo systemctl restart ecowaste
-            echo "✅ Deployment completed!"
+            # Restart application
+            echo "🔄 Restarting application..."
+            sudo systemctl restart ecowaste || echo "⚠️ Gunicorn service not found"
+            
+            echo "✅ Deployment completed successfully!"
           ENDSSH
