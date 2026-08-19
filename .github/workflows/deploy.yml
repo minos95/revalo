@@ -58,7 +58,7 @@ jobs:
             fi
             
             # Activate and install
-            source venv/bin/activate
+            . venv/bin/activate
             echo "📦 Installing dependencies..."
             pip install --upgrade pip
             pip install -r requirements.txt
