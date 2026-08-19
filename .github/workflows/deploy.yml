@@ -40,11 +40,11 @@ jobs:
           echo "📤 Copying application files..."
           # Copy each directory individually
           scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -r ./app $SSH_USER@$VM_IP:/home/$SSH_USER/ecowaste/
-          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -r ./templates $SSH_USER@$VM_IP:/home/$SSH_USER/ecowaste/
           scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -r ./static $SSH_USER@$VM_IP:/home/$SSH_USER/ecowaste/
           scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ./run.py $SSH_USER@$VM_IP:/home/$SSH_USER/ecowaste/
           scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ./requirements.txt $SSH_USER@$VM_IP:/home/$SSH_USER/ecowaste/
-          
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ./extension.py $SSH_USER@$VM_IP:/home/$SSH_USER/ecowaste/
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ./app.py $SSH_USER@$VM_IP:/home/$SSH_USER/ecowaste/
           echo "🔄 Running deployment commands..."
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $SSH_USER@$VM_IP << 'ENDSSH'
             cd /home/$SSH_USER/ecowaste
