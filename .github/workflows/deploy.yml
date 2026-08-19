@@ -45,8 +45,8 @@ jobs:
           scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ./app.py $SSH_USER@$VM_IP:/home/$SSH_USER/ecowaste/
           echo "🔄 Running deployment commands..."
           echo "user.......... $(SSH_USER)"
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $SSH_USER@$VM_IP << ENDSSH
-            cd /home/$SSH_USER/ecowaste
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $SSH_USER@$VM_IP << 'ENDSSH'
+            cd /home/\$SSH_USER/ecowaste
             
             # Check if files were copied
             echo "📁 Files on VM:"
