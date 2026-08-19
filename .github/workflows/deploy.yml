@@ -43,6 +43,9 @@ jobs:
           scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ./requirements.txt $SSH_USER@$VM_IP:/home/$SSH_USER/ecowaste/
           scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ./extensions.py $SSH_USER@$VM_IP:/home/$SSH_USER/ecowaste/
           scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ./app.py $SSH_USER@$VM_IP:/home/$SSH_USER/ecowaste/
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ./reset_db.py $SSH_USER@$VM_IP:/home/$SSH_USER/ecowaste/
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ./seed_category.py $SSH_USER@$VM_IP:/home/$SSH_USER/ecowaste/
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ./seed_subscription.py $SSH_USER@$VM_IP:/home/$SSH_USER/ecowaste/
           echo "🔄 Running deployment commands..."
           echo "USER: $SSH_USER"
           echo "HOME: /home/$SSH_USER"
