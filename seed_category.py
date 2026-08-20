@@ -68,7 +68,7 @@ def seed_categories():
             "Color":["Clear","Green","Brown","Mixed"],
             "Condition":["Whole","Broken"],
         },
-        "medical":{
+        "Medical":{
 
         }
 
