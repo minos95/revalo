@@ -202,7 +202,6 @@ def edit_company():
         
         # Handle logo upload
         if form.logo_url.data:
-            print('++++++++')
             logo_file = form.logo_url.data
             if logo_file :
                 # Delete old logo if exists
