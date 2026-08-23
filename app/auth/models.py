@@ -13,7 +13,7 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 class Company(db.Model):
     id = db.Column(db.Integer(),primary_key=True)
-    name = db.Column(db.String(length=30),nullable=False,unique=True)
+    name = db.Column(db.String(length=50),nullable=False,unique=True)
     email = db.Column(db.String(200))
     
     phone = db.Column(db.String(50))
@@ -30,20 +30,20 @@ class Company(db.Model):
     total_revenue=db.Column(db.Numeric(10, 2),default=0)
 
     #location
-    address = db.Column(db.String(length=30),nullable=False)
-    country = db.Column(db.String(length=30),nullable=False)
-    city = db.Column(db.String(length=30),nullable=False)
-    Postal_code = db.Column(db.String(length=30))
-    business_type = db.Column(db.String(length=30)) #generator, recycler, trader
-    business_size= db.Column(db.String(length=30)) 
-    activity = db.Column(db.String(length=30),nullable=False)
+    address = db.Column(db.String(length=50),nullable=False)
+    country = db.Column(db.String(length=50),nullable=False)
+    city = db.Column(db.String(length=50),nullable=False)
+    Postal_code = db.Column(db.String(length=50))
+    business_type = db.Column(db.String(length=50)) #generator, recycler, trader
+    business_size= db.Column(db.String(length=50)) 
+    activity = db.Column(db.String(length=50),nullable=False)
     #information
-    rc = db.Column(db.String(length=30))
-    nif = db.Column(db.String(length=30))
-    nis = db.Column(db.String(length=30))
-    referal = db.Column(db.String(length=30))
+    rc = db.Column(db.String(length=50))
+    nif = db.Column(db.String(length=50))
+    nis = db.Column(db.String(length=50))
+    referal = db.Column(db.String(length=50))
 
-    status=db.Column(db.String(length=30), default="pending")
+    status=db.Column(db.String(length=50), default="pending")
     verified=db.Column(db.Boolean(),default=False)
     verified_by= db.Column(db.Integer())
     verified_at=db.Column(db.DateTime(timezone=True))
@@ -265,16 +265,16 @@ class User(db.Model,UserMixin):
     __tablename__ = 'user'
     id = db.Column(db.Integer(),primary_key=True)
     company_id = db.Column(db.Integer(),db.ForeignKey('company.id'))
-    full_name = db.Column(db.String(length=30),nullable=False)
-    avatar_url= db.Column(db.String(length=30))
-    phone = db.Column(db.String(length=30))
+    full_name = db.Column(db.String(length=50),nullable=False)
+    avatar_url= db.Column(db.String(length=50))
+    phone = db.Column(db.String(length=50))
     email = db.Column(db.String(length=50),nullable=False,index=True)
     email_verified=db.Column(db.Boolean(),default=False)
-    password_hash=db.Column(db.String(length=50),nullable=False)
-    role = db.Column(db.String(length=30),nullable=False)  # owner, manager, employee
-    job_title =db.Column(db.String(length=30))
-    department =db.Column(db.String(length=30))
-    notification_preferences =db.Column(db.String(length=30))
+    password_hash=db.Column(db.String(length=100),nullable=False)
+    role = db.Column(db.String(length=50),nullable=False)  # owner, manager, employee
+    job_title =db.Column(db.String(length=50))
+    department =db.Column(db.String(length=50))
+    notification_preferences =db.Column(db.String(length=50))
      # Password reset fields
     reset_password_token = db.Column(db.String(100), unique=True, index=True)
     reset_password_expires = db.Column(db.DateTime)
@@ -289,7 +289,7 @@ class User(db.Model,UserMixin):
     verification_attempts = db.Column(db.Integer, default=0)
 
 
-    status=db.Column(db.String(length=30), default="active")
+    status=db.Column(db.String(length=50), default="active")
     authorized=db.Column(db.Boolean(),default=True)
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
 

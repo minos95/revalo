@@ -76,27 +76,29 @@ def seed_categories():
     }
 
     for category_name, attributes in data.items():
-
-        category = Category(name=category_name,default_image_url=f"uploads/categories/{category_name}.jpg",description="")
-        db.session.add(category)
-        db.session.flush()
-
-        for attr_name, values in attributes.items():
-
-            attribute = Quality_attributes(
-                name=attr_name,
-                category_id=category.id,
-                field="select"
-            )
-            db.session.add(attribute)
+        slug=category_name.lower().replace(' ', '-')
+        existing = Category.query.filter_by(slug=slug).first()
+        if not existing:
+            category = Category(name=category_name,default_image_url=f"uploads/categories/{category_name}.jpg",description="")
+            db.session.add(category)
             db.session.flush()
 
-            for val in values:
-                value = Quality_attribute_options(
-                    value=val,
-                    attribute_id=attribute.id
+            for attr_name, values in attributes.items():
+
+                attribute = Quality_attributes(
+                    name=attr_name,
+                    category_id=category.id,
+                    field="select"
                 )
-                db.session.add(value)
+                db.session.add(attribute)
+                db.session.flush()
+
+                for val in values:
+                    value = Quality_attribute_options(
+                        value=val,
+                        attribute_id=attribute.id
+                    )
+                    db.session.add(value)
 
     db.session.commit()
 

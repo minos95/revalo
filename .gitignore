@@ -1,0 +1,112 @@
+# ============================================
+# PYTHON
+# ============================================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+env/
+
+# ============================================
+# ENVIRONMENT VARIABLES
+# ============================================
+# DON'T commit .env file! It contains secrets
+.env
+.env.local
+.env.production
+.env.dev
+
+# BUT DO commit .env.example (template)
+!.env.testing
+
+# ============================================
+# DATABASE
+# ============================================
+*.db
+*.sqlite
+*.sqlite3
+instance/
+*.postgresql
+*.postgres
+
+# ============================================
+# LOGS
+# ============================================
+logs/
+*.log
+access.log
+error.log
+gunicorn.log
+
+# ============================================
+# UPLOADS
+# ============================================
+uploads/
+media/
+static/uploads/
+app/static/uploads/
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.webp
+*.pdf
+*.doc
+*.docx
+
+# ============================================
+# IDE / EDITOR
+# ============================================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ============================================
+# TESTING
+# ============================================
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+coverage.xml
+*.cover
+
+# ============================================
+# DEPLOYMENT
+# ============================================
+deploy.tar.gz
+*.pem
+*.key
+*.pub
+deploy_key
+deploy_script.sh
+
+# ============================================
+# MIGRATIONS (Optional - commit these)
+# ============================================
+# migrations/  # Uncomment if you want to ignore migrations
+# migrations/versions/*.py  # Or just ignore version files
+
+# ============================================
+# MISC
+# ============================================
+*.bak
+*.tmp
+*.temp
+.DS_Store

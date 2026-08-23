@@ -19,7 +19,7 @@ metadata = MetaData(naming_convention={
 })
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'   
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://amine:Sasukevsnaruto10@localhost:5432/ecowaste_test'   
 app.config['SECRET_KEY']='fb0dcdeb3a4223be7c444a52'
 UPLOAD_FOLDER="app/static/uploads/"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
