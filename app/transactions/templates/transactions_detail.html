@@ -527,8 +527,8 @@
                     <div class="p-6">
                         <div class="flex items-center space-x-3 mb-4">
                             <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                                {% if transaction.seller_company.logo_url %}
-                                <img src="{{ transaction.seller_company.logo_url }}" class="w-12 h-12 rounded-full">
+                                {% if transaction.seller_company.logo %}
+                                <img src="{{ url_for('static', filename='uploads/companies/'+transaction.seller_company.logo+'/logos/' + company.logo) }}" class="w-12 h-12 rounded-full">
                                 {% else %}
                                 <i class="fas fa-building text-green-600 text-xl"></i>
                                 {% endif %}
@@ -587,8 +587,7 @@
                         <div class="flex items-center space-x-3 mb-4">
                             <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                                 {% if transaction.buyer_company.logo_url %}
-                                <img src="{{ transaction.buyer_company.logo_url }}" class="w-12 h-12 rounded-full">
-                                {% else %}
+                                    <img src="{{ url_for('static', filename='uploads/companies/'+transaction.buyer_company.logo+'/logos/' + company.logo) }}" class="w-12 h-12 rounded-full">                                {% else %}
                                 <i class="fas fa-user text-blue-600 text-xl"></i>
                                 {% endif %}
                             </div>
