@@ -1,8 +1,9 @@
 import os
+from urllib.parse import unquote
 import app
 from app.services.rating_service import RatingService
 from app.services.transaction_service import TransactionService
-from flask import Blueprint, render_template,request,redirect,url_for,flash,current_app,send_from_directory
+from flask import Blueprint, abort, render_template,request,redirect, send_file,url_for,flash,current_app,send_from_directory
 from app import db
 from app.auth.models import Company, Notification, Review, User
 from app.listings.models import Category,Item, Quality_attributes
@@ -619,10 +620,44 @@ def cancel(transaction_id):
     
     return redirect(url_for('transactions.detail', transaction_id=transaction_id))
 
-@bp.route('/uploads/<transaction_id>/<path:filename>')
+@bp.route('/uploads/<transaction_id>/<filename>')
 def download_payment(filename,transaction_id):
-    return send_from_directory(
-        os.path.join(current_app.config['UPLOAD_FOLDER'], f'transactions/{transaction_id}/payment'),
-        filename,
-        as_attachment=True
-    )
+     # 1. Build the absolute path
+    directory = os.path.abspath(os.path.join(
+        current_app.config['UPLOAD_FOLDER'], 
+        'transactions', 
+        str(transaction_id), 
+        'payment'
+    ))
+    
+    file_path = os.path.join(directory, filename)
+    print(f"Full file path: {file_path}")
+    print(f"File exists?: {os.path.exists(file_path)}")
+    
+    # 2. Check if the physical file exists before sending
+    if not os.path.exists(file_path) or not os.path.isfile(file_path):
+        abort(404)
+        
+    # 3. Serve the file directly
+    return send_file(file_path, as_attachment=True)
+
+@bp.route('/downloadweightcertificate/<transaction_id>/<filename>')
+def download_weight_certificate(filename,transaction_id):
+     # 1. Build the absolute path
+    directory = os.path.abspath(os.path.join(
+        current_app.config['UPLOAD_FOLDER'], 
+        'transactions', 
+        str(transaction_id), 
+        'weight_certificate'
+    ))
+    
+    file_path = os.path.join(directory, filename)
+    print(f"Full file path: {file_path}")
+    print(f"File exists?: {os.path.exists(file_path)}")
+    
+    # 2. Check if the physical file exists before sending
+    if not os.path.exists(file_path) or not os.path.isfile(file_path):
+        abort(404)
+        
+    # 3. Serve the file directly
+    return send_file(file_path, as_attachment=True)
