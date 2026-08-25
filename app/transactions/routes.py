@@ -19,6 +19,7 @@ from app.transactions import bp
 from werkzeug.utils import secure_filename
 
 @bp.route("/")
+@login_required
 def index():
     NotificationService.mark_as_read_by_type(current_user.id,"transaction")
 
@@ -29,6 +30,7 @@ def index():
 
 
 @bp.route("/detail/<int:transaction_id>",methods=['POST','GET'])
+@login_required
 def detail(transaction_id):
     transaction=Transaction.query.get_or_404(transaction_id)
     mark_in_transit_form=markInTransitForm()
