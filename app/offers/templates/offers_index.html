@@ -170,10 +170,10 @@
                                         <span class="text-gray-500">Amount:</span>
                                         <span class="font-semibold text-green-600">{{ "%.2f"|format(offer.offered_price) }} DA</span>
                                     </div>
-                                    {% if offer.quantity %}
+                                    {% if offer.quantity_requested %}
                                     <div>
                                         <span class="text-gray-500">Quantity:</span>
-                                        <span>{{ offer.quantity }} {{ offer.listing.unit }}</span>
+                                        <span>{{ offer.quantity_requested }} {{ offer.item.unit }}</span>
                                     </div>
                                     {% endif %}
                                     <div>
