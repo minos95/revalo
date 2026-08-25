@@ -135,14 +135,14 @@ def index():
         Offer.responded_at.isnot(None)
     ).limit(100).all()
     
-    if responded_offers:
-        avg_response = sum(
-            (offer.responded_at - offer.created_at).total_seconds() / 3600
-            for offer in responded_offers
-        ) / len(responded_offers)
-        avg_response_hours = round(avg_response, 1)
-    else:
-        avg_response_hours = 0
+   # if responded_offers:
+   #     avg_response = sum(
+   #         (offer.responded_at - offer.created_at).total_seconds() / 3600
+   #         for offer in responded_offers
+   #     ) / len(responded_offers)
+   #     avg_response_hours = round(avg_response, 1)
+   # else:
+    avg_response_hours = 0
     
     return render_template('offers_index.html',
                          offers=offers,
