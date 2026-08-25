@@ -112,7 +112,7 @@ def confirm_payment(transaction_id):
         return redirect(url_for('transactions.detail', transaction_id=transaction.id))
     
     # Check if transaction is in correct state
-    if transaction.status != 'confirmed':
+    if transaction.status == 'confirmed':
         flash(f'Cannot confirm payment. Transaction payment status is {transaction.status}.', 'warning')
         return redirect(url_for('transactions.detail', transaction_id=transaction.id))
     
