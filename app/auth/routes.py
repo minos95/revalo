@@ -49,13 +49,12 @@ def signup():
         company_created=Company.query.filter_by(name=form.company_name.data).first()
 
         # Handle logo upload
-        print("***************+++++++++++")
-        print(form.documents.data)
+        
         if form.documents.data and allowed_file:
             documents=form.documents.data
             documents_name = secure_filename(form.documents.data.filename)
             if documents :
-                print(documents)
+                
                 # Save new documents
                 filename = secure_filename(f"company_{company_created.id}_{datetime.utcnow().timestamp()}_{documents_name}")
                 documents_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'companies/'+company_created.name+'/documents', filename)
@@ -222,7 +221,7 @@ def edit_company():
                     documents=form.documents.data
                     documents_name = secure_filename(form.documents.data.filename)
                     if documents :
-                        print(documents)
+                        
                         # Save new documents
                         filename = secure_filename(f"company_{company.id}_{datetime.utcnow().timestamp()}_{documents_name}")
                         documents_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'companies/'+company.name+'/documents', filename)
@@ -462,7 +461,7 @@ def send_reset_email(email, token, name):
     )
     
     try:
-        print('---------------------------------')
+        
         mail.send(msg)
     except Exception as e:
         print('-----------------------------------')
