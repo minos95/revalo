@@ -431,9 +431,9 @@ def complete(transaction_id):
     try:
         payment_reference = request.form.get('payment_reference')
         
-        transaction = TransactionService.complete_transaction(
+        TransactionService.complete_transaction(
             transaction_id=transaction_id,
-            user_id=current_user.id,
+            
             payment_reference=payment_reference
         )
         
