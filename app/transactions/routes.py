@@ -139,6 +139,7 @@ def confirm_payment(transaction_id):
             
            
             # Update company statistics
+            """
             seller_company = transaction.seller_company
             if seller_company:
                 seller_company.total_transactions = (seller_company.total_transactions or 0) + 1
@@ -147,7 +148,7 @@ def confirm_payment(transaction_id):
             buyer_company = transaction.buyer_company
             if buyer_company:
                 buyer_company.total_transactions = (buyer_company.total_transactions or 0) + 1
-            
+            """
             db.session.commit()
             
             # Create notification for buyer
