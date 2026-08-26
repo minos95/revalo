@@ -70,7 +70,7 @@ def market(category_id):
             
             listings=listings.filter(*filters)
             
-    print(str(listings))
+    
     listings=listings.paginate(page=page,per_page=per_page,error_out=False)
    
     return render_template('market.html',listings=listings,form=form,category_id=category_id,attributes=attributes,quality_filter=quality_filter)
@@ -168,7 +168,7 @@ def post(category_id):
                     filename = secure_filename(image.filename)
                     file_path=app.config['UPLOAD_FOLDER']+'listings/'
                     file_path = os.path.join(file_path, filename)
-                    print(file_path)
+                   
                     image.save(file_path)
                     image_to_create.append(Image(item_id=item_to_create.id, 
                                                 uri='uploads/listings/'+filename))

@@ -40,9 +40,7 @@ def index():
     sent_query = Offer.query.filter(
         Offer.sender_company_id == company.id
     )
-    print(f'..........................{company.id}')
-    print(f'++++++++++++++received_query: {received_query}')
-    print(f'-----------------sent_query: {sent_query}')
+    
     
     # Apply status filters
     if status_filter != 'all':
@@ -121,8 +119,7 @@ def index():
         offers.sort(key=lambda x: x.created_at, reverse=True)
         pagination = None
         current_type = 'all'
-    #print(f'++++++++++++++received_query: {received_pagination.items}')
-    #print(f'-----------------received_query: {sent_pagination.items}')
+   
     
     # Get offer statistics
     total_offers = received_counts['total'] + sent_counts['total']
@@ -210,7 +207,7 @@ def create_offer(listing_id):
             flash("The quantity isn't available.", 'warning')
             return redirect(url_for('offers.create_offer', listing_id=listing.id))
 
-        print("----------------offer")
+        
         try:
             # Create the offer
             offer = OfferService.create_offer(

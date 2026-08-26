@@ -34,10 +34,9 @@ def index():
 def detail(transaction_id):
     transaction=Transaction.query.get_or_404(transaction_id)
     mark_in_transit_form=markInTransitForm()
-    print('-----------------------')
-    print(current_user.company_id)
+
     if mark_in_transit_form.validate_on_submit() :
-        print('------------------------- mar_in_trasit')
+     
         transaction.mark_in_transit()
         
     
@@ -76,7 +75,7 @@ def process_payment(transaction_id):
         
         
         if file and allowed_file(file.filename) :
-                print('--------------------------- file')
+               
                 filename = secure_filename(f"payment_{transaction_id}_{current_user.id}_{file.filename}")
                 file_path=os.path.join(current_app.config['UPLOAD_FOLDER'], f'transactions/{transaction_id}/payment', filename)
                 os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -122,7 +121,7 @@ def confirm_payment(transaction_id):
         return redirect(url_for('transactions.detail', transaction_id=transaction.id))
     
     if request.method == 'POST':
-        print("+++++++++++++++++++++++++++++method post")
+       
         try:
             # Get payment details from form
             #payment_reference = request.form.get('payment_reference', '')
@@ -244,7 +243,7 @@ def confirm_pickup(transaction_id):
         file=request.files['weight_certificate']  
     
         if file and allowed_file(file.filename) :
-                    print('--------------------------- file')
+                    
                     filename = secure_filename(f"weight_certificate_{transaction_id}_{current_user.id}_{file.filename}")
                     file_path=os.path.join(current_app.config['UPLOAD_FOLDER'], f'transactions/{transaction_id}/weight_certificate', filename)
                     os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -354,7 +353,7 @@ def confirm_delivery(transaction_id):
             # Option 1: Auto-release payment
             # Option 2: Wait for seller to confirm payment
             if transaction.payment_confirmed:
-                print('---------------------------- transaction completed')
+                
                 TransactionService.complete_transaction(transaction.id)
               
             return redirect(url_for('transactions.detail', transaction_id=transaction.id))
@@ -634,8 +633,6 @@ def download_payment(filename,transaction_id):
     ))
     
     file_path = os.path.join(directory, filename)
-    print(f"Full file path: {file_path}")
-    print(f"File exists?: {os.path.exists(file_path)}")
     
     # 2. Check if the physical file exists before sending
     if not os.path.exists(file_path) or not os.path.isfile(file_path):
@@ -655,8 +652,7 @@ def download_weight_certificate(filename,transaction_id):
     ))
     
     file_path = os.path.join(directory, filename)
-    print(f"Full file path: {file_path}")
-    print(f"File exists?: {os.path.exists(file_path)}")
+
     
     # 2. Check if the physical file exists before sending
     if not os.path.exists(file_path) or not os.path.isfile(file_path):
